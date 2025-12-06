@@ -9,9 +9,9 @@ const Dashboard = () => {
   const [apellidos, setApellidos] = useState("");
 
   useEffect(() => {
-    const storedNombres = localStorage.getItem("profesor_nombres");
-    const storedApellidos = localStorage.getItem("profesor_apellidos");
-    const storedCodigo = localStorage.getItem("profesor_codigo");
+    const storedNombres = localStorage.getItem("nombres");
+    const storedApellidos = localStorage.getItem("apellidos");
+    const storedCodigo = localStorage.getItem("codigo");
 
     if (!storedCodigo) {
       navigate("/");
@@ -23,9 +23,9 @@ const Dashboard = () => {
   }, [navigate]);
 
   const handleLogout = () => {
-    localStorage.removeItem("profesor_codigo");
-    localStorage.removeItem("profesor_nombres");
-    localStorage.removeItem("profesor_apellidos");
+    localStorage.removeItem("codigo");
+    localStorage.removeItem("nombres");
+    localStorage.removeItem("apellidos");
     navigate("/");
   };
 

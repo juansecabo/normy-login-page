@@ -40,22 +40,13 @@ const Index = () => {
 
     try {
       const { data, error } = await supabase
-        .from("Internos")
-        .select("codigo, nombres, apellidos, cargo")
-        .eq("codigo", codigo.trim())
-        .maybeSingle();
+        .from('Internos')
+        .select('*')
+        .eq('codigo', parseInt(codigo.trim()))
+        .eq('cargo', 'Profesor(a)')
+        .single();
 
-      if (error) {
-        toast({
-          title: "Error",
-          description: "Error al verificar el código",
-          variant: "destructive",
-        });
-        setLoading(false);
-        return;
-      }
-
-      if (!data) {
+      if (error || !data) {
         toast({
           title: "Error",
           description: "Código no válido",
@@ -65,20 +56,10 @@ const Index = () => {
         return;
       }
 
-      if (data.cargo !== "Profesor(a)") {
-        toast({
-          title: "Acceso denegado",
-          description: "No tienes permisos de acceso",
-          variant: "destructive",
-        });
-        setLoading(false);
-        return;
-      }
-
       // Login exitoso - guardar en localStorage
-      localStorage.setItem("profesor_codigo", data.codigo);
-      localStorage.setItem("profesor_nombres", data.nombres || "");
-      localStorage.setItem("profesor_apellidos", data.apellidos || "");
+      localStorage.setItem("codigo", data.codigo);
+      localStorage.setItem("nombres", data.nombres || "");
+      localStorage.setItem("apellidos", data.apellidos || "");
 
       toast({
         title: "Bienvenido",
