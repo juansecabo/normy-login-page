@@ -1,16 +1,100 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import escudoImg from "@/assets/escudo.png";
 import normyImg from "@/assets/normy-placeholder.png";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 const Index = () => {
   const [codigo, setCodigo] = useState("");
+  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
+  const { toast } = useToast();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Funcionalidad pendiente
-    console.log("Código ingresado:", codigo);
+
+    // Validación: campo vacío
+    if (!codigo.trim()) {
+      toast({
+        title: "Error",
+        description: "Por favor ingresa tu código",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validación: solo números
+    if (!/^\d+$/.test(codigo.trim())) {
+      toast({
+        title: "Error",
+        description: "El código debe contener solo números",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const { data, error } = await supabase
+        .from("Internos")
+        .select("codigo, nombres, apellidos, cargo")
+        .eq("codigo", codigo.trim())
+        .maybeSingle();
+
+      if (error) {
+        toast({
+          title: "Error",
+          description: "Error al verificar el código",
+          variant: "destructive",
+        });
+        setLoading(false);
+        return;
+      }
+
+      if (!data) {
+        toast({
+          title: "Error",
+          description: "Código no válido",
+          variant: "destructive",
+        });
+        setLoading(false);
+        return;
+      }
+
+      if (data.cargo !== "Profesor(a)") {
+        toast({
+          title: "Acceso denegado",
+          description: "No tienes permisos de acceso",
+          variant: "destructive",
+        });
+        setLoading(false);
+        return;
+      }
+
+      // Login exitoso - guardar en localStorage
+      localStorage.setItem("profesor_codigo", data.codigo);
+      localStorage.setItem("profesor_nombres", data.nombres || "");
+      localStorage.setItem("profesor_apellidos", data.apellidos || "");
+
+      toast({
+        title: "Bienvenido",
+        description: `${data.nombres} ${data.apellidos}`,
+      });
+
+      navigate("/dashboard");
+    } catch {
+      toast({
+        title: "Error",
+        description: "Ocurrió un error inesperado",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -51,8 +135,8 @@ const Index = () => {
           {/* Formulario */}
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-2">
-              <label 
-                htmlFor="codigo" 
+              <label
+                htmlFor="codigo"
                 className="block text-sm font-medium text-foreground"
               >
                 Digita tu código aquí
@@ -64,14 +148,16 @@ const Index = () => {
                 value={codigo}
                 onChange={(e) => setCodigo(e.target.value)}
                 className="w-full h-12 text-base border-input bg-background focus:ring-2 focus:ring-primary/20 transition-all"
+                disabled={loading}
               />
             </div>
 
-            <Button 
-              type="submit" 
+            <Button
+              type="submit"
               className="w-full h-12 text-base font-semibold shadow-button hover:shadow-lg transition-all duration-300 hover:scale-[1.02]"
+              disabled={loading}
             >
-              Ingresar
+              {loading ? "Verificando..." : "Ingresar"}
             </Button>
           </form>
 
