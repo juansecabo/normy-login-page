@@ -56,7 +56,7 @@ const Dashboard = () => {
       <main className="flex-1 container mx-auto p-8">
         <div className="bg-card rounded-lg shadow-soft p-8 max-w-2xl mx-auto text-center">
           <h2 className="text-2xl lg:text-3xl font-bold text-foreground mb-4">
-            Bienvenido
+            Bienvenido(a)
           </h2>
           <p className="text-xl text-primary font-semibold">
             {nombres} {apellidos}
