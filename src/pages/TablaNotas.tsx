@@ -63,9 +63,9 @@ const TablaNotas = () => {
   const [celdaEditando, setCeldaEditando] = useState<CeldaEditando | null>(null);
   const [valorEditando, setValorEditando] = useState("");
   
-  // Ref para almacenar las celdas y manejar navegación
+  // Ref para almacenar las celdas y flag para evitar doble guardado
   const inputRefs = useRef<{ [key: string]: HTMLInputElement | null }>({});
-  const pendingFocus = useRef<{ studentIndex: number; actividadId: string; periodo: number } | null>(null);
+  const isNavigating = useRef(false);
 
   useEffect(() => {
     const storedCodigo = localStorage.getItem("codigo");
@@ -293,9 +293,6 @@ const TablaNotas = () => {
     const nextStudent = estudiantes[nextStudentIndex];
     const nota = notas[nextStudent.codigo_estudiantil]?.[periodo]?.[actividadId];
     
-    // Programar el focus para después del guardado
-    pendingFocus.current = { studentIndex: nextStudentIndex, actividadId, periodo };
-    
     // Activar edición en la siguiente celda
     setCeldaEditando({ 
       codigoEstudiantil: nextStudent.codigo_estudiantil, 
@@ -307,7 +304,6 @@ const TablaNotas = () => {
 
   // Handlers para edición de notas
   const handleClickCelda = (codigoEstudiantil: string, actividadId: string, periodo: number, notaActual: number | undefined) => {
-    pendingFocus.current = null; // Limpiar cualquier focus pendiente
     setCeldaEditando({ codigoEstudiantil, actividadId, periodo });
     setValorEditando(notaActual !== undefined ? notaActual.toString() : "");
   };
@@ -455,45 +451,44 @@ const TablaNotas = () => {
       }
     }
 
-    // Solo limpiar si NO hay focus pendiente
-    if (!pendingFocus.current) {
-      setCeldaEditando(null);
-      setValorEditando("");
-    }
+    setCeldaEditando(null);
+    setValorEditando("");
   };
 
   // Handler para cuando se presiona Enter (navegar a celda de abajo)
-  const handleKeyDownNota = (e: React.KeyboardEvent<HTMLInputElement>, studentIndex: number, actividadId: string, periodo: number) => {
+  const handleKeyDownNota = async (e: React.KeyboardEvent<HTMLInputElement>, studentIndex: number, actividadId: string, periodo: number) => {
     if (e.key === 'Enter') {
       e.preventDefault();
-      // Guardar nota y luego mover a la siguiente celda
-      handleGuardarNota();
+      // Marcar que estamos navegando (evita doble guardado con onBlur)
+      isNavigating.current = true;
+      // Primero guardar la nota (esperar a que termine)
+      await handleGuardarNota();
+      // Luego mover a la siguiente celda
       focusCeldaAbajo(studentIndex, actividadId, periodo);
+      // Resetear el flag después de un pequeño delay
+      setTimeout(() => {
+        isNavigating.current = false;
+      }, 100);
     } else if (e.key === 'Escape') {
-      pendingFocus.current = null;
       setCeldaEditando(null);
       setValorEditando("");
     }
   };
 
-  // Efecto para enfocar el input cuando hay un focus pendiente
+  // Efecto para enfocar el input cuando cambia la celda editando
   useEffect(() => {
-    if (pendingFocus.current && celdaEditando) {
-      const { studentIndex, actividadId } = pendingFocus.current;
-      const student = estudiantes[studentIndex];
-      if (student) {
-        const key = `${student.codigo_estudiantil}-${actividadId}`;
-        setTimeout(() => {
-          const input = inputRefs.current[key];
-          if (input) {
-            input.focus();
-            input.select();
-          }
-          pendingFocus.current = null;
-        }, 50);
-      }
+    if (celdaEditando) {
+      const key = `${celdaEditando.codigoEstudiantil}-${celdaEditando.actividadId}`;
+      // Pequeño delay para asegurar que el input se ha renderizado
+      setTimeout(() => {
+        const input = inputRefs.current[key];
+        if (input) {
+          input.focus();
+          input.select();
+        }
+      }, 10);
     }
-  }, [celdaEditando, estudiantes]);
+  }, [celdaEditando]);
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -672,8 +667,8 @@ const TablaNotas = () => {
                                         value={valorEditando}
                                         onChange={(e) => handleCambioNota(e.target.value)}
                                         onBlur={() => {
-                                          // Solo guardar si no hay focus pendiente (evitar doble guardado con Enter)
-                                          if (!pendingFocus.current) {
+                                          // Solo guardar si NO estamos navegando con Enter
+                                          if (!isNavigating.current) {
                                             handleGuardarNota();
                                           }
                                         }}
