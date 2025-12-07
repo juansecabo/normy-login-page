@@ -28,6 +28,21 @@ interface Actividad {
   porcentaje: number | null;
 }
 
+// Estructura: { [codigo_estudiantil]: { [periodo]: { [actividad_id]: nota } } }
+type NotasEstudiantes = {
+  [codigoEstudiantil: string]: {
+    [periodo: number]: {
+      [actividadId: string]: number;
+    };
+  };
+};
+
+interface CeldaEditando {
+  codigoEstudiantil: string;
+  actividadId: string;
+  periodo: number;
+}
+
 const TablaNotas = () => {
   const navigate = useNavigate();
   const [materiaSeleccionada, setMateriaSeleccionada] = useState("");
@@ -36,12 +51,17 @@ const TablaNotas = () => {
   const [estudiantes, setEstudiantes] = useState<Estudiante[]>([]);
   const [loading, setLoading] = useState(true);
   const [actividades, setActividades] = useState<Actividad[]>([]);
+  const [notas, setNotas] = useState<NotasEstudiantes>({});
   
   // Modal state
   const [modalOpen, setModalOpen] = useState(false);
   const [periodoActual, setPeriodoActual] = useState<number>(1);
   const [nombreActividad, setNombreActividad] = useState("");
   const [porcentajeActividad, setPorcentajeActividad] = useState("");
+  
+  // Estado para celda en edición
+  const [celdaEditando, setCeldaEditando] = useState<CeldaEditando | null>(null);
+  const [valorEditando, setValorEditando] = useState("");
 
   useEffect(() => {
     const storedCodigo = localStorage.getItem("codigo");
@@ -211,6 +231,68 @@ const TablaNotas = () => {
     return Math.max(200, 80 + (actividadesDelPeriodo.length * 120));
   };
 
+  // Handlers para edición de notas
+  const handleClickCelda = (codigoEstudiantil: string, actividadId: string, periodo: number, notaActual: number | undefined) => {
+    setCeldaEditando({ codigoEstudiantil, actividadId, periodo });
+    setValorEditando(notaActual !== undefined ? notaActual.toString() : "");
+  };
+
+  const handleCambioNota = (valor: string) => {
+    // Convertir coma a punto
+    const valorNormalizado = valor.replace(",", ".");
+    
+    // Permitir vacío, números y un punto decimal
+    if (valorNormalizado === "" || /^\d*\.?\d{0,2}$/.test(valorNormalizado)) {
+      setValorEditando(valorNormalizado);
+    }
+  };
+
+  const handleGuardarNota = () => {
+    if (!celdaEditando) return;
+
+    const { codigoEstudiantil, actividadId, periodo } = celdaEditando;
+
+    if (valorEditando.trim() === "") {
+      // Si está vacío, eliminar la nota
+      setNotas(prev => {
+        const nuevasNotas = { ...prev };
+        if (nuevasNotas[codigoEstudiantil]?.[periodo]?.[actividadId] !== undefined) {
+          delete nuevasNotas[codigoEstudiantil][periodo][actividadId];
+        }
+        return nuevasNotas;
+      });
+    } else {
+      const nota = parseFloat(valorEditando);
+      
+      // Validar rango
+      if (isNaN(nota) || nota < 0 || nota > 5) {
+        toast({
+          title: "Error",
+          description: "La nota debe estar entre 0 y 5",
+          variant: "destructive",
+        });
+        setCeldaEditando(null);
+        setValorEditando("");
+        return;
+      }
+
+      // Guardar la nota
+      setNotas(prev => ({
+        ...prev,
+        [codigoEstudiantil]: {
+          ...prev[codigoEstudiantil],
+          [periodo]: {
+            ...prev[codigoEstudiantil]?.[periodo],
+            [actividadId]: Math.round(nota * 100) / 100, // Redondear a 2 decimales
+          },
+        },
+      }));
+    }
+
+    setCeldaEditando(null);
+    setValorEditando("");
+  };
+
   return (
     <div className="min-h-screen bg-background flex flex-col">
       {/* Header */}
@@ -369,14 +451,45 @@ const TablaNotas = () => {
                           const actividadesDelPeriodo = getActividadesPorPeriodo(periodo.numero);
                           return (
                             <>
-                              {actividadesDelPeriodo.map((actividad) => (
-                                <td 
-                                  key={`${estudiante.codigo_estudiantil}-${actividad.id}`}
-                                  className="border border-border p-3 text-center text-sm text-muted-foreground min-w-[120px]"
-                                >
-                                  —
-                                </td>
-                              ))}
+                              {actividadesDelPeriodo.map((actividad) => {
+                                const nota = notas[estudiante.codigo_estudiantil]?.[periodo.numero]?.[actividad.id];
+                                const estaEditando = celdaEditando?.codigoEstudiantil === estudiante.codigo_estudiantil 
+                                  && celdaEditando?.actividadId === actividad.id;
+                                
+                                return (
+                                  <td 
+                                    key={`${estudiante.codigo_estudiantil}-${actividad.id}`}
+                                    className="border border-border p-1 text-center text-sm min-w-[120px]"
+                                  >
+                                    {estaEditando ? (
+                                      <input
+                                        type="text"
+                                        className="w-full h-8 text-center border border-primary rounded px-1 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                                        value={valorEditando}
+                                        onChange={(e) => handleCambioNota(e.target.value)}
+                                        onBlur={handleGuardarNota}
+                                        onKeyDown={(e) => {
+                                          if (e.key === 'Enter') {
+                                            handleGuardarNota();
+                                          } else if (e.key === 'Escape') {
+                                            setCeldaEditando(null);
+                                            setValorEditando("");
+                                          }
+                                        }}
+                                        autoFocus
+                                        placeholder="0-5"
+                                      />
+                                    ) : (
+                                      <button
+                                        className="w-full h-8 hover:bg-muted/50 rounded cursor-pointer transition-colors flex items-center justify-center"
+                                        onClick={() => handleClickCelda(estudiante.codigo_estudiantil, actividad.id, periodo.numero, nota)}
+                                      >
+                                        {nota !== undefined ? nota.toFixed(2) : <span className="text-muted-foreground">—</span>}
+                                      </button>
+                                    )}
+                                  </td>
+                                );
+                              })}
                               <td 
                                 key={`${estudiante.codigo_estudiantil}-empty-${periodo.numero}`}
                                 className="border border-border p-3 text-center text-sm text-muted-foreground/50 min-w-[80px]"
