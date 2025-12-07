@@ -1,12 +1,16 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { supabase } from "@/integrations/supabase/client";
 import escudoImg from "@/assets/escudo.png";
 
 const Dashboard = () => {
   const navigate = useNavigate();
   const [nombres, setNombres] = useState("");
   const [apellidos, setApellidos] = useState("");
+  const [materias, setMaterias] = useState<string[]>([]);
+  const [selectedMateria, setSelectedMateria] = useState<string | null>(null);
+  const [loadingMaterias, setLoadingMaterias] = useState(true);
 
   useEffect(() => {
     const storedNombres = localStorage.getItem("nombres");
@@ -20,6 +24,46 @@ const Dashboard = () => {
 
     setNombres(storedNombres || "");
     setApellidos(storedApellidos || "");
+
+    // Fetch materias del profesor
+    const fetchMaterias = async () => {
+      try {
+        // Primero obtener el id del profesor desde Internos
+        const { data: profesor, error: profesorError } = await supabase
+          .from('Internos')
+          .select('id')
+          .eq('codigo', parseInt(storedCodigo))
+          .single();
+
+        if (profesorError || !profesor) {
+          console.error('Error fetching profesor:', profesorError);
+          setLoadingMaterias(false);
+          return;
+        }
+
+        // Luego buscar las materias en Asignación Profesores
+        const { data: asignacion, error: asignacionError } = await supabase
+          .from('Asignación Profesores')
+          .select('Materia(s)')
+          .eq('id', profesor.id)
+          .single();
+
+        if (asignacionError || !asignacion) {
+          console.error('Error fetching materias:', asignacionError);
+          setLoadingMaterias(false);
+          return;
+        }
+
+        const materiasArray = asignacion['Materia(s)'] || [];
+        setMaterias(materiasArray);
+      } catch (error) {
+        console.error('Error:', error);
+      } finally {
+        setLoadingMaterias(false);
+      }
+    };
+
+    fetchMaterias();
   }, [navigate]);
 
   const handleLogout = () => {
@@ -64,6 +108,42 @@ const Dashboard = () => {
           <p className="text-muted-foreground mt-2">
             Sistema de gestión de calificaciones
           </p>
+        </div>
+
+        {/* Sección de Materias */}
+        <div className="bg-card rounded-lg shadow-soft p-8 max-w-4xl mx-auto mt-8">
+          <h3 className="text-xl font-bold text-foreground mb-6 text-center">
+            Elige tu materia:
+          </h3>
+          
+          {loadingMaterias ? (
+            <div className="text-center text-muted-foreground">
+              Cargando materias...
+            </div>
+          ) : materias.length === 0 ? (
+            <div className="text-center text-muted-foreground">
+              No tienes materias asignadas
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {materias.map((materia, index) => (
+                <button
+                  key={index}
+                  onClick={() => setSelectedMateria(materia)}
+                  className={`
+                    p-6 rounded-lg border-2 text-center transition-all duration-200
+                    hover:shadow-md hover:border-primary hover:bg-primary/5
+                    ${selectedMateria === materia 
+                      ? 'border-primary bg-primary/10 shadow-md' 
+                      : 'border-border bg-card'
+                    }
+                  `}
+                >
+                  <span className="font-medium text-foreground">{materia}</span>
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       </main>
     </div>
