@@ -146,7 +146,7 @@ const Dashboard = () => {
                       hover:shadow-md hover:border-primary hover:bg-primary/10
                       ${isSelected 
                         ? 'border-primary bg-primary/20 shadow-md ring-2 ring-primary/30' 
-                        : 'border-border/50 bg-background'
+                        : 'border-border bg-background'
                       }
                     `}
                   >
