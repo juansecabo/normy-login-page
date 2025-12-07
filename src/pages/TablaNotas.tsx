@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
@@ -62,6 +62,10 @@ const TablaNotas = () => {
   // Estado para celda en edición
   const [celdaEditando, setCeldaEditando] = useState<CeldaEditando | null>(null);
   const [valorEditando, setValorEditando] = useState("");
+  
+  // Ref para almacenar las celdas y manejar navegación
+  const inputRefs = useRef<{ [key: string]: HTMLInputElement | null }>({});
+  const pendingFocus = useRef<{ studentIndex: number; actividadId: string; periodo: number } | null>(null);
 
   useEffect(() => {
     const storedCodigo = localStorage.getItem("codigo");
@@ -279,8 +283,31 @@ const TablaNotas = () => {
     return Math.max(200, 80 + (actividadesDelPeriodo.length * 120));
   };
 
+  // Función para enfocar la siguiente celda (abajo)
+  const focusCeldaAbajo = useCallback((currentStudentIndex: number, actividadId: string, periodo: number) => {
+    const nextStudentIndex = currentStudentIndex + 1;
+    
+    // Si no hay más estudiantes, no hacer nada
+    if (nextStudentIndex >= estudiantes.length) return;
+    
+    const nextStudent = estudiantes[nextStudentIndex];
+    const nota = notas[nextStudent.codigo_estudiantil]?.[periodo]?.[actividadId];
+    
+    // Programar el focus para después del guardado
+    pendingFocus.current = { studentIndex: nextStudentIndex, actividadId, periodo };
+    
+    // Activar edición en la siguiente celda
+    setCeldaEditando({ 
+      codigoEstudiantil: nextStudent.codigo_estudiantil, 
+      actividadId, 
+      periodo 
+    });
+    setValorEditando(nota !== undefined ? nota.toString() : "");
+  }, [estudiantes, notas]);
+
   // Handlers para edición de notas
   const handleClickCelda = (codigoEstudiantil: string, actividadId: string, periodo: number, notaActual: number | undefined) => {
+    pendingFocus.current = null; // Limpiar cualquier focus pendiente
     setCeldaEditando({ codigoEstudiantil, actividadId, periodo });
     setValorEditando(notaActual !== undefined ? notaActual.toString() : "");
   };
@@ -428,9 +455,45 @@ const TablaNotas = () => {
       }
     }
 
-    setCeldaEditando(null);
-    setValorEditando("");
+    // Solo limpiar si NO hay focus pendiente
+    if (!pendingFocus.current) {
+      setCeldaEditando(null);
+      setValorEditando("");
+    }
   };
+
+  // Handler para cuando se presiona Enter (navegar a celda de abajo)
+  const handleKeyDownNota = (e: React.KeyboardEvent<HTMLInputElement>, studentIndex: number, actividadId: string, periodo: number) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      // Guardar nota y luego mover a la siguiente celda
+      handleGuardarNota();
+      focusCeldaAbajo(studentIndex, actividadId, periodo);
+    } else if (e.key === 'Escape') {
+      pendingFocus.current = null;
+      setCeldaEditando(null);
+      setValorEditando("");
+    }
+  };
+
+  // Efecto para enfocar el input cuando hay un focus pendiente
+  useEffect(() => {
+    if (pendingFocus.current && celdaEditando) {
+      const { studentIndex, actividadId } = pendingFocus.current;
+      const student = estudiantes[studentIndex];
+      if (student) {
+        const key = `${student.codigo_estudiantil}-${actividadId}`;
+        setTimeout(() => {
+          const input = inputRefs.current[key];
+          if (input) {
+            input.focus();
+            input.select();
+          }
+          pendingFocus.current = null;
+        }, 50);
+      }
+    }
+  }, [celdaEditando, estudiantes]);
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -570,19 +633,19 @@ const TablaNotas = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {estudiantes.map((estudiante, index) => (
+                    {estudiantes.map((estudiante, studentIndex) => (
                       <tr 
                         key={estudiante.codigo_estudiantil}
-                        className={index % 2 === 0 ? 'bg-background' : 'bg-muted/30'}
+                        className={studentIndex % 2 === 0 ? 'bg-background' : 'bg-muted/30'}
                       >
                         {/* Fixed columns */}
-                        <td className={`sticky left-0 z-10 border border-border p-3 text-sm ${index % 2 === 0 ? 'bg-background' : 'bg-muted/30'}`}>
+                        <td className={`sticky left-0 z-10 border border-border p-3 text-sm ${studentIndex % 2 === 0 ? 'bg-background' : 'bg-muted/30'}`}>
                           {estudiante.codigo_estudiantil}
                         </td>
-                        <td className={`sticky left-[100px] z-10 border border-border p-3 text-sm font-medium ${index % 2 === 0 ? 'bg-background' : 'bg-muted/30'}`}>
+                        <td className={`sticky left-[100px] z-10 border border-border p-3 text-sm font-medium ${studentIndex % 2 === 0 ? 'bg-background' : 'bg-muted/30'}`}>
                           {estudiante.apellidos_estudiante}
                         </td>
-                        <td className={`sticky left-[280px] z-10 border border-border p-3 text-sm ${index % 2 === 0 ? 'bg-background' : 'bg-muted/30'}`}>
+                        <td className={`sticky left-[280px] z-10 border border-border p-3 text-sm ${studentIndex % 2 === 0 ? 'bg-background' : 'bg-muted/30'}`}>
                           {estudiante.nombre_estudiante}
                         </td>
                         {/* Period cells with activities */}
@@ -594,27 +657,27 @@ const TablaNotas = () => {
                                 const nota = notas[estudiante.codigo_estudiantil]?.[periodo.numero]?.[actividad.id];
                                 const estaEditando = celdaEditando?.codigoEstudiantil === estudiante.codigo_estudiantil 
                                   && celdaEditando?.actividadId === actividad.id;
+                                const inputKey = `${estudiante.codigo_estudiantil}-${actividad.id}`;
                                 
                                 return (
                                   <td 
-                                    key={`${estudiante.codigo_estudiantil}-${actividad.id}`}
+                                    key={inputKey}
                                     className="border border-border p-1 text-center text-sm min-w-[120px]"
                                   >
                                     {estaEditando ? (
                                       <input
+                                        ref={(el) => { inputRefs.current[inputKey] = el; }}
                                         type="text"
                                         className="w-full h-8 text-center border border-primary rounded px-1 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
                                         value={valorEditando}
                                         onChange={(e) => handleCambioNota(e.target.value)}
-                                        onBlur={handleGuardarNota}
-                                        onKeyDown={(e) => {
-                                          if (e.key === 'Enter') {
+                                        onBlur={() => {
+                                          // Solo guardar si no hay focus pendiente (evitar doble guardado con Enter)
+                                          if (!pendingFocus.current) {
                                             handleGuardarNota();
-                                          } else if (e.key === 'Escape') {
-                                            setCeldaEditando(null);
-                                            setValorEditando("");
                                           }
                                         }}
+                                        onKeyDown={(e) => handleKeyDownNota(e, studentIndex, actividad.id, periodo.numero)}
                                         autoFocus
                                         placeholder="0-5"
                                       />
