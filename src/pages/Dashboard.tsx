@@ -64,7 +64,11 @@ const Dashboard = () => {
         }
 
         // Combinar todas las materias de todos los registros sin duplicados
-        const todasMaterias = asignaciones.flatMap(a => a['Materia(s)'] || []);
+        console.log("Materias antes de aplanar:", asignaciones?.map(a => a['Materia(s)']));
+        
+        const todasMaterias = asignaciones
+          ?.flatMap(a => a['Materia(s)'] || [])
+          .flat() || [];
         const materiasUnicas = [...new Set(todasMaterias)];
         setMaterias(materiasUnicas);
       } catch (error) {
