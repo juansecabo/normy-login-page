@@ -51,13 +51,22 @@ const TablaNotas = () => {
 
     const fetchEstudiantes = async () => {
       try {
+        console.log("=== DEBUG FILTRO ESTUDIANTES ===");
+        console.log("Grado desde localStorage:", storedGrado);
+        console.log("Salón desde localStorage:", storedSalon);
+        console.log("Tipo de grado:", typeof storedGrado);
+        console.log("Tipo de salón:", typeof storedSalon);
+
         const { data, error } = await supabase
           .from('Estudiantes')
-          .select('id, codigo_estudiantil, apellidos_estudiante, nombre_estudiante')
-          .eq('grado_estudiante', storedGrado)
+          .select('*')
+          .ilike('grado_estudiante', storedGrado!)
           .eq('salon_estudiante', storedSalon)
           .order('apellidos_estudiante', { ascending: true })
           .order('nombre_estudiante', { ascending: true });
+
+        console.log("Estudiantes encontrados:", data?.length || 0);
+        console.log("Datos:", data);
 
         if (error) {
           console.error('Error fetching estudiantes:', error);
