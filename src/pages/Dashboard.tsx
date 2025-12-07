@@ -28,8 +28,6 @@ const Dashboard = () => {
     // Fetch materias del profesor
     const fetchMaterias = async () => {
       try {
-        console.log("1. Codigo desde localStorage:", storedCodigo);
-        
         // Primero obtener el id del profesor desde Internos
         const { data: profesor, error: profesorError } = await supabase
           .from('Internos')
@@ -37,11 +35,7 @@ const Dashboard = () => {
           .eq('codigo', parseInt(storedCodigo))
           .single();
 
-        console.log("2. ID del profesor desde Internos:", profesor?.id);
-        console.log("2b. Error profesor si hay:", profesorError);
-
         if (profesorError || !profesor) {
-          console.error('Error fetching profesor:', profesorError);
           setLoadingMaterias(false);
           return;
         }
@@ -52,11 +46,7 @@ const Dashboard = () => {
           .select('"Materia(s)", "Grado(s)"')
           .eq('id', profesor.id);
 
-        console.log("3. Asignaciones encontradas:", asignaciones);
-        console.log("4. Error asignaciones si hay:", asignacionError);
-
         if (asignacionError || !asignaciones) {
-          console.error('Error fetching materias:', asignacionError);
           setLoadingMaterias(false);
           return;
         }
@@ -64,8 +54,6 @@ const Dashboard = () => {
         // Combinar todas las materias de todos los registros sin duplicados
         const todasMaterias = asignaciones.flatMap(a => a['Materia(s)'] || []);
         const materiasUnicas = [...new Set(todasMaterias)];
-        console.log("5. Materias únicas:", materiasUnicas);
-        
         setMaterias(materiasUnicas);
       } catch (error) {
         console.error('Error:', error);
