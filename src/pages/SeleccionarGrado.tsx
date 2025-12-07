@@ -16,31 +16,32 @@ const greenShades = [
   'bg-lime-100 hover:bg-lime-200',
 ];
 
-const Dashboard = () => {
+const SeleccionarGrado = () => {
   const navigate = useNavigate();
-  const [nombres, setNombres] = useState("");
-  const [apellidos, setApellidos] = useState("");
-  const [materias, setMaterias] = useState<string[]>([]);
-  const [selectedMateria, setSelectedMateria] = useState<string | null>(null);
-  const [loadingMaterias, setLoadingMaterias] = useState(true);
+  const [materiaSeleccionada, setMateriaSeleccionada] = useState("");
+  const [grados, setGrados] = useState<string[]>([]);
+  const [selectedGrado, setSelectedGrado] = useState<string | null>(null);
+  const [loadingGrados, setLoadingGrados] = useState(true);
 
   useEffect(() => {
-    const storedNombres = localStorage.getItem("nombres");
-    const storedApellidos = localStorage.getItem("apellidos");
     const storedCodigo = localStorage.getItem("codigo");
+    const storedMateria = localStorage.getItem("materiaSeleccionada");
 
     if (!storedCodigo) {
       navigate("/");
       return;
     }
 
-    setNombres(storedNombres || "");
-    setApellidos(storedApellidos || "");
+    if (!storedMateria) {
+      navigate("/dashboard");
+      return;
+    }
 
-    // Fetch materias del profesor
-    const fetchMaterias = async () => {
+    setMateriaSeleccionada(storedMateria);
+
+    const fetchGrados = async () => {
       try {
-        // Primero obtener el id del profesor desde Internos
+        // Obtener el id del profesor desde Internos
         const { data: profesor, error: profesorError } = await supabase
           .from('Internos')
           .select('id')
@@ -48,43 +49,50 @@ const Dashboard = () => {
           .single();
 
         if (profesorError || !profesor) {
-          setLoadingMaterias(false);
+          setLoadingGrados(false);
           return;
         }
 
-        // Luego buscar las materias en Asignación Profesores (puede tener múltiples registros)
+        // Buscar asignaciones que contengan la materia seleccionada
         const { data: asignaciones, error: asignacionError } = await supabase
           .from('Asignación Profesores')
           .select('"Materia(s)", "Grado(s)"')
           .eq('id', profesor.id);
 
         if (asignacionError || !asignaciones) {
-          setLoadingMaterias(false);
+          setLoadingGrados(false);
           return;
         }
 
-        // Combinar todas las materias de todos los registros sin duplicados
-        console.log("Materias antes de aplanar:", asignaciones?.map(a => a['Materia(s)']));
-        
-        const todasMaterias = asignaciones
-          ?.flatMap(a => a['Materia(s)'] || [])
+        // Filtrar solo las asignaciones que contienen la materia seleccionada
+        const asignacionesFiltradas = asignaciones.filter(a => {
+          const materias = (a['Materia(s)'] || []).flat();
+          return materias.includes(storedMateria);
+        });
+
+        console.log("Grados antes de aplanar:", asignacionesFiltradas?.map(a => a['Grado(s)']));
+
+        // Extraer todos los grados y eliminar duplicados
+        const todosGrados = asignacionesFiltradas
+          ?.flatMap(a => a['Grado(s)'] || [])
           .flat() || [];
-        const materiasUnicas = [...new Set(todasMaterias)];
-        setMaterias(materiasUnicas);
+        const gradosUnicos = [...new Set(todosGrados)];
+        setGrados(gradosUnicos);
       } catch (error) {
         console.error('Error:', error);
       } finally {
-        setLoadingMaterias(false);
+        setLoadingGrados(false);
       }
     };
 
-    fetchMaterias();
+    fetchGrados();
   }, [navigate]);
 
   const handleLogout = () => {
     localStorage.removeItem("codigo");
     localStorage.removeItem("nombres");
     localStorage.removeItem("apellidos");
+    localStorage.removeItem("materiaSeleccionada");
     navigate("/");
   };
 
@@ -113,46 +121,44 @@ const Dashboard = () => {
 
       {/* Main Content */}
       <main className="flex-1 container mx-auto p-8">
-        <div className="bg-card rounded-lg shadow-soft p-8 max-w-2xl mx-auto text-center">
-          <h2 className="text-2xl lg:text-3xl font-bold text-foreground mb-4">
-            Bienvenido(a)
-          </h2>
-          <p className="text-xl text-primary font-semibold">
-            {nombres} {apellidos}
-          </p>
-          <p className="text-muted-foreground mt-2">
-            Sistema de gestión de calificaciones
-          </p>
+        {/* Breadcrumb / Materia seleccionada */}
+        <div className="bg-card rounded-lg shadow-soft p-4 max-w-4xl mx-auto mb-6">
+          <div className="flex items-center gap-2 text-sm">
+            <button 
+              onClick={() => navigate("/dashboard")}
+              className="text-primary hover:underline"
+            >
+              Materias
+            </button>
+            <span className="text-muted-foreground">→</span>
+            <span className="text-foreground font-medium">{materiaSeleccionada}</span>
+          </div>
         </div>
 
-        {/* Sección de Materias */}
-        <div className="bg-card rounded-lg shadow-soft p-8 max-w-4xl mx-auto mt-8">
+        {/* Sección de Grados */}
+        <div className="bg-card rounded-lg shadow-soft p-8 max-w-4xl mx-auto">
           <h3 className="text-xl font-bold text-foreground mb-6 text-center">
-            Elige tu materia:
+            Elige tu grado:
           </h3>
           
-          {loadingMaterias ? (
+          {loadingGrados ? (
             <div className="text-center text-muted-foreground">
-              Cargando materias...
+              Cargando grados...
             </div>
-          ) : materias.length === 0 ? (
+          ) : grados.length === 0 ? (
             <div className="text-center text-muted-foreground">
-              No tienes materias asignadas
+              No hay grados asignados para esta materia
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {materias.map((materia, index) => {
+              {grados.map((grado, index) => {
                 const shadeClass = greenShades[index % greenShades.length];
-                const isSelected = selectedMateria === materia;
+                const isSelected = selectedGrado === grado;
                 
                 return (
                   <button
                     key={index}
-                    onClick={() => {
-                      setSelectedMateria(materia);
-                      localStorage.setItem("materiaSeleccionada", materia);
-                      navigate("/seleccionar-grado");
-                    }}
+                    onClick={() => setSelectedGrado(grado)}
                     className={`
                       p-6 rounded-lg border-2 text-center transition-all duration-200
                       hover:shadow-md hover:border-primary
@@ -162,7 +168,7 @@ const Dashboard = () => {
                       }
                     `}
                   >
-                    <span className="font-medium text-foreground">{materia}</span>
+                    <span className="font-medium text-foreground">{grado}</span>
                   </button>
                 );
               })}
@@ -174,4 +180,4 @@ const Dashboard = () => {
   );
 };
 
-export default Dashboard;
+export default SeleccionarGrado;
