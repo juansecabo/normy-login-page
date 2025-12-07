@@ -49,7 +49,7 @@ const Dashboard = () => {
         // Luego buscar las materias en Asignación Profesores (puede tener múltiples registros)
         const { data: asignaciones, error: asignacionError } = await supabase
           .from('Asignación Profesores')
-          .select('Materia(s), Grado(s)')
+          .select('"Materia(s)", "Grado(s)"')
           .eq('id', profesor.id);
 
         console.log("3. Asignaciones encontradas:", asignaciones);
