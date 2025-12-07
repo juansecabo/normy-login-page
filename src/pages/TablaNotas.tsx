@@ -3,11 +3,29 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import escudoImg from "@/assets/escudo.png";
+import { Plus } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { toast } from "@/hooks/use-toast";
 
 interface Estudiante {
   codigo_estudiantil: string;
   apellidos_estudiante: string;
   nombre_estudiante: string;
+}
+
+interface Actividad {
+  id: string;
+  periodo: number;
+  nombre: string;
+  porcentaje: number | null;
 }
 
 const TablaNotas = () => {
@@ -17,6 +35,13 @@ const TablaNotas = () => {
   const [salonSeleccionado, setSalonSeleccionado] = useState("");
   const [estudiantes, setEstudiantes] = useState<Estudiante[]>([]);
   const [loading, setLoading] = useState(true);
+  const [actividades, setActividades] = useState<Actividad[]>([]);
+  
+  // Modal state
+  const [modalOpen, setModalOpen] = useState(false);
+  const [periodoActual, setPeriodoActual] = useState<number>(1);
+  const [nombreActividad, setNombreActividad] = useState("");
+  const [porcentajeActividad, setPorcentajeActividad] = useState("");
 
   useEffect(() => {
     const storedCodigo = localStorage.getItem("codigo");
@@ -94,7 +119,97 @@ const TablaNotas = () => {
     navigate("/");
   };
 
-  const periodos = ["1er Periodo", "2do Periodo", "3er Periodo", "4to Periodo"];
+  const periodos = [
+    { numero: 1, nombre: "1er Periodo" },
+    { numero: 2, nombre: "2do Periodo" },
+    { numero: 3, nombre: "3er Periodo" },
+    { numero: 4, nombre: "4to Periodo" },
+  ];
+
+  const getActividadesPorPeriodo = (periodo: number) => {
+    return actividades.filter(a => a.periodo === periodo);
+  };
+
+  const getPorcentajeUsado = (periodo: number) => {
+    return actividades
+      .filter(a => a.periodo === periodo && a.porcentaje !== null)
+      .reduce((sum, a) => sum + (a.porcentaje || 0), 0);
+  };
+
+  const handleAbrirModal = (periodo: number) => {
+    setPeriodoActual(periodo);
+    setNombreActividad("");
+    setPorcentajeActividad("");
+    setModalOpen(true);
+  };
+
+  const handleCrearActividad = () => {
+    // Validar nombre
+    if (!nombreActividad.trim()) {
+      toast({
+        title: "Error",
+        description: "El nombre de la actividad es requerido",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (nombreActividad.length > 100) {
+      toast({
+        title: "Error",
+        description: "El nombre no puede superar 100 caracteres",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validar porcentaje si existe
+    let porcentaje: number | null = null;
+    if (porcentajeActividad.trim()) {
+      porcentaje = parseFloat(porcentajeActividad);
+      if (isNaN(porcentaje) || porcentaje < 0 || porcentaje > 100) {
+        toast({
+          title: "Error",
+          description: "El porcentaje debe estar entre 0 y 100",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const porcentajeUsado = getPorcentajeUsado(periodoActual);
+      if (porcentajeUsado + porcentaje > 100) {
+        toast({
+          title: "Error",
+          description: `El porcentaje total del período no puede superar 100%. Actualmente usado: ${porcentajeUsado}%`,
+          variant: "destructive",
+        });
+        return;
+      }
+    }
+
+    // Crear actividad
+    const nuevaActividad: Actividad = {
+      id: crypto.randomUUID(),
+      periodo: periodoActual,
+      nombre: nombreActividad.trim(),
+      porcentaje,
+    };
+
+    setActividades([...actividades, nuevaActividad]);
+    setModalOpen(false);
+    
+    toast({
+      title: "Actividad creada",
+      description: `"${nuevaActividad.nombre}" agregada al ${periodos[periodoActual - 1].nombre}`,
+    });
+  };
+
+  // Calcular el ancho mínimo de cada período basado en sus actividades
+  const getAnchoMinimoPeriodo = (periodo: number) => {
+    const actividadesDelPeriodo = getActividadesPorPeriodo(periodo);
+    // Mínimo 200px para el botón, más 120px por cada actividad
+    return Math.max(200, 80 + (actividadesDelPeriodo.length * 120));
+  };
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -161,31 +276,76 @@ const TablaNotas = () => {
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <div className="min-w-[1200px]">
+              <div style={{ minWidth: `${430 + periodos.reduce((sum, p) => sum + getAnchoMinimoPeriodo(p.numero), 0)}px` }}>
                 {/* Table */}
                 <table className="w-full border-collapse">
                   {/* Header Row - Periods */}
                   <thead>
+                    {/* Primera fila: Títulos de período */}
                     <tr className="bg-primary text-primary-foreground">
-                      {/* Fixed columns headers */}
-                      <th className="sticky left-0 z-20 bg-primary border border-border/30 w-[100px] min-w-[100px] p-3 text-left font-semibold">
+                      <th className="sticky left-0 z-20 bg-primary border border-border/30 w-[100px] min-w-[100px] p-3 text-left font-semibold" rowSpan={2}>
                         Código
                       </th>
-                      <th className="sticky left-[100px] z-20 bg-primary border border-border/30 w-[180px] min-w-[180px] p-3 text-left font-semibold">
+                      <th className="sticky left-[100px] z-20 bg-primary border border-border/30 w-[180px] min-w-[180px] p-3 text-left font-semibold" rowSpan={2}>
                         Apellidos
                       </th>
-                      <th className="sticky left-[280px] z-20 bg-primary border border-border/30 w-[150px] min-w-[150px] p-3 text-left font-semibold">
+                      <th className="sticky left-[280px] z-20 bg-primary border border-border/30 w-[150px] min-w-[150px] p-3 text-left font-semibold" rowSpan={2}>
                         Nombre
                       </th>
                       {/* Period headers */}
-                      {periodos.map((periodo, index) => (
-                        <th 
-                          key={index}
-                          className="border border-border/30 w-[200px] min-w-[200px] p-3 text-center font-semibold"
-                        >
-                          {periodo}
-                        </th>
-                      ))}
+                      {periodos.map((periodo) => {
+                        const actividadesDelPeriodo = getActividadesPorPeriodo(periodo.numero);
+                        const colSpan = actividadesDelPeriodo.length + 1; // +1 para el botón
+                        return (
+                          <th 
+                            key={periodo.numero}
+                            colSpan={colSpan}
+                            className="border border-border/30 p-3 text-center font-semibold"
+                            style={{ minWidth: `${getAnchoMinimoPeriodo(periodo.numero)}px` }}
+                          >
+                            {periodo.nombre}
+                          </th>
+                        );
+                      })}
+                    </tr>
+                    {/* Segunda fila: Actividades + botón agregar */}
+                    <tr className="bg-primary/90 text-primary-foreground">
+                      {periodos.map((periodo) => {
+                        const actividadesDelPeriodo = getActividadesPorPeriodo(periodo.numero);
+                        return (
+                          <>
+                            {actividadesDelPeriodo.map((actividad) => (
+                              <th 
+                                key={actividad.id}
+                                className="border border-border/30 p-2 text-center text-xs font-medium min-w-[120px]"
+                              >
+                                <div className="truncate" title={actividad.nombre}>
+                                  {actividad.nombre}
+                                </div>
+                                {actividad.porcentaje !== null && (
+                                  <div className="text-primary-foreground/70 text-xs">
+                                    ({actividad.porcentaje}%)
+                                  </div>
+                                )}
+                              </th>
+                            ))}
+                            <th 
+                              key={`btn-${periodo.numero}`}
+                              className="border border-border/30 p-2 text-center min-w-[80px]"
+                            >
+                              <Button
+                                variant="secondary"
+                                size="sm"
+                                className="h-7 text-xs bg-green-100 hover:bg-green-200 text-green-800 border-green-300"
+                                onClick={() => handleAbrirModal(periodo.numero)}
+                              >
+                                <Plus className="w-3 h-3 mr-1" />
+                                Agregar
+                              </Button>
+                            </th>
+                          </>
+                        );
+                      })}
                     </tr>
                   </thead>
                   <tbody>
@@ -204,15 +364,28 @@ const TablaNotas = () => {
                         <td className={`sticky left-[280px] z-10 border border-border p-3 text-sm ${index % 2 === 0 ? 'bg-background' : 'bg-muted/30'}`}>
                           {estudiante.nombre_estudiante}
                         </td>
-                        {/* Period cells - placeholders */}
-                        {periodos.map((_, periodIndex) => (
-                          <td 
-                            key={periodIndex}
-                            className="border border-border p-3 text-center text-sm text-muted-foreground"
-                          >
-                            —
-                          </td>
-                        ))}
+                        {/* Period cells with activities */}
+                        {periodos.map((periodo) => {
+                          const actividadesDelPeriodo = getActividadesPorPeriodo(periodo.numero);
+                          return (
+                            <>
+                              {actividadesDelPeriodo.map((actividad) => (
+                                <td 
+                                  key={`${estudiante.codigo_estudiantil}-${actividad.id}`}
+                                  className="border border-border p-3 text-center text-sm text-muted-foreground min-w-[120px]"
+                                >
+                                  —
+                                </td>
+                              ))}
+                              <td 
+                                key={`${estudiante.codigo_estudiantil}-empty-${periodo.numero}`}
+                                className="border border-border p-3 text-center text-sm text-muted-foreground/50 min-w-[80px]"
+                              >
+                                
+                              </td>
+                            </>
+                          );
+                        })}
                       </tr>
                     ))}
                   </tbody>
@@ -222,6 +395,55 @@ const TablaNotas = () => {
           )}
         </div>
       </main>
+
+      {/* Modal para crear actividad */}
+      <Dialog open={modalOpen} onOpenChange={setModalOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>
+              Nueva Actividad - {periodos[periodoActual - 1]?.nombre}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="nombre">Nombre de la actividad *</Label>
+              <Input
+                id="nombre"
+                placeholder="Ej: Evaluación 1, Taller, Exposición"
+                value={nombreActividad}
+                onChange={(e) => setNombreActividad(e.target.value)}
+                maxLength={100}
+              />
+              <p className="text-xs text-muted-foreground text-right">
+                {nombreActividad.length}/100 caracteres
+              </p>
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="porcentaje">Porcentaje (opcional)</Label>
+              <Input
+                id="porcentaje"
+                type="number"
+                placeholder="Ej: 25"
+                min={0}
+                max={100}
+                value={porcentajeActividad}
+                onChange={(e) => setPorcentajeActividad(e.target.value)}
+              />
+              <p className="text-xs text-muted-foreground">
+                Porcentaje usado: {getPorcentajeUsado(periodoActual)}% / 100%
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setModalOpen(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={handleCrearActividad} className="bg-primary hover:bg-primary/90">
+              Crear Actividad
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
