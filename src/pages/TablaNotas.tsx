@@ -5,7 +5,6 @@ import { supabase } from "@/integrations/supabase/client";
 import escudoImg from "@/assets/escudo.png";
 
 interface Estudiante {
-  id: number;
   codigo_estudiantil: string;
   apellidos_estudiante: string;
   nombre_estudiante: string;
@@ -59,8 +58,8 @@ const TablaNotas = () => {
 
         const { data, error } = await supabase
           .from('Estudiantes')
-          .select('*')
-          .ilike('grado_estudiante', storedGrado!)
+          .select('codigo_estudiantil, apellidos_estudiante, nombre_estudiante')
+          .eq('grado_estudiante', storedGrado)
           .eq('salon_estudiante', storedSalon)
           .order('apellidos_estudiante', { ascending: true })
           .order('nombre_estudiante', { ascending: true });
@@ -192,7 +191,7 @@ const TablaNotas = () => {
                   <tbody>
                     {estudiantes.map((estudiante, index) => (
                       <tr 
-                        key={estudiante.id}
+                        key={estudiante.codigo_estudiantil}
                         className={index % 2 === 0 ? 'bg-background' : 'bg-muted/30'}
                       >
                         {/* Fixed columns */}
