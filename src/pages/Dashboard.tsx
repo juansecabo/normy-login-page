@@ -58,7 +58,7 @@ const Dashboard = () => {
         const todasMaterias = asignaciones
           ?.flatMap(a => a['Materia(s)'] || [])
           .flat() || [];
-        const materiasUnicas = [...new Set(todasMaterias)];
+        const materiasUnicas = [...new Set(todasMaterias)].sort((a, b) => a.localeCompare(b, 'es'));
         setMaterias(materiasUnicas);
       } catch (error) {
         console.error('Error:', error);
