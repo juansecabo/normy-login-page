@@ -7,6 +7,7 @@ import Index from "./pages/Index";
 import Dashboard from "./pages/Dashboard";
 import SeleccionarGrado from "./pages/SeleccionarGrado";
 import SeleccionarSalon from "./pages/SeleccionarSalon";
+import TablaNotas from "./pages/TablaNotas";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -22,6 +23,7 @@ const App = () => (
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/seleccionar-grado" element={<SeleccionarGrado />} />
           <Route path="/seleccionar-salon" element={<SeleccionarSalon />} />
+          <Route path="/tabla-notas" element={<TablaNotas />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

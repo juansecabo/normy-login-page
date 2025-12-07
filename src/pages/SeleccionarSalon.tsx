@@ -91,6 +91,7 @@ const SeleccionarSalon = () => {
     localStorage.removeItem("apellidos");
     localStorage.removeItem("materiaSeleccionada");
     localStorage.removeItem("gradoSeleccionado");
+    localStorage.removeItem("salonSeleccionado");
     navigate("/");
   };
 
@@ -162,7 +163,11 @@ const SeleccionarSalon = () => {
                 return (
                   <button
                     key={index}
-                    onClick={() => setSelectedSalon(salon)}
+                    onClick={() => {
+                      setSelectedSalon(salon);
+                      localStorage.setItem("salonSeleccionado", salon);
+                      navigate("/tabla-notas");
+                    }}
                     className={`
                       p-6 rounded-lg border-2 text-center transition-all duration-200
                       hover:shadow-md hover:border-primary hover:bg-primary/10
