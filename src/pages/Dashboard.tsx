@@ -4,17 +4,6 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import escudoImg from "@/assets/escudo.png";
 
-// Paleta de tonalidades de verde
-const greenShades = [
-  'bg-emerald-50 hover:bg-emerald-100',
-  'bg-green-50 hover:bg-green-100',
-  'bg-teal-50 hover:bg-teal-100',
-  'bg-lime-50 hover:bg-lime-100',
-  'bg-emerald-100 hover:bg-emerald-200',
-  'bg-green-100 hover:bg-green-200',
-  'bg-teal-100 hover:bg-teal-200',
-  'bg-lime-100 hover:bg-lime-200',
-];
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -142,7 +131,6 @@ const Dashboard = () => {
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {materias.map((materia, index) => {
-                const shadeClass = greenShades[index % greenShades.length];
                 const isSelected = selectedMateria === materia;
                 
                 return (
@@ -155,10 +143,10 @@ const Dashboard = () => {
                     }}
                     className={`
                       p-6 rounded-lg border-2 text-center transition-all duration-200
-                      hover:shadow-md hover:border-primary
+                      hover:shadow-md hover:border-primary hover:bg-primary/10
                       ${isSelected 
                         ? 'border-primary bg-primary/20 shadow-md ring-2 ring-primary/30' 
-                        : `border-border/50 ${shadeClass}`
+                        : 'border-border/50 bg-background'
                       }
                     `}
                   >
