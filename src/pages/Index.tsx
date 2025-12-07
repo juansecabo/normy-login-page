@@ -62,7 +62,7 @@ const Index = () => {
       localStorage.setItem("apellidos", data.apellidos || "");
 
       toast({
-        title: "Bienvenido",
+        title: "Bienvenido(a)",
         description: `${data.nombres} ${data.apellidos}`,
       });
 
