@@ -41,21 +41,22 @@ const Dashboard = () => {
           return;
         }
 
-        // Luego buscar las materias en Asignación Profesores
-        const { data: asignacion, error: asignacionError } = await supabase
+        // Luego buscar las materias en Asignación Profesores (puede tener múltiples registros)
+        const { data: asignaciones, error: asignacionError } = await supabase
           .from('Asignación Profesores')
-          .select('Materia(s)')
-          .eq('id', profesor.id)
-          .single();
+          .select('Materia(s), Grado(s)')
+          .eq('id', profesor.id);
 
-        if (asignacionError || !asignacion) {
+        if (asignacionError || !asignaciones) {
           console.error('Error fetching materias:', asignacionError);
           setLoadingMaterias(false);
           return;
         }
 
-        const materiasArray = asignacion['Materia(s)'] || [];
-        setMaterias(materiasArray);
+        // Combinar todas las materias de todos los registros sin duplicados
+        const todasMaterias = asignaciones.flatMap(a => a['Materia(s)'] || []);
+        const materiasUnicas = [...new Set(todasMaterias)];
+        setMaterias(materiasUnicas);
       } catch (error) {
         console.error('Error:', error);
       } finally {
