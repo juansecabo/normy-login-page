@@ -93,15 +93,14 @@ const TablaNotas = () => {
     setGradoSeleccionado(storedGrado);
     setSalonSeleccionado(storedSalon);
 
-    const fetchEstudiantes = async () => {
+    const fetchData = async () => {
       try {
         console.log("=== DEBUG FILTRO ESTUDIANTES ===");
         console.log("Grado desde localStorage:", storedGrado);
         console.log("Salón desde localStorage:", storedSalon);
-        console.log("Tipo de grado:", typeof storedGrado);
-        console.log("Tipo de salón:", typeof storedSalon);
 
-        const { data, error } = await supabase
+        // Fetch estudiantes
+        const { data: estudiantesData, error: estudiantesError } = await supabase
           .from('Estudiantes')
           .select('codigo_estudiantil, apellidos_estudiante, nombre_estudiante')
           .eq('grado_estudiante', storedGrado)
@@ -109,16 +108,65 @@ const TablaNotas = () => {
           .order('apellidos_estudiante', { ascending: true })
           .order('nombre_estudiante', { ascending: true });
 
-        console.log("Estudiantes encontrados:", data?.length || 0);
-        console.log("Datos:", data);
+        console.log("Estudiantes encontrados:", estudiantesData?.length || 0);
 
-        if (error) {
-          console.error('Error fetching estudiantes:', error);
+        if (estudiantesError) {
+          console.error('Error fetching estudiantes:', estudiantesError);
           setLoading(false);
           return;
         }
 
-        setEstudiantes(data || []);
+        setEstudiantes(estudiantesData || []);
+
+        // Fetch notas existentes
+        console.log("=== CARGANDO NOTAS EXISTENTES ===");
+        const { data: notasData, error: notasError } = await supabase
+          .from('Notas')
+          .select('*')
+          .eq('materia', storedMateria)
+          .eq('grado', storedGrado)
+          .eq('salon', storedSalon);
+
+        if (notasError) {
+          console.error('Error fetching notas:', notasError);
+        } else if (notasData && notasData.length > 0) {
+          console.log("Notas encontradas:", notasData.length);
+          
+          // Convertir notas de Supabase al formato local
+          const notasFormateadas: NotasEstudiantes = {};
+          const actividadesMap = new Map<string, Actividad>();
+          
+          notasData.forEach((nota) => {
+            const { codigo_estudiantil, periodo, nombre_actividad, nota: valorNota, porcentaje } = nota;
+            
+            // Crear ID único para la actividad basado en periodo y nombre
+            const actividadId = `${periodo}-${nombre_actividad}`;
+            
+            // Agregar actividad si no existe
+            if (!actividadesMap.has(actividadId)) {
+              actividadesMap.set(actividadId, {
+                id: actividadId,
+                periodo,
+                nombre: nombre_actividad,
+                porcentaje: porcentaje || null,
+              });
+            }
+            
+            // Agregar nota al estado
+            if (!notasFormateadas[codigo_estudiantil]) {
+              notasFormateadas[codigo_estudiantil] = {};
+            }
+            if (!notasFormateadas[codigo_estudiantil][periodo]) {
+              notasFormateadas[codigo_estudiantil][periodo] = {};
+            }
+            notasFormateadas[codigo_estudiantil][periodo][actividadId] = valorNota;
+          });
+          
+          setNotas(notasFormateadas);
+          setActividades(Array.from(actividadesMap.values()));
+          console.log("Notas cargadas:", notasFormateadas);
+          console.log("Actividades cargadas:", Array.from(actividadesMap.values()));
+        }
       } catch (error) {
         console.error('Error:', error);
       } finally {
@@ -126,7 +174,7 @@ const TablaNotas = () => {
       }
     };
 
-    fetchEstudiantes();
+    fetchData();
   }, [navigate]);
 
   const handleLogout = () => {
@@ -247,20 +295,60 @@ const TablaNotas = () => {
     }
   };
 
-  const handleGuardarNota = () => {
+  const handleGuardarNota = async () => {
     if (!celdaEditando) return;
 
     const { codigoEstudiantil, actividadId, periodo } = celdaEditando;
+    
+    // Encontrar la actividad para obtener nombre y porcentaje
+    const actividad = actividades.find(a => a.id === actividadId);
+    if (!actividad) {
+      console.error("Actividad no encontrada:", actividadId);
+      setCeldaEditando(null);
+      setValorEditando("");
+      return;
+    }
 
     if (valorEditando.trim() === "") {
-      // Si está vacío, eliminar la nota
-      setNotas(prev => {
-        const nuevasNotas = { ...prev };
-        if (nuevasNotas[codigoEstudiantil]?.[periodo]?.[actividadId] !== undefined) {
-          delete nuevasNotas[codigoEstudiantil][periodo][actividadId];
+      // Si está vacío, eliminar la nota de Supabase
+      try {
+        console.log("=== ELIMINANDO NOTA ===");
+        const { error } = await supabase
+          .from('Notas')
+          .delete()
+          .eq('codigo_estudiantil', codigoEstudiantil)
+          .eq('materia', materiaSeleccionada)
+          .eq('grado', gradoSeleccionado)
+          .eq('salon', salonSeleccionado)
+          .eq('periodo', periodo)
+          .eq('nombre_actividad', actividad.nombre);
+
+        if (error) {
+          console.error('Error eliminando nota:', error);
+          toast({
+            title: "Error",
+            description: "No se pudo eliminar la nota",
+            variant: "destructive",
+          });
+        } else {
+          // Actualizar estado local
+          setNotas(prev => {
+            const nuevasNotas = { ...prev };
+            if (nuevasNotas[codigoEstudiantil]?.[periodo]?.[actividadId] !== undefined) {
+              delete nuevasNotas[codigoEstudiantil][periodo][actividadId];
+            }
+            return nuevasNotas;
+          });
+          console.log("Nota eliminada correctamente");
         }
-        return nuevasNotas;
-      });
+      } catch (error) {
+        console.error('Error:', error);
+        toast({
+          title: "Error",
+          description: "Error de conexión al eliminar la nota",
+          variant: "destructive",
+        });
+      }
     } else {
       const nota = parseFloat(valorEditando);
       
@@ -276,17 +364,68 @@ const TablaNotas = () => {
         return;
       }
 
-      // Guardar la nota
-      setNotas(prev => ({
-        ...prev,
-        [codigoEstudiantil]: {
-          ...prev[codigoEstudiantil],
-          [periodo]: {
-            ...prev[codigoEstudiantil]?.[periodo],
-            [actividadId]: Math.round(nota * 100) / 100, // Redondear a 2 decimales
-          },
-        },
-      }));
+      const notaRedondeada = Math.round(nota * 100) / 100;
+
+      // Guardar en Supabase con UPSERT
+      try {
+        console.log("=== GUARDANDO NOTA ===");
+        console.log("Datos:", {
+          codigo_estudiantil: codigoEstudiantil,
+          materia: materiaSeleccionada,
+          grado: gradoSeleccionado,
+          salon: salonSeleccionado,
+          periodo,
+          nombre_actividad: actividad.nombre,
+          porcentaje: actividad.porcentaje,
+          nota: notaRedondeada,
+        });
+
+        const { error } = await supabase
+          .from('Notas')
+          .upsert({
+            codigo_estudiantil: codigoEstudiantil,
+            materia: materiaSeleccionada,
+            grado: gradoSeleccionado,
+            salon: salonSeleccionado,
+            periodo,
+            nombre_actividad: actividad.nombre,
+            porcentaje: actividad.porcentaje,
+            nota: notaRedondeada,
+            comentario: null,
+            notificado: false,
+          }, {
+            onConflict: 'codigo_estudiantil,materia,grado,salon,periodo,nombre_actividad'
+          });
+
+        if (error) {
+          console.error('Error guardando nota:', error);
+          toast({
+            title: "Error",
+            description: "No se pudo guardar la nota",
+            variant: "destructive",
+          });
+        } else {
+          // Actualizar estado local
+          setNotas(prev => ({
+            ...prev,
+            [codigoEstudiantil]: {
+              ...prev[codigoEstudiantil],
+              [periodo]: {
+                ...prev[codigoEstudiantil]?.[periodo],
+                [actividadId]: notaRedondeada,
+              },
+            },
+          }));
+          console.log("Nota guardada correctamente:", notaRedondeada);
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        toast({
+          title: "Error",
+          description: "Error de conexión al guardar la nota",
+          variant: "destructive",
+        });
+      }
     }
 
     setCeldaEditando(null);
