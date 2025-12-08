@@ -90,6 +90,9 @@ const TablaNotas = () => {
   const [notas, setNotas] = useState<NotasEstudiantes>({});
   const [comentarios, setComentarios] = useState<ComentariosEstudiantes>({});
   
+  // Estado para período activo (pestañas)
+  const [periodoActivo, setPeriodoActivo] = useState<number>(1);
+  
   // Modal state para crear/editar actividad
   const [modalOpen, setModalOpen] = useState(false);
   const [periodoActual, setPeriodoActual] = useState<number>(1);
@@ -531,56 +534,33 @@ const TablaNotas = () => {
   };
 
   // Calcular nota final del periodo para un estudiante (usando notas proporcionadas o estado)
+  // FÓRMULA: Σ(nota * porcentaje/100) - Solo actividades con porcentaje
   const calcularFinalPeriodoConNotas = useCallback((notasParam: NotasEstudiantes, codigoEstudiantil: string, periodo: number): number | null => {
     const actividadesDelPeriodo = getActividadesPorPeriodo(periodo);
     if (actividadesDelPeriodo.length === 0) return null;
     
     const notasEstudiante = notasParam[codigoEstudiantil]?.[periodo] || {};
     
-    // Obtener actividades que tienen notas
-    const actividadesConNota = actividadesDelPeriodo.filter(a => notasEstudiante[a.id] !== undefined);
-    if (actividadesConNota.length === 0) return null;
+    // Solo considerar actividades que tienen porcentaje asignado
+    const actividadesConPorcentaje = actividadesDelPeriodo.filter(a => a.porcentaje !== null && a.porcentaje > 0);
+    if (actividadesConPorcentaje.length === 0) return null;
     
-    // Verificar cuáles tienen porcentaje
-    const actividadesConPorcentaje = actividadesConNota.filter(a => a.porcentaje !== null && a.porcentaje > 0);
+    // Verificar que el estudiante tenga al menos una nota en actividades con porcentaje
+    const actividadesConNotaYPorcentaje = actividadesConPorcentaje.filter(a => notasEstudiante[a.id] !== undefined);
+    if (actividadesConNotaYPorcentaje.length === 0) return null;
     
-    if (actividadesConPorcentaje.length > 0) {
-      // Usar solo las que tienen porcentaje para cálculo ponderado
-      let sumaPonderada = 0;
-      let sumaPorcentajes = 0;
-      
-      actividadesConPorcentaje.forEach(actividad => {
-        const notaValue = notasEstudiante[actividad.id];
-        if (notaValue !== undefined && actividad.porcentaje) {
-          sumaPonderada += notaValue * actividad.porcentaje;
-          sumaPorcentajes += actividad.porcentaje;
-        }
-      });
-      
-      if (sumaPorcentajes > 0) {
-        const resultado = sumaPonderada / sumaPorcentajes;
-        return Math.floor(resultado * 100) / 100; // Truncar a 2 decimales, no redondear
+    // Calcular: Σ(nota * porcentaje/100)
+    let sumaPonderada = 0;
+    
+    actividadesConNotaYPorcentaje.forEach(actividad => {
+      const notaValue = notasEstudiante[actividad.id];
+      if (notaValue !== undefined && actividad.porcentaje) {
+        sumaPonderada += notaValue * (actividad.porcentaje / 100);
       }
-      return null;
-    } else {
-      // Promedio simple si ninguna tiene porcentaje
-      let suma = 0;
-      let count = 0;
-      
-      actividadesConNota.forEach(actividad => {
-        const notaValue = notasEstudiante[actividad.id];
-        if (notaValue !== undefined) {
-          suma += notaValue;
-          count++;
-        }
-      });
-      
-      if (count > 0) {
-        const resultado = suma / count;
-        return Math.floor(resultado * 100) / 100; // Truncar a 2 decimales
-      }
-      return null;
-    }
+    });
+    
+    // Truncar a 2 decimales (no redondear)
+    return Math.floor(sumaPonderada * 100) / 100;
   }, [actividades]);
 
   // Versión que usa el estado actual
@@ -1007,8 +987,36 @@ const TablaNotas = () => {
           </div>
         </div>
 
-        {/* Tabla de Notas */}
+        {/* Pestañas de Períodos */}
         <div className="bg-card rounded-lg shadow-soft overflow-hidden">
+          {/* Tab Headers */}
+          <div className="flex border-b border-border">
+            {periodos.map((periodo) => {
+              const porcentajeUsado = getPorcentajeUsado(periodo.numero);
+              const isActive = periodoActivo === periodo.numero;
+              return (
+                <button
+                  key={periodo.numero}
+                  onClick={() => setPeriodoActivo(periodo.numero)}
+                  className={`flex-1 px-4 py-3 text-sm font-medium transition-colors relative
+                    ${isActive 
+                      ? 'bg-primary text-primary-foreground' 
+                      : 'bg-muted/30 text-muted-foreground hover:bg-muted hover:text-foreground'
+                    }`}
+                >
+                  <span>{periodo.nombre}</span>
+                  <span className={`ml-2 text-xs ${isActive ? 'text-primary-foreground/80' : 'text-muted-foreground'}`}>
+                    ({porcentajeUsado}%)
+                  </span>
+                  {isActive && (
+                    <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary-foreground" />
+                  )}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Tabla de Notas */}
           {loading ? (
             <div className="p-8 text-center text-muted-foreground">
               Cargando estudiantes...
@@ -1019,111 +1027,93 @@ const TablaNotas = () => {
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <div style={{ minWidth: `${430 + periodos.reduce((sum, p) => sum + getAnchoMinimoPeriodo(p.numero), 0)}px` }}>
-                {/* Table */}
-                <table className="w-full border-collapse">
-                  {/* Header Row - Periods */}
-                  <thead>
-                    {/* Primera fila: Títulos de período */}
-                    <tr className="bg-primary text-primary-foreground">
-                      <th className="sticky left-0 z-20 bg-primary border border-border/30 w-[100px] min-w-[100px] p-3 text-left font-semibold" rowSpan={2}>
-                        Código
-                      </th>
-                      <th className="sticky left-[100px] z-20 bg-primary border border-border/30 w-[180px] min-w-[180px] p-3 text-left font-semibold" rowSpan={2}>
-                        Apellidos
-                      </th>
-                      <th className="sticky left-[280px] z-20 bg-primary border border-border/30 w-[150px] min-w-[150px] p-3 text-left font-semibold" rowSpan={2}>
-                        Nombre
-                      </th>
-                      {/* Period headers */}
-                      {periodos.map((periodo) => {
-                        const actividadesDelPeriodo = getActividadesPorPeriodo(periodo.numero);
-                        const colSpan = actividadesDelPeriodo.length + 2; // +1 para el botón, +1 para Final
-                        return (
-                          <th 
-                            key={periodo.numero}
-                            colSpan={colSpan}
-                            className="border border-border/30 p-3 text-center font-semibold"
-                            style={{ minWidth: `${getAnchoMinimoPeriodo(periodo.numero)}px` }}
-                          >
-                            {periodo.nombre}
-                          </th>
-                        );
-                      })}
-                    </tr>
-                    {/* Segunda fila: Actividades + botón agregar */}
-                    <tr className="bg-primary/90 text-primary-foreground">
-                      {periodos.map((periodo) => {
-                        const actividadesDelPeriodo = getActividadesPorPeriodo(periodo.numero);
-                        return (
-                          <>
-                            {actividadesDelPeriodo.map((actividad) => (
-                              <th 
-                                key={actividad.id}
-                                className="border border-border/30 p-2 text-center text-xs font-medium min-w-[120px]"
+              <table className="w-full border-collapse">
+                <thead>
+                  <tr className="bg-primary text-primary-foreground">
+                    {/* Columnas fijas */}
+                    <th className="sticky left-0 z-20 bg-primary border border-border/30 w-[100px] min-w-[100px] p-3 text-left font-semibold">
+                      Código
+                    </th>
+                    <th className="sticky left-[100px] z-20 bg-primary border border-border/30 w-[180px] min-w-[180px] p-3 text-left font-semibold">
+                      Apellidos
+                    </th>
+                    <th className="sticky left-[280px] z-20 bg-primary border border-border/30 w-[150px] min-w-[150px] p-3 text-left font-semibold">
+                      Nombre
+                    </th>
+                    {/* Columnas de actividades del período activo */}
+                    {getActividadesPorPeriodo(periodoActivo).map((actividad) => (
+                      <th 
+                        key={actividad.id}
+                        className="border border-border/30 p-2 text-center text-xs font-medium min-w-[120px] bg-primary/90"
+                      >
+                        <div className="flex items-center justify-center gap-1">
+                          <div className="flex-1 min-w-0">
+                            <div className="truncate" title={actividad.nombre}>
+                              {actividad.nombre}
+                            </div>
+                            {actividad.porcentaje !== null && (
+                              <div className="text-primary-foreground/70 text-xs">
+                                ({actividad.porcentaje}%)
+                              </div>
+                            )}
+                          </div>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <button className="p-1 hover:bg-primary-foreground/20 rounded transition-colors">
+                                <MoreVertical className="w-3 h-3" />
+                              </button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="bg-background z-50">
+                              <DropdownMenuItem onClick={() => handleAbrirModalEditar(actividad)}>
+                                <Pencil className="w-4 h-4 mr-2" />
+                                Editar actividad
+                              </DropdownMenuItem>
+                              <DropdownMenuItem 
+                                onClick={() => handleConfirmarEliminar(actividad)}
+                                className="text-destructive focus:text-destructive"
                               >
-                                <div className="flex items-center justify-center gap-1">
-                                  <div className="flex-1 min-w-0">
-                                    <div className="truncate" title={actividad.nombre}>
-                                      {actividad.nombre}
-                                    </div>
-                                    {actividad.porcentaje !== null && (
-                                      <div className="text-primary-foreground/70 text-xs">
-                                        ({actividad.porcentaje}%)
-                                      </div>
-                                    )}
-                                  </div>
-                                  <DropdownMenu>
-                                    <DropdownMenuTrigger asChild>
-                                      <button className="p-1 hover:bg-primary-foreground/20 rounded transition-colors">
-                                        <MoreVertical className="w-3 h-3" />
-                                      </button>
-                                    </DropdownMenuTrigger>
-                                    <DropdownMenuContent align="end" className="bg-background z-50">
-                                      <DropdownMenuItem onClick={() => handleAbrirModalEditar(actividad)}>
-                                        <Pencil className="w-4 h-4 mr-2" />
-                                        Editar actividad
-                                      </DropdownMenuItem>
-                                      <DropdownMenuItem 
-                                        onClick={() => handleConfirmarEliminar(actividad)}
-                                        className="text-destructive focus:text-destructive"
-                                      >
-                                        <Trash2 className="w-4 h-4 mr-2" />
-                                        Eliminar actividad
-                                      </DropdownMenuItem>
-                                    </DropdownMenuContent>
-                                  </DropdownMenu>
-                                </div>
-                              </th>
-                            ))}
-                            {/* Header columna Final Periodo */}
-                            <th 
-                              key={`final-${periodo.numero}`}
-                              className="border border-border/30 p-2 text-center text-xs font-medium min-w-[100px] bg-primary"
-                            >
-                              Final
-                            </th>
-                            <th 
-                              key={`btn-${periodo.numero}`}
-                              className="border border-border/30 p-2 text-center min-w-[80px]"
-                            >
-                              <Button
-                                variant="secondary"
-                                size="sm"
-                                className="h-7 text-xs bg-green-100 hover:bg-green-200 text-green-800 border-green-300"
-                                onClick={() => handleAbrirModal(periodo.numero)}
-                              >
-                                <Plus className="w-3 h-3 mr-1" />
-                                Agregar
-                              </Button>
-                            </th>
-                          </>
-                        );
-                      })}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {estudiantes.map((estudiante, studentIndex) => (
+                                <Trash2 className="w-4 h-4 mr-2" />
+                                Eliminar actividad
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
+                      </th>
+                    ))}
+                    {/* Botón Agregar */}
+                    <th className="border border-border/30 p-2 text-center min-w-[100px] bg-primary/90">
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        className="h-7 text-xs bg-green-100 hover:bg-green-200 text-green-800 border-green-300"
+                        onClick={() => handleAbrirModal(periodoActivo)}
+                      >
+                        <Plus className="w-3 h-3 mr-1" />
+                        Agregar
+                      </Button>
+                    </th>
+                    {/* Header columna Final Periodo con porcentaje */}
+                    {(() => {
+                      const porcentajeUsado = getPorcentajeUsado(periodoActivo);
+                      const isComplete = porcentajeUsado === 100;
+                      return (
+                        <th className="border border-border/30 p-2 text-center text-xs font-medium min-w-[130px] bg-primary">
+                          <div className="flex flex-col items-center">
+                            <span>Final Periodo</span>
+                            <span className={`text-xs ${isComplete ? 'text-green-300' : 'text-primary-foreground/70'}`}>
+                              ({porcentajeUsado}/100%)
+                              {isComplete && ' ✓'}
+                            </span>
+                          </div>
+                        </th>
+                      );
+                    })()}
+                  </tr>
+                </thead>
+                <tbody>
+                  {estudiantes.map((estudiante, studentIndex) => {
+                    const actividadesDelPeriodo = getActividadesPorPeriodo(periodoActivo);
+                    return (
                       <tr 
                         key={estudiante.codigo_estudiantil}
                         className={studentIndex % 2 === 0 ? 'bg-background' : 'bg-muted/30'}
@@ -1138,81 +1128,72 @@ const TablaNotas = () => {
                         <td className={`sticky left-[280px] z-10 border border-border p-3 text-sm ${studentIndex % 2 === 0 ? 'bg-background' : 'bg-muted/30'}`}>
                           {estudiante.nombre_estudiante}
                         </td>
-                        {/* Period cells with activities */}
-                        {periodos.map((periodo) => {
-                          const actividadesDelPeriodo = getActividadesPorPeriodo(periodo.numero);
+                        {/* Celdas de actividades del período activo */}
+                        {actividadesDelPeriodo.map((actividad) => {
+                          const nota = notas[estudiante.codigo_estudiantil]?.[periodoActivo]?.[actividad.id];
+                          const estaEditando = celdaEditando?.codigoEstudiantil === estudiante.codigo_estudiantil 
+                            && celdaEditando?.actividadId === actividad.id;
+                          const inputKey = `${estudiante.codigo_estudiantil}-${actividad.id}`;
+                          
                           return (
-                            <>
-                              {actividadesDelPeriodo.map((actividad) => {
-                                const nota = notas[estudiante.codigo_estudiantil]?.[periodo.numero]?.[actividad.id];
-                                const estaEditando = celdaEditando?.codigoEstudiantil === estudiante.codigo_estudiantil 
-                                  && celdaEditando?.actividadId === actividad.id;
-                                const inputKey = `${estudiante.codigo_estudiantil}-${actividad.id}`;
-                                
-                                return (
-                                  <NotaCelda
-                                    key={inputKey}
-                                    nota={nota}
-                                    comentario={comentarios[estudiante.codigo_estudiantil]?.[periodo.numero]?.[actividad.id] || null}
-                                    estaEditando={estaEditando}
-                                    valorEditando={valorEditando}
-                                    inputRef={(el) => { inputRefs.current[inputKey] = el; }}
-                                    onCambioNota={handleCambioNota}
-                                    onBlur={() => {
-                                      if (!isNavigating.current) {
-                                        handleGuardarNota();
-                                      }
-                                    }}
-                                    onKeyDown={(e) => handleKeyDownNota(e, studentIndex, actividad.id, periodo.numero)}
-                                    onClick={() => handleClickCelda(estudiante.codigo_estudiantil, actividad.id, periodo.numero, nota)}
-                                    onAbrirComentario={() => handleAbrirComentario(
-                                      estudiante.codigo_estudiantil,
-                                      `${estudiante.nombre_estudiante} ${estudiante.apellidos_estudiante}`,
-                                      actividad.id,
-                                      actividad.nombre,
-                                      periodo.numero
-                                    )}
-                                    onEliminarComentario={() => handleEliminarComentario(
-                                      estudiante.codigo_estudiantil,
-                                      actividad.id,
-                                      actividad.nombre,
-                                      periodo.numero
-                                    )}
-                                  />
-                                );
-                              })}
-                              {/* Celda Final Periodo */}
-                              <FinalPeriodoCelda
-                                notaFinal={calcularFinalPeriodo(estudiante.codigo_estudiantil, periodo.numero)}
-                                comentario={comentarios[estudiante.codigo_estudiantil]?.[periodo.numero]?.[`${periodo.numero}-Final Periodo`] || null}
-                                onAbrirComentario={() => handleAbrirComentario(
-                                  estudiante.codigo_estudiantil,
-                                  `${estudiante.nombre_estudiante} ${estudiante.apellidos_estudiante}`,
-                                  `${periodo.numero}-Final Periodo`,
-                                  'Final Periodo',
-                                  periodo.numero
-                                )}
-                                onEliminarComentario={() => handleEliminarComentario(
-                                  estudiante.codigo_estudiantil,
-                                  `${periodo.numero}-Final Periodo`,
-                                  'Final Periodo',
-                                  periodo.numero
-                                )}
-                              />
-                              <td 
-                                key={`${estudiante.codigo_estudiantil}-empty-${periodo.numero}`}
-                                className="border border-border p-3 text-center text-sm text-muted-foreground/50 min-w-[80px]"
-                              >
-                                
-                              </td>
-                            </>
+                            <NotaCelda
+                              key={inputKey}
+                              nota={nota}
+                              comentario={comentarios[estudiante.codigo_estudiantil]?.[periodoActivo]?.[actividad.id] || null}
+                              estaEditando={estaEditando}
+                              valorEditando={valorEditando}
+                              inputRef={(el) => { inputRefs.current[inputKey] = el; }}
+                              onCambioNota={handleCambioNota}
+                              onBlur={() => {
+                                if (!isNavigating.current) {
+                                  handleGuardarNota();
+                                }
+                              }}
+                              onKeyDown={(e) => handleKeyDownNota(e, studentIndex, actividad.id, periodoActivo)}
+                              onClick={() => handleClickCelda(estudiante.codigo_estudiantil, actividad.id, periodoActivo, nota)}
+                              onAbrirComentario={() => handleAbrirComentario(
+                                estudiante.codigo_estudiantil,
+                                `${estudiante.nombre_estudiante} ${estudiante.apellidos_estudiante}`,
+                                actividad.id,
+                                actividad.nombre,
+                                periodoActivo
+                              )}
+                              onEliminarComentario={() => handleEliminarComentario(
+                                estudiante.codigo_estudiantil,
+                                actividad.id,
+                                actividad.nombre,
+                                periodoActivo
+                              )}
+                            />
                           );
                         })}
+                        {/* Celda vacía bajo botón Agregar */}
+                        <td className="border border-border p-3 text-center text-sm text-muted-foreground/50 min-w-[100px]">
+                          
+                        </td>
+                        {/* Celda Final Periodo */}
+                        <FinalPeriodoCelda
+                          notaFinal={calcularFinalPeriodo(estudiante.codigo_estudiantil, periodoActivo)}
+                          comentario={comentarios[estudiante.codigo_estudiantil]?.[periodoActivo]?.[`${periodoActivo}-Final Periodo`] || null}
+                          onAbrirComentario={() => handleAbrirComentario(
+                            estudiante.codigo_estudiantil,
+                            `${estudiante.nombre_estudiante} ${estudiante.apellidos_estudiante}`,
+                            `${periodoActivo}-Final Periodo`,
+                            'Final Periodo',
+                            periodoActivo
+                          )}
+                          onEliminarComentario={() => handleEliminarComentario(
+                            estudiante.codigo_estudiantil,
+                            `${periodoActivo}-Final Periodo`,
+                            'Final Periodo',
+                            periodoActivo
+                          )}
+                        />
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                    );
+                  })}
+                </tbody>
+              </table>
             </div>
           )}
         </div>
