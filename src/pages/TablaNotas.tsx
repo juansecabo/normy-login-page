@@ -30,6 +30,9 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
+import NotaCelda from "@/components/notas/NotaCelda";
+import FinalPeriodoCelda from "@/components/notas/FinalPeriodoCelda";
+import ComentarioModal from "@/components/notas/ComentarioModal";
 
 interface Estudiante {
   codigo_estudiantil: string;
@@ -53,9 +56,26 @@ type NotasEstudiantes = {
   };
 };
 
+// Estructura para comentarios: { [codigo_estudiantil]: { [periodo]: { [actividad_id]: comentario } } }
+type ComentariosEstudiantes = {
+  [codigoEstudiantil: string]: {
+    [periodo: number]: {
+      [actividadId: string]: string | null;
+    };
+  };
+};
+
 interface CeldaEditando {
   codigoEstudiantil: string;
   actividadId: string;
+  periodo: number;
+}
+
+interface ComentarioEditando {
+  codigoEstudiantil: string;
+  nombreEstudiante: string;
+  actividadId: string;
+  nombreActividad: string;
   periodo: number;
 }
 
@@ -68,6 +88,7 @@ const TablaNotas = () => {
   const [loading, setLoading] = useState(true);
   const [actividades, setActividades] = useState<Actividad[]>([]);
   const [notas, setNotas] = useState<NotasEstudiantes>({});
+  const [comentarios, setComentarios] = useState<ComentariosEstudiantes>({});
   
   // Modal state para crear/editar actividad
   const [modalOpen, setModalOpen] = useState(false);
@@ -79,6 +100,10 @@ const TablaNotas = () => {
   // Modal state para confirmar eliminación
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [actividadAEliminar, setActividadAEliminar] = useState<Actividad | null>(null);
+  
+  // Modal state para comentarios
+  const [comentarioModalOpen, setComentarioModalOpen] = useState(false);
+  const [comentarioEditando, setComentarioEditando] = useState<ComentarioEditando | null>(null);
   
   // Estado para celda en edición
   const [celdaEditando, setCeldaEditando] = useState<CeldaEditando | null>(null);
@@ -159,10 +184,27 @@ const TablaNotas = () => {
           
           // Convertir notas de Supabase al formato local
           const notasFormateadas: NotasEstudiantes = {};
+          const comentariosFormateados: ComentariosEstudiantes = {};
           const actividadesMap = new Map<string, Actividad>();
           
           notasData.forEach((nota) => {
-            const { codigo_estudiantil, periodo, nombre_actividad, nota: valorNota, porcentaje } = nota;
+            const { codigo_estudiantil, periodo, nombre_actividad, nota: valorNota, porcentaje, comentario } = nota;
+            
+            // Ignorar las notas de "Final Periodo" para las actividades
+            if (nombre_actividad === "Final Periodo") {
+              // Solo cargar el comentario si existe
+              if (comentario) {
+                const actividadId = `${periodo}-Final Periodo`;
+                if (!comentariosFormateados[codigo_estudiantil]) {
+                  comentariosFormateados[codigo_estudiantil] = {};
+                }
+                if (!comentariosFormateados[codigo_estudiantil][periodo]) {
+                  comentariosFormateados[codigo_estudiantil][periodo] = {};
+                }
+                comentariosFormateados[codigo_estudiantil][periodo][actividadId] = comentario;
+              }
+              return;
+            }
             
             // Crear ID único para la actividad basado en periodo y nombre
             const actividadId = `${periodo}-${nombre_actividad}`;
@@ -185,12 +227,25 @@ const TablaNotas = () => {
               notasFormateadas[codigo_estudiantil][periodo] = {};
             }
             notasFormateadas[codigo_estudiantil][periodo][actividadId] = valorNota;
+            
+            // Agregar comentario al estado si existe
+            if (comentario) {
+              if (!comentariosFormateados[codigo_estudiantil]) {
+                comentariosFormateados[codigo_estudiantil] = {};
+              }
+              if (!comentariosFormateados[codigo_estudiantil][periodo]) {
+                comentariosFormateados[codigo_estudiantil][periodo] = {};
+              }
+              comentariosFormateados[codigo_estudiantil][periodo][actividadId] = comentario;
+            }
           });
           
           setNotas(notasFormateadas);
-          setActividades(Array.from(actividadesMap.values()));
+          setComentarios(comentariosFormateados);
+          // Filtrar actividades que no sean "Final Periodo"
+          setActividades(Array.from(actividadesMap.values()).filter(a => a.nombre !== "Final Periodo"));
           console.log("Notas cargadas:", notasFormateadas);
-          console.log("Actividades cargadas:", Array.from(actividadesMap.values()));
+          console.log("Comentarios cargados:", comentariosFormateados);
         }
       } catch (error) {
         console.error('Error:', error);
@@ -468,11 +523,221 @@ const TablaNotas = () => {
       .reduce((sum, a) => sum + (a.porcentaje || 0), 0);
   };
 
-  // Calcular el ancho mínimo de cada período basado en sus actividades
+  // Calcular el ancho mínimo de cada período basado en sus actividades (+ columna Final)
   const getAnchoMinimoPeriodo = (periodo: number) => {
     const actividadesDelPeriodo = getActividadesPorPeriodo(periodo);
-    // Mínimo 200px para el botón, más 120px por cada actividad
-    return Math.max(200, 80 + (actividadesDelPeriodo.length * 120));
+    // Mínimo 200px para el botón + 100px para Final, más 120px por cada actividad
+    return Math.max(300, 180 + (actividadesDelPeriodo.length * 120));
+  };
+
+  // Calcular nota final del periodo para un estudiante (usando notas proporcionadas o estado)
+  const calcularFinalPeriodoConNotas = useCallback((notasParam: NotasEstudiantes, codigoEstudiantil: string, periodo: number): number | null => {
+    const actividadesDelPeriodo = getActividadesPorPeriodo(periodo);
+    if (actividadesDelPeriodo.length === 0) return null;
+    
+    const notasEstudiante = notasParam[codigoEstudiantil]?.[periodo] || {};
+    
+    // Obtener actividades que tienen notas
+    const actividadesConNota = actividadesDelPeriodo.filter(a => notasEstudiante[a.id] !== undefined);
+    if (actividadesConNota.length === 0) return null;
+    
+    // Verificar cuáles tienen porcentaje
+    const actividadesConPorcentaje = actividadesConNota.filter(a => a.porcentaje !== null && a.porcentaje > 0);
+    
+    if (actividadesConPorcentaje.length > 0) {
+      // Usar solo las que tienen porcentaje para cálculo ponderado
+      let sumaPonderada = 0;
+      let sumaPorcentajes = 0;
+      
+      actividadesConPorcentaje.forEach(actividad => {
+        const notaValue = notasEstudiante[actividad.id];
+        if (notaValue !== undefined && actividad.porcentaje) {
+          sumaPonderada += notaValue * actividad.porcentaje;
+          sumaPorcentajes += actividad.porcentaje;
+        }
+      });
+      
+      if (sumaPorcentajes > 0) {
+        const resultado = sumaPonderada / sumaPorcentajes;
+        return Math.floor(resultado * 100) / 100; // Truncar a 2 decimales, no redondear
+      }
+      return null;
+    } else {
+      // Promedio simple si ninguna tiene porcentaje
+      let suma = 0;
+      let count = 0;
+      
+      actividadesConNota.forEach(actividad => {
+        const notaValue = notasEstudiante[actividad.id];
+        if (notaValue !== undefined) {
+          suma += notaValue;
+          count++;
+        }
+      });
+      
+      if (count > 0) {
+        const resultado = suma / count;
+        return Math.floor(resultado * 100) / 100; // Truncar a 2 decimales
+      }
+      return null;
+    }
+  }, [actividades]);
+
+  // Versión que usa el estado actual
+  const calcularFinalPeriodo = useCallback((codigoEstudiantil: string, periodo: number): number | null => {
+    return calcularFinalPeriodoConNotas(notas, codigoEstudiantil, periodo);
+  }, [calcularFinalPeriodoConNotas, notas]);
+
+  // Guardar nota final en Supabase
+  const guardarFinalPeriodo = async (codigoEstudiantil: string, periodo: number, notaFinal: number | null) => {
+    const finalActividadId = `${periodo}-Final Periodo`;
+    
+    if (notaFinal === null) {
+      // Eliminar si no hay nota final
+      await supabase
+        .from('Notas')
+        .delete()
+        .eq('codigo_estudiantil', codigoEstudiantil)
+        .eq('materia', materiaSeleccionada)
+        .eq('grado', gradoSeleccionado)
+        .eq('salon', salonSeleccionado)
+        .eq('periodo', periodo)
+        .eq('nombre_actividad', 'Final Periodo');
+    } else {
+      // Upsert la nota final
+      await supabase
+        .from('Notas')
+        .upsert({
+          codigo_estudiantil: codigoEstudiantil,
+          materia: materiaSeleccionada,
+          grado: gradoSeleccionado,
+          salon: salonSeleccionado,
+          periodo,
+          nombre_actividad: 'Final Periodo',
+          porcentaje: null,
+          nota: notaFinal,
+          comentario: comentarios[codigoEstudiantil]?.[periodo]?.[finalActividadId] || null,
+          notificado: false,
+        }, {
+          onConflict: 'codigo_estudiantil,materia,grado,salon,periodo,nombre_actividad'
+        });
+    }
+  };
+
+  // Abrir modal de comentario
+  const handleAbrirComentario = (
+    codigoEstudiantil: string,
+    nombreEstudiante: string,
+    actividadId: string,
+    nombreActividad: string,
+    periodo: number
+  ) => {
+    setComentarioEditando({
+      codigoEstudiantil,
+      nombreEstudiante,
+      actividadId,
+      nombreActividad,
+      periodo,
+    });
+    setComentarioModalOpen(true);
+  };
+
+  // Guardar comentario en Supabase
+  const handleGuardarComentario = async (nuevoComentario: string | null) => {
+    if (!comentarioEditando) return;
+    
+    const { codigoEstudiantil, actividadId, periodo, nombreActividad } = comentarioEditando;
+    
+    try {
+      // Actualizar en Supabase
+      const { error } = await supabase
+        .from('Notas')
+        .update({ comentario: nuevoComentario })
+        .eq('codigo_estudiantil', codigoEstudiantil)
+        .eq('materia', materiaSeleccionada)
+        .eq('grado', gradoSeleccionado)
+        .eq('salon', salonSeleccionado)
+        .eq('periodo', periodo)
+        .eq('nombre_actividad', nombreActividad);
+      
+      if (error) {
+        console.error('Error guardando comentario:', error);
+        toast({
+          title: "Error",
+          description: "No se pudo guardar el comentario",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      // Actualizar estado local
+      setComentarios(prev => ({
+        ...prev,
+        [codigoEstudiantil]: {
+          ...prev[codigoEstudiantil],
+          [periodo]: {
+            ...prev[codigoEstudiantil]?.[periodo],
+            [actividadId]: nuevoComentario,
+          },
+        },
+      }));
+      
+      toast({
+        title: nuevoComentario ? "Comentario guardado" : "Comentario eliminado",
+      });
+    } catch (error) {
+      console.error('Error:', error);
+      toast({
+        title: "Error",
+        description: "Error de conexión",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Eliminar comentario
+  const handleEliminarComentario = async (
+    codigoEstudiantil: string,
+    actividadId: string,
+    nombreActividad: string,
+    periodo: number
+  ) => {
+    try {
+      const { error } = await supabase
+        .from('Notas')
+        .update({ comentario: null })
+        .eq('codigo_estudiantil', codigoEstudiantil)
+        .eq('materia', materiaSeleccionada)
+        .eq('grado', gradoSeleccionado)
+        .eq('salon', salonSeleccionado)
+        .eq('periodo', periodo)
+        .eq('nombre_actividad', nombreActividad);
+      
+      if (error) {
+        console.error('Error eliminando comentario:', error);
+        toast({
+          title: "Error",
+          description: "No se pudo eliminar el comentario",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      // Actualizar estado local
+      setComentarios(prev => {
+        const nuevosComentarios = { ...prev };
+        if (nuevosComentarios[codigoEstudiantil]?.[periodo]) {
+          delete nuevosComentarios[codigoEstudiantil][periodo][actividadId];
+        }
+        return nuevosComentarios;
+      });
+      
+      toast({
+        title: "Comentario eliminado",
+      });
+    } catch (error) {
+      console.error('Error:', error);
+    }
   };
 
   // Función para enfocar la siguiente celda (abajo)
@@ -606,7 +871,7 @@ const TablaNotas = () => {
             nombre_actividad: actividad.nombre,
             porcentaje: actividad.porcentaje,
             nota: notaRedondeada,
-            comentario: null,
+            comentario: comentarios[codigoEstudiantil]?.[periodo]?.[actividadId] || null,
             notificado: false,
           }, {
             onConflict: 'codigo_estudiantil,materia,grado,salon,periodo,nombre_actividad'
@@ -621,17 +886,24 @@ const TablaNotas = () => {
           });
         } else {
           // Actualizar estado local
-          setNotas(prev => ({
-            ...prev,
+          const nuevasNotas = {
+            ...notas,
             [codigoEstudiantil]: {
-              ...prev[codigoEstudiantil],
+              ...notas[codigoEstudiantil],
               [periodo]: {
-                ...prev[codigoEstudiantil]?.[periodo],
+                ...notas[codigoEstudiantil]?.[periodo],
                 [actividadId]: notaRedondeada,
               },
             },
-          }));
+          };
+          setNotas(nuevasNotas);
           console.log("Nota guardada correctamente:", notaRedondeada);
+          
+          // Calcular y guardar Final Periodo después de actualizar el estado
+          setTimeout(async () => {
+            const notaFinal = calcularFinalPeriodoConNotas(nuevasNotas, codigoEstudiantil, periodo);
+            await guardarFinalPeriodo(codigoEstudiantil, periodo, notaFinal);
+          }, 0);
         }
       } catch (error) {
         console.error('Error:', error);
@@ -766,7 +1038,7 @@ const TablaNotas = () => {
                       {/* Period headers */}
                       {periodos.map((periodo) => {
                         const actividadesDelPeriodo = getActividadesPorPeriodo(periodo.numero);
-                        const colSpan = actividadesDelPeriodo.length + 1; // +1 para el botón
+                        const colSpan = actividadesDelPeriodo.length + 2; // +1 para el botón, +1 para Final
                         return (
                           <th 
                             key={periodo.numero}
@@ -824,6 +1096,13 @@ const TablaNotas = () => {
                                 </div>
                               </th>
                             ))}
+                            {/* Header columna Final Periodo */}
+                            <th 
+                              key={`final-${periodo.numero}`}
+                              className="border border-border/30 p-2 text-center text-xs font-medium min-w-[100px] bg-primary"
+                            >
+                              Final
+                            </th>
                             <th 
                               key={`btn-${periodo.numero}`}
                               className="border border-border/30 p-2 text-center min-w-[80px]"
@@ -871,38 +1150,55 @@ const TablaNotas = () => {
                                 const inputKey = `${estudiante.codigo_estudiantil}-${actividad.id}`;
                                 
                                 return (
-                                  <td 
+                                  <NotaCelda
                                     key={inputKey}
-                                    className="border border-border p-1 text-center text-sm min-w-[120px]"
-                                  >
-                                    {estaEditando ? (
-                                      <input
-                                        ref={(el) => { inputRefs.current[inputKey] = el; }}
-                                        type="text"
-                                        className="w-full h-8 text-center border border-primary rounded px-1 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-                                        value={valorEditando}
-                                        onChange={(e) => handleCambioNota(e.target.value)}
-                                        onBlur={() => {
-                                          // Solo guardar si NO estamos navegando con Enter
-                                          if (!isNavigating.current) {
-                                            handleGuardarNota();
-                                          }
-                                        }}
-                                        onKeyDown={(e) => handleKeyDownNota(e, studentIndex, actividad.id, periodo.numero)}
-                                        autoFocus
-                                        placeholder="0-5"
-                                      />
-                                    ) : (
-                                      <button
-                                        className="w-full h-8 hover:bg-muted/50 rounded cursor-pointer transition-colors flex items-center justify-center"
-                                        onClick={() => handleClickCelda(estudiante.codigo_estudiantil, actividad.id, periodo.numero, nota)}
-                                      >
-                                        {nota !== undefined ? nota.toFixed(2) : <span className="text-muted-foreground">—</span>}
-                                      </button>
+                                    nota={nota}
+                                    comentario={comentarios[estudiante.codigo_estudiantil]?.[periodo.numero]?.[actividad.id] || null}
+                                    estaEditando={estaEditando}
+                                    valorEditando={valorEditando}
+                                    inputRef={(el) => { inputRefs.current[inputKey] = el; }}
+                                    onCambioNota={handleCambioNota}
+                                    onBlur={() => {
+                                      if (!isNavigating.current) {
+                                        handleGuardarNota();
+                                      }
+                                    }}
+                                    onKeyDown={(e) => handleKeyDownNota(e, studentIndex, actividad.id, periodo.numero)}
+                                    onClick={() => handleClickCelda(estudiante.codigo_estudiantil, actividad.id, periodo.numero, nota)}
+                                    onAbrirComentario={() => handleAbrirComentario(
+                                      estudiante.codigo_estudiantil,
+                                      `${estudiante.nombre_estudiante} ${estudiante.apellidos_estudiante}`,
+                                      actividad.id,
+                                      actividad.nombre,
+                                      periodo.numero
                                     )}
-                                  </td>
+                                    onEliminarComentario={() => handleEliminarComentario(
+                                      estudiante.codigo_estudiantil,
+                                      actividad.id,
+                                      actividad.nombre,
+                                      periodo.numero
+                                    )}
+                                  />
                                 );
                               })}
+                              {/* Celda Final Periodo */}
+                              <FinalPeriodoCelda
+                                notaFinal={calcularFinalPeriodo(estudiante.codigo_estudiantil, periodo.numero)}
+                                comentario={comentarios[estudiante.codigo_estudiantil]?.[periodo.numero]?.[`${periodo.numero}-Final Periodo`] || null}
+                                onAbrirComentario={() => handleAbrirComentario(
+                                  estudiante.codigo_estudiantil,
+                                  `${estudiante.nombre_estudiante} ${estudiante.apellidos_estudiante}`,
+                                  `${periodo.numero}-Final Periodo`,
+                                  'Final Periodo',
+                                  periodo.numero
+                                )}
+                                onEliminarComentario={() => handleEliminarComentario(
+                                  estudiante.codigo_estudiantil,
+                                  `${periodo.numero}-Final Periodo`,
+                                  'Final Periodo',
+                                  periodo.numero
+                                )}
+                              />
                               <td 
                                 key={`${estudiante.codigo_estudiantil}-empty-${periodo.numero}`}
                                 className="border border-border p-3 text-center text-sm text-muted-foreground/50 min-w-[80px]"
@@ -991,6 +1287,16 @@ const TablaNotas = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Modal para comentarios */}
+      <ComentarioModal
+        open={comentarioModalOpen}
+        onOpenChange={setComentarioModalOpen}
+        nombreEstudiante={comentarioEditando?.nombreEstudiante || ""}
+        nombreActividad={comentarioEditando?.nombreActividad || ""}
+        comentarioActual={comentarioEditando ? (comentarios[comentarioEditando.codigoEstudiantil]?.[comentarioEditando.periodo]?.[comentarioEditando.actividadId] || null) : null}
+        onGuardar={handleGuardarComentario}
+      />
     </div>
   );
 };
