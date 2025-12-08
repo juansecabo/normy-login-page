@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import escudoImg from "@/assets/escudo.png";
-import { Plus } from "lucide-react";
+import { Plus, MoreVertical, Pencil, Trash2 } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -11,6 +11,22 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
@@ -53,11 +69,16 @@ const TablaNotas = () => {
   const [actividades, setActividades] = useState<Actividad[]>([]);
   const [notas, setNotas] = useState<NotasEstudiantes>({});
   
-  // Modal state
+  // Modal state para crear/editar actividad
   const [modalOpen, setModalOpen] = useState(false);
   const [periodoActual, setPeriodoActual] = useState<number>(1);
   const [nombreActividad, setNombreActividad] = useState("");
   const [porcentajeActividad, setPorcentajeActividad] = useState("");
+  const [actividadEditando, setActividadEditando] = useState<Actividad | null>(null);
+  
+  // Modal state para confirmar eliminación
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [actividadAEliminar, setActividadAEliminar] = useState<Actividad | null>(null);
   
   // Estado para celda en edición
   const [celdaEditando, setCeldaEditando] = useState<CeldaEditando | null>(null);
@@ -212,10 +233,19 @@ const TablaNotas = () => {
     setPeriodoActual(periodo);
     setNombreActividad("");
     setPorcentajeActividad("");
+    setActividadEditando(null);
     setModalOpen(true);
   };
 
-  const handleCrearActividad = () => {
+  const handleAbrirModalEditar = (actividad: Actividad) => {
+    setPeriodoActual(actividad.periodo);
+    setNombreActividad(actividad.nombre);
+    setPorcentajeActividad(actividad.porcentaje?.toString() || "");
+    setActividadEditando(actividad);
+    setModalOpen(true);
+  };
+
+  const handleGuardarActividad = async () => {
     // Validar nombre
     if (!nombreActividad.trim()) {
       toast({
@@ -248,7 +278,11 @@ const TablaNotas = () => {
         return;
       }
 
-      const porcentajeUsado = getPorcentajeUsado(periodoActual);
+      // Calcular porcentaje usado excluyendo la actividad que se está editando
+      const porcentajeUsado = actividades
+        .filter(a => a.periodo === periodoActual && a.porcentaje !== null && a.id !== actividadEditando?.id)
+        .reduce((sum, a) => sum + (a.porcentaje || 0), 0);
+      
       if (porcentajeUsado + porcentaje > 100) {
         toast({
           title: "Error",
@@ -259,21 +293,179 @@ const TablaNotas = () => {
       }
     }
 
-    // Crear actividad
-    const nuevaActividad: Actividad = {
-      id: crypto.randomUUID(),
-      periodo: periodoActual,
-      nombre: nombreActividad.trim(),
-      porcentaje,
-    };
+    if (actividadEditando) {
+      // EDITAR actividad existente
+      const nombreAntiguo = actividadEditando.nombre;
+      const nombreNuevo = nombreActividad.trim();
+      
+      // Si cambió el nombre, actualizar todas las notas en Supabase
+      if (nombreAntiguo !== nombreNuevo) {
+        try {
+          const { error } = await supabase
+            .from('Notas')
+            .update({ nombre_actividad: nombreNuevo })
+            .eq('nombre_actividad', nombreAntiguo)
+            .eq('materia', materiaSeleccionada)
+            .eq('grado', gradoSeleccionado)
+            .eq('salon', salonSeleccionado)
+            .eq('periodo', actividadEditando.periodo);
 
-    setActividades([...actividades, nuevaActividad]);
-    setModalOpen(false);
-    
-    toast({
-      title: "Actividad creada",
-      description: `"${nuevaActividad.nombre}" agregada al ${periodos[periodoActual - 1].nombre}`,
-    });
+          if (error) {
+            console.error('Error actualizando nombre de actividad:', error);
+            toast({
+              title: "Error",
+              description: "No se pudo actualizar el nombre de la actividad",
+              variant: "destructive",
+            });
+            return;
+          }
+        } catch (error) {
+          console.error('Error:', error);
+          toast({
+            title: "Error",
+            description: "Error de conexión al actualizar",
+            variant: "destructive",
+          });
+          return;
+        }
+      }
+
+      // Si cambió el porcentaje, actualizar todas las notas en Supabase
+      if (actividadEditando.porcentaje !== porcentaje) {
+        try {
+          const { error } = await supabase
+            .from('Notas')
+            .update({ porcentaje: porcentaje })
+            .eq('nombre_actividad', nombreNuevo)
+            .eq('materia', materiaSeleccionada)
+            .eq('grado', gradoSeleccionado)
+            .eq('salon', salonSeleccionado)
+            .eq('periodo', actividadEditando.periodo);
+
+          if (error) {
+            console.error('Error actualizando porcentaje:', error);
+            // No es crítico, continuar
+          }
+        } catch (error) {
+          console.error('Error:', error);
+        }
+      }
+
+      // Actualizar en el estado local - crear nuevo ID si cambió el nombre
+      const nuevoId = nombreAntiguo !== nombreNuevo 
+        ? `${actividadEditando.periodo}-${nombreNuevo}` 
+        : actividadEditando.id;
+
+      setActividades(prev => prev.map(a => 
+        a.id === actividadEditando.id 
+          ? { ...a, id: nuevoId, nombre: nombreNuevo, porcentaje } 
+          : a
+      ));
+
+      // Actualizar las notas locales si cambió el nombre
+      if (nombreAntiguo !== nombreNuevo) {
+        setNotas(prev => {
+          const nuevasNotas = { ...prev };
+          Object.keys(nuevasNotas).forEach(codigo => {
+            if (nuevasNotas[codigo]?.[actividadEditando.periodo]?.[actividadEditando.id] !== undefined) {
+              const valorNota = nuevasNotas[codigo][actividadEditando.periodo][actividadEditando.id];
+              delete nuevasNotas[codigo][actividadEditando.periodo][actividadEditando.id];
+              nuevasNotas[codigo][actividadEditando.periodo][nuevoId] = valorNota;
+            }
+          });
+          return nuevasNotas;
+        });
+      }
+
+      setModalOpen(false);
+      toast({
+        title: "Actividad actualizada",
+        description: `"${nombreNuevo}" ha sido actualizada`,
+      });
+    } else {
+      // CREAR nueva actividad
+      const nuevaActividad: Actividad = {
+        id: crypto.randomUUID(),
+        periodo: periodoActual,
+        nombre: nombreActividad.trim(),
+        porcentaje,
+      };
+
+      setActividades([...actividades, nuevaActividad]);
+      setModalOpen(false);
+      
+      toast({
+        title: "Actividad creada",
+        description: `"${nuevaActividad.nombre}" agregada al ${periodos[periodoActual - 1].nombre}`,
+      });
+    }
+  };
+
+  const handleConfirmarEliminar = (actividad: Actividad) => {
+    setActividadAEliminar(actividad);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleEliminarActividad = async () => {
+    if (!actividadAEliminar) return;
+
+    try {
+      // Eliminar todas las notas de esta actividad de Supabase
+      const { error } = await supabase
+        .from('Notas')
+        .delete()
+        .eq('nombre_actividad', actividadAEliminar.nombre)
+        .eq('materia', materiaSeleccionada)
+        .eq('grado', gradoSeleccionado)
+        .eq('salon', salonSeleccionado)
+        .eq('periodo', actividadAEliminar.periodo);
+
+      if (error) {
+        console.error('Error eliminando notas:', error);
+        toast({
+          title: "Error",
+          description: "No se pudieron eliminar las notas de la actividad",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Eliminar del estado local de actividades
+      setActividades(prev => prev.filter(a => a.id !== actividadAEliminar.id));
+
+      // Eliminar del estado local de notas
+      setNotas(prev => {
+        const nuevasNotas = { ...prev };
+        Object.keys(nuevasNotas).forEach(codigo => {
+          if (nuevasNotas[codigo]?.[actividadAEliminar.periodo]) {
+            delete nuevasNotas[codigo][actividadAEliminar.periodo][actividadAEliminar.id];
+          }
+        });
+        return nuevasNotas;
+      });
+
+      setDeleteDialogOpen(false);
+      setActividadAEliminar(null);
+
+      toast({
+        title: "Actividad eliminada",
+        description: `"${actividadAEliminar.nombre}" y todas sus notas han sido eliminadas`,
+      });
+    } catch (error) {
+      console.error('Error:', error);
+      toast({
+        title: "Error",
+        description: "Error de conexión al eliminar",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Calcular porcentaje usado excluyendo la actividad en edición
+  const getPorcentajeUsadoParaModal = () => {
+    return actividades
+      .filter(a => a.periodo === periodoActual && a.porcentaje !== null && a.id !== actividadEditando?.id)
+      .reduce((sum, a) => sum + (a.porcentaje || 0), 0);
   };
 
   // Calcular el ancho mínimo de cada período basado en sus actividades
@@ -598,14 +790,38 @@ const TablaNotas = () => {
                                 key={actividad.id}
                                 className="border border-border/30 p-2 text-center text-xs font-medium min-w-[120px]"
                               >
-                                <div className="truncate" title={actividad.nombre}>
-                                  {actividad.nombre}
-                                </div>
-                                {actividad.porcentaje !== null && (
-                                  <div className="text-primary-foreground/70 text-xs">
-                                    ({actividad.porcentaje}%)
+                                <div className="flex items-center justify-center gap-1">
+                                  <div className="flex-1 min-w-0">
+                                    <div className="truncate" title={actividad.nombre}>
+                                      {actividad.nombre}
+                                    </div>
+                                    {actividad.porcentaje !== null && (
+                                      <div className="text-primary-foreground/70 text-xs">
+                                        ({actividad.porcentaje}%)
+                                      </div>
+                                    )}
                                   </div>
-                                )}
+                                  <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                      <button className="p-1 hover:bg-primary-foreground/20 rounded transition-colors">
+                                        <MoreVertical className="w-3 h-3" />
+                                      </button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end" className="bg-background z-50">
+                                      <DropdownMenuItem onClick={() => handleAbrirModalEditar(actividad)}>
+                                        <Pencil className="w-4 h-4 mr-2" />
+                                        Editar actividad
+                                      </DropdownMenuItem>
+                                      <DropdownMenuItem 
+                                        onClick={() => handleConfirmarEliminar(actividad)}
+                                        className="text-destructive focus:text-destructive"
+                                      >
+                                        <Trash2 className="w-4 h-4 mr-2" />
+                                        Eliminar actividad
+                                      </DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                  </DropdownMenu>
+                                </div>
                               </th>
                             ))}
                             <th 
@@ -706,12 +922,12 @@ const TablaNotas = () => {
         </div>
       </main>
 
-      {/* Modal para crear actividad */}
+      {/* Modal para crear/editar actividad */}
       <Dialog open={modalOpen} onOpenChange={setModalOpen}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
             <DialogTitle>
-              Nueva Actividad - {periodos[periodoActual - 1]?.nombre}
+              {actividadEditando ? "Editar Actividad" : "Nueva Actividad"} - {periodos[periodoActual - 1]?.nombre}
             </DialogTitle>
           </DialogHeader>
           <div className="grid gap-4 py-4">
@@ -740,7 +956,7 @@ const TablaNotas = () => {
                 onChange={(e) => setPorcentajeActividad(e.target.value)}
               />
               <p className="text-xs text-muted-foreground">
-                Porcentaje usado: {getPorcentajeUsado(periodoActual)}% / 100%
+                Porcentaje usado: {getPorcentajeUsadoParaModal()}% / 100%
               </p>
             </div>
           </div>
@@ -748,12 +964,33 @@ const TablaNotas = () => {
             <Button variant="outline" onClick={() => setModalOpen(false)}>
               Cancelar
             </Button>
-            <Button onClick={handleCrearActividad} className="bg-primary hover:bg-primary/90">
-              Crear Actividad
+            <Button onClick={handleGuardarActividad} className="bg-primary hover:bg-primary/90">
+              {actividadEditando ? "Guardar cambios" : "Crear Actividad"}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Modal de confirmación para eliminar */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Eliminar actividad?</AlertDialogTitle>
+            <AlertDialogDescription>
+              ¿Estás seguro de eliminar "{actividadAEliminar?.nombre}"? Se borrarán todas las notas de esta actividad. Esta acción no se puede deshacer.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleEliminarActividad}
+              className="bg-destructive hover:bg-destructive/90"
+            >
+              Eliminar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
