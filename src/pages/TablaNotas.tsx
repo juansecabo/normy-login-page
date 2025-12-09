@@ -290,6 +290,15 @@ const TablaNotas = () => {
       .reduce((sum, a) => sum + (a.porcentaje || 0), 0);
   };
 
+  // Calcular porcentaje promedio anual (promedio de los 4 períodos)
+  const getPorcentajePromedioAnual = () => {
+    const porcentajes = [1, 2, 3, 4].map(p => getPorcentajeUsado(p));
+    const suma = porcentajes.reduce((acc, val) => acc + val, 0);
+    const promedio = suma / 4;
+    // Redondear a 2 decimales
+    return Math.round(promedio * 100) / 100;
+  };
+
   const handleAbrirModal = (periodo: number) => {
     setPeriodoActual(periodo);
     setNombreActividad("");
@@ -1084,19 +1093,31 @@ const TablaNotas = () => {
               );
             })}
             {/* Pestaña Final Definitiva */}
-            <button
-              onClick={() => setPeriodoActivo(0)}
-              className={`flex-1 px-4 py-3 text-sm font-medium transition-colors relative
-                ${esFinalDefinitiva 
-                  ? 'bg-primary text-primary-foreground' 
-                  : 'bg-muted/30 text-muted-foreground hover:bg-muted hover:text-foreground'
-                }`}
-            >
-              <span>Final Definitiva</span>
-              {esFinalDefinitiva && (
-                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary-foreground" />
-              )}
-            </button>
+            {(() => {
+              const porcentajePromedio = getPorcentajePromedioAnual();
+              const estaCompleto = porcentajePromedio === 100;
+              return (
+                <button
+                  onClick={() => setPeriodoActivo(0)}
+                  className={`flex-1 px-4 py-3 text-sm font-medium transition-colors relative
+                    ${esFinalDefinitiva 
+                      ? 'bg-primary text-primary-foreground' 
+                      : 'bg-muted/30 text-muted-foreground hover:bg-muted hover:text-foreground'
+                    }`}
+                >
+                  <span className="flex items-center justify-center gap-1">
+                    Final Definitiva 
+                    <span className={estaCompleto ? 'text-green-300' : ''}>
+                      ({porcentajePromedio}/100%)
+                    </span>
+                    {estaCompleto && <span>✓</span>}
+                  </span>
+                  {esFinalDefinitiva && (
+                    <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary-foreground" />
+                  )}
+                </button>
+              );
+            })()}
           </div>
 
           {/* Tabla de Notas */}
