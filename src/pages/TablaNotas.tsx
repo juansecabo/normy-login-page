@@ -193,6 +193,21 @@ const TablaNotas = () => {
           notasData.forEach((nota) => {
             const { codigo_estudiantil, periodo, nombre_actividad, nota: valorNota, porcentaje, comentario } = nota;
             
+            // Cargar comentarios de Final Definitiva (periodo = 0)
+            if (nombre_actividad === "Final Definitiva" && periodo === 0) {
+              if (comentario) {
+                const actividadId = '0-Final Definitiva';
+                if (!comentariosFormateados[codigo_estudiantil]) {
+                  comentariosFormateados[codigo_estudiantil] = {};
+                }
+                if (!comentariosFormateados[codigo_estudiantil][0]) {
+                  comentariosFormateados[codigo_estudiantil][0] = {};
+                }
+                comentariosFormateados[codigo_estudiantil][0][actividadId] = comentario;
+              }
+              return;
+            }
+            
             // Ignorar las notas de "Final Periodo" para las actividades
             if (nombre_actividad === "Final Periodo") {
               // Solo cargar el comentario si existe
@@ -640,7 +655,7 @@ const TablaNotas = () => {
     }
   };
 
-  // Guardar Final Definitiva en Supabase
+  // Guardar Final Definitiva en Supabase (preservando comentario existente)
   const guardarFinalDefinitiva = async (codigoEstudiantil: string, notaFinal: number | null) => {
     if (notaFinal === null) {
       await supabase
@@ -653,6 +668,9 @@ const TablaNotas = () => {
         .eq('periodo', 0)
         .eq('nombre_actividad', 'Final Definitiva');
     } else {
+      // Primero consultar si existe comentario para no perderlo
+      const comentarioExistente = comentarios[codigoEstudiantil]?.[0]?.['0-Final Definitiva'] || null;
+      
       await supabase
         .from('Notas')
         .upsert({
@@ -664,7 +682,7 @@ const TablaNotas = () => {
           nombre_actividad: 'Final Definitiva',
           porcentaje: null,
           nota: notaFinal,
-          comentario: comentarios[codigoEstudiantil]?.[0]?.['0-Final Definitiva'] || null,
+          comentario: comentarioExistente,
           notificado: false,
         }, {
           onConflict: 'codigo_estudiantil,materia,grado,salon,periodo,nombre_actividad'
@@ -952,15 +970,19 @@ const TablaNotas = () => {
             const notaFinal = calcularFinalPeriodoConNotas(nuevasNotas, codigoEstudiantil, periodo);
             await guardarFinalPeriodo(codigoEstudiantil, periodo, notaFinal);
             
-            // Recalcular y guardar Final Definitiva
-            const finalesPeriodos: number[] = [];
+            // Recalcular y guardar Final Definitiva (siempre divide entre 4)
+            let suma = 0;
+            let tieneAlgunaNota = false;
             for (let p = 1; p <= 4; p++) {
               const fp = calcularFinalPeriodoConNotas(nuevasNotas, codigoEstudiantil, p);
-              if (fp !== null) finalesPeriodos.push(fp);
+              if (fp !== null) {
+                suma += fp;
+                tieneAlgunaNota = true;
+              }
+              // Si es null, cuenta como 0
             }
-            if (finalesPeriodos.length > 0) {
-              const suma = finalesPeriodos.reduce((acc, val) => acc + val, 0);
-              const finalDef = Math.floor((suma / finalesPeriodos.length) * 100) / 100;
+            if (tieneAlgunaNota) {
+              const finalDef = Math.round((suma / 4) * 100) / 100;
               await guardarFinalDefinitiva(codigoEstudiantil, finalDef);
             } else {
               await guardarFinalDefinitiva(codigoEstudiantil, null);
