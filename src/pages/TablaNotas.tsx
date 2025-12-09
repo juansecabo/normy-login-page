@@ -667,11 +667,23 @@ const TablaNotas = () => {
         .eq('salon', salonSeleccionado)
         .eq('periodo', 0)
         .eq('nombre_actividad', 'Final Definitiva');
+      console.log('Final Definitiva eliminada para:', codigoEstudiantil);
     } else {
-      // Primero consultar si existe comentario para no perderlo
-      const comentarioExistente = comentarios[codigoEstudiantil]?.[0]?.['0-Final Definitiva'] || null;
+      // Primero consultar desde Supabase si existe comentario para no perderlo
+      const { data: existente } = await supabase
+        .from('Notas')
+        .select('comentario')
+        .eq('codigo_estudiantil', codigoEstudiantil)
+        .eq('materia', materiaSeleccionada)
+        .eq('grado', gradoSeleccionado)
+        .eq('salon', salonSeleccionado)
+        .eq('periodo', 0)
+        .eq('nombre_actividad', 'Final Definitiva')
+        .maybeSingle();
       
-      await supabase
+      const comentarioExistente = existente?.comentario || null;
+      
+      const { error } = await supabase
         .from('Notas')
         .upsert({
           codigo_estudiantil: codigoEstudiantil,
@@ -687,6 +699,12 @@ const TablaNotas = () => {
         }, {
           onConflict: 'codigo_estudiantil,materia,grado,salon,periodo,nombre_actividad'
         });
+      
+      if (error) {
+        console.error('Error guardando Final Definitiva:', error);
+      } else {
+        console.log('Final Definitiva guardada:', codigoEstudiantil, notaFinal);
+      }
     }
   };
 
