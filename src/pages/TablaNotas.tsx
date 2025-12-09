@@ -571,8 +571,8 @@ const TablaNotas = () => {
       }
     });
     
-    // Truncar a 2 decimales (no redondear)
-    return Math.floor(sumaPonderada * 100) / 100;
+    // Redondear a 2 decimales (redondeo matemático estándar)
+    return Math.round(sumaPonderada * 100) / 100;
   }, [actividades]);
 
   // Versión que usa el estado actual
@@ -596,8 +596,8 @@ const TablaNotas = () => {
     const suma = finalesPeriodos.reduce((acc, val) => acc + val, 0);
     const promedio = suma / finalesPeriodos.length;
     
-    // Truncar a 2 decimales (no redondear)
-    return Math.floor(promedio * 100) / 100;
+    // Redondear a 2 decimales (redondeo matemático estándar)
+    return Math.round(promedio * 100) / 100;
   }, [calcularFinalPeriodo]);
 
   // Guardar nota final en Supabase
