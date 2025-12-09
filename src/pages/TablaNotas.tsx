@@ -193,17 +193,17 @@ const TablaNotas = () => {
           notasData.forEach((nota) => {
             const { codigo_estudiantil, periodo, nombre_actividad, nota: valorNota, porcentaje, comentario } = nota;
             
-            // Cargar comentarios de Final Definitiva (periodo = 0)
-            if (nombre_actividad === "Final Definitiva" && periodo === 0) {
+            // Cargar comentarios de Final Definitiva (periodo = 5)
+            if (nombre_actividad === "Final Definitiva" && periodo === 5) {
               if (comentario) {
-                const actividadId = '0-Final Definitiva';
+                const actividadId = '5-Final Definitiva';
                 if (!comentariosFormateados[codigo_estudiantil]) {
                   comentariosFormateados[codigo_estudiantil] = {};
                 }
-                if (!comentariosFormateados[codigo_estudiantil][0]) {
-                  comentariosFormateados[codigo_estudiantil][0] = {};
+                if (!comentariosFormateados[codigo_estudiantil][5]) {
+                  comentariosFormateados[codigo_estudiantil][5] = {};
                 }
-                comentariosFormateados[codigo_estudiantil][0][actividadId] = comentario;
+                comentariosFormateados[codigo_estudiantil][5][actividadId] = comentario;
               }
               return;
             }
@@ -668,7 +668,7 @@ const TablaNotas = () => {
         .eq('materia', materiaSeleccionada)
         .eq('grado', gradoSeleccionado)
         .eq('salon', salonSeleccionado)
-        .eq('periodo', 0)
+        .eq('periodo', 5)
         .eq('nombre_actividad', 'Final Definitiva');
       console.log('Final Definitiva eliminada para:', codigoEstudiantil, 'Error:', error);
     } else {
@@ -680,7 +680,7 @@ const TablaNotas = () => {
         .eq('materia', materiaSeleccionada)
         .eq('grado', gradoSeleccionado)
         .eq('salon', salonSeleccionado)
-        .eq('periodo', 0)
+        .eq('periodo', 5)
         .eq('nombre_actividad', 'Final Definitiva')
         .maybeSingle();
       
@@ -693,7 +693,7 @@ const TablaNotas = () => {
         materia: materiaSeleccionada,
         grado: gradoSeleccionado,
         salon: salonSeleccionado,
-        periodo: 0,
+        periodo: 5,
         nombre_actividad: 'Final Definitiva',
         porcentaje: null,
         nota: notaFinal,
@@ -750,8 +750,8 @@ const TablaNotas = () => {
     console.log('Datos:', { codigoEstudiantil, periodo, nombreActividad, nuevoComentario });
     
     try {
-      // Para Final Definitiva (periodo = 0), verificar si existe el registro
-      if (periodo === 0 && nombreActividad === 'Final Definitiva') {
+      // Para Final Definitiva (periodo = 5), verificar si existe el registro
+      if (periodo === 5 && nombreActividad === 'Final Definitiva') {
         const { data: existe } = await supabase
           .from('Notas')
           .select('id, nota')
@@ -759,7 +759,7 @@ const TablaNotas = () => {
           .eq('materia', materiaSeleccionada)
           .eq('grado', gradoSeleccionado)
           .eq('salon', salonSeleccionado)
-          .eq('periodo', 0)
+          .eq('periodo', 5)
           .eq('nombre_actividad', 'Final Definitiva')
           .maybeSingle();
         
@@ -777,7 +777,7 @@ const TablaNotas = () => {
               materia: materiaSeleccionada,
               grado: gradoSeleccionado,
               salon: salonSeleccionado,
-              periodo: 0,
+              periodo: 5,
               nombre_actividad: 'Final Definitiva',
               porcentaje: null,
               nota: finalDef,
@@ -806,7 +806,7 @@ const TablaNotas = () => {
             .eq('materia', materiaSeleccionada)
             .eq('grado', gradoSeleccionado)
             .eq('salon', salonSeleccionado)
-            .eq('periodo', 0)
+            .eq('periodo', 5)
             .eq('nombre_actividad', 'Final Definitiva')
             .select();
           
@@ -1420,7 +1420,7 @@ const TablaNotas = () => {
                             {/* Celda Final Definitiva */}
                             {(() => {
                               const finalDef = calcularFinalDefinitiva(estudiante.codigo_estudiantil);
-                              const comentario = comentarios[estudiante.codigo_estudiantil]?.[0]?.['0-Final Definitiva'] || null;
+                              const comentario = comentarios[estudiante.codigo_estudiantil]?.[5]?.['5-Final Definitiva'] || null;
                               return (
                                 <td className="border border-border p-1 text-center text-sm min-w-[130px] bg-primary/20 font-bold relative group">
                                   <div className="relative flex items-center justify-center h-8">
@@ -1441,9 +1441,9 @@ const TablaNotas = () => {
                                           <DropdownMenuItem onClick={() => handleAbrirComentario(
                                             estudiante.codigo_estudiantil,
                                             `${estudiante.nombre_estudiante} ${estudiante.apellidos_estudiante}`,
-                                            '0-Final Definitiva',
+                                            '5-Final Definitiva',
                                             'Final Definitiva',
-                                            0
+                                            5
                                           )}>
                                             {comentario ? "Editar comentario" : "Agregar comentario"}
                                           </DropdownMenuItem>
@@ -1451,9 +1451,9 @@ const TablaNotas = () => {
                                             <DropdownMenuItem 
                                               onClick={() => handleEliminarComentario(
                                                 estudiante.codigo_estudiantil,
-                                                '0-Final Definitiva',
+                                                '5-Final Definitiva',
                                                 'Final Definitiva',
-                                                0
+                                                5
                                               )}
                                               className="text-destructive focus:text-destructive"
                                             >
