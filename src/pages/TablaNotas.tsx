@@ -657,8 +657,11 @@ const TablaNotas = () => {
 
   // Guardar Final Definitiva en Supabase (preservando comentario existente)
   const guardarFinalDefinitiva = async (codigoEstudiantil: string, notaFinal: number | null) => {
+    console.log('=== INICIANDO guardarFinalDefinitiva ===');
+    console.log('Parámetros:', { codigoEstudiantil, notaFinal, materia: materiaSeleccionada, grado: gradoSeleccionado, salon: salonSeleccionado });
+    
     if (notaFinal === null) {
-      await supabase
+      const { error } = await supabase
         .from('Notas')
         .delete()
         .eq('codigo_estudiantil', codigoEstudiantil)
@@ -667,10 +670,10 @@ const TablaNotas = () => {
         .eq('salon', salonSeleccionado)
         .eq('periodo', 0)
         .eq('nombre_actividad', 'Final Definitiva');
-      console.log('Final Definitiva eliminada para:', codigoEstudiantil);
+      console.log('Final Definitiva eliminada para:', codigoEstudiantil, 'Error:', error);
     } else {
       // Primero consultar desde Supabase si existe comentario para no perderlo
-      const { data: existente } = await supabase
+      const { data: existente, error: errorConsulta } = await supabase
         .from('Notas')
         .select('comentario')
         .eq('codigo_estudiantil', codigoEstudiantil)
@@ -681,29 +684,40 @@ const TablaNotas = () => {
         .eq('nombre_actividad', 'Final Definitiva')
         .maybeSingle();
       
+      console.log('Consulta comentario existente:', { existente, errorConsulta });
+      
       const comentarioExistente = existente?.comentario || null;
       
-      const { error } = await supabase
+      const datosUpsert = {
+        codigo_estudiantil: codigoEstudiantil,
+        materia: materiaSeleccionada,
+        grado: gradoSeleccionado,
+        salon: salonSeleccionado,
+        periodo: 0,
+        nombre_actividad: 'Final Definitiva',
+        porcentaje: null,
+        nota: notaFinal,
+        comentario: comentarioExistente,
+        notificado: false,
+      };
+      
+      console.log('Datos para UPSERT:', datosUpsert);
+      
+      const { data, error } = await supabase
         .from('Notas')
-        .upsert({
-          codigo_estudiantil: codigoEstudiantil,
-          materia: materiaSeleccionada,
-          grado: gradoSeleccionado,
-          salon: salonSeleccionado,
-          periodo: 0,
-          nombre_actividad: 'Final Definitiva',
-          porcentaje: null,
-          nota: notaFinal,
-          comentario: comentarioExistente,
-          notificado: false,
-        }, {
+        .upsert(datosUpsert, {
           onConflict: 'codigo_estudiantil,materia,grado,salon,periodo,nombre_actividad'
-        });
+        })
+        .select();
+      
+      console.log('=== RESULTADO UPSERT Final Definitiva ===');
+      console.log('Data:', data);
+      console.log('Error:', error);
       
       if (error) {
-        console.error('Error guardando Final Definitiva:', error);
+        console.error('ERROR guardando Final Definitiva:', error);
       } else {
-        console.log('Final Definitiva guardada:', codigoEstudiantil, notaFinal);
+        console.log('✅ Final Definitiva guardada exitosamente:', codigoEstudiantil, notaFinal);
       }
     }
   };
@@ -732,26 +746,103 @@ const TablaNotas = () => {
     
     const { codigoEstudiantil, actividadId, periodo, nombreActividad } = comentarioEditando;
     
+    console.log('=== GUARDANDO COMENTARIO ===');
+    console.log('Datos:', { codigoEstudiantil, periodo, nombreActividad, nuevoComentario });
+    
     try {
-      // Actualizar en Supabase
-      const { error } = await supabase
-        .from('Notas')
-        .update({ comentario: nuevoComentario })
-        .eq('codigo_estudiantil', codigoEstudiantil)
-        .eq('materia', materiaSeleccionada)
-        .eq('grado', gradoSeleccionado)
-        .eq('salon', salonSeleccionado)
-        .eq('periodo', periodo)
-        .eq('nombre_actividad', nombreActividad);
-      
-      if (error) {
-        console.error('Error guardando comentario:', error);
-        toast({
-          title: "Error",
-          description: "No se pudo guardar el comentario",
-          variant: "destructive",
-        });
-        return;
+      // Para Final Definitiva (periodo = 0), verificar si existe el registro
+      if (periodo === 0 && nombreActividad === 'Final Definitiva') {
+        const { data: existe } = await supabase
+          .from('Notas')
+          .select('id, nota')
+          .eq('codigo_estudiantil', codigoEstudiantil)
+          .eq('materia', materiaSeleccionada)
+          .eq('grado', gradoSeleccionado)
+          .eq('salon', salonSeleccionado)
+          .eq('periodo', 0)
+          .eq('nombre_actividad', 'Final Definitiva')
+          .maybeSingle();
+        
+        console.log('Registro Final Definitiva existe:', existe);
+        
+        if (!existe) {
+          // Calcular la nota actual y crear el registro
+          const finalDef = calcularFinalDefinitiva(codigoEstudiantil);
+          console.log('Creando registro Final Definitiva con nota:', finalDef);
+          
+          const { data, error } = await supabase
+            .from('Notas')
+            .insert({
+              codigo_estudiantil: codigoEstudiantil,
+              materia: materiaSeleccionada,
+              grado: gradoSeleccionado,
+              salon: salonSeleccionado,
+              periodo: 0,
+              nombre_actividad: 'Final Definitiva',
+              porcentaje: null,
+              nota: finalDef,
+              comentario: nuevoComentario,
+              notificado: false,
+            })
+            .select();
+          
+          console.log('Resultado INSERT Final Definitiva:', { data, error });
+          
+          if (error) {
+            console.error('Error creando Final Definitiva:', error);
+            toast({
+              title: "Error",
+              description: "No se pudo guardar el comentario",
+              variant: "destructive",
+            });
+            return;
+          }
+        } else {
+          // Actualizar solo el comentario
+          const { data, error } = await supabase
+            .from('Notas')
+            .update({ comentario: nuevoComentario })
+            .eq('codigo_estudiantil', codigoEstudiantil)
+            .eq('materia', materiaSeleccionada)
+            .eq('grado', gradoSeleccionado)
+            .eq('salon', salonSeleccionado)
+            .eq('periodo', 0)
+            .eq('nombre_actividad', 'Final Definitiva')
+            .select();
+          
+          console.log('Resultado UPDATE comentario Final Definitiva:', { data, error });
+          
+          if (error) {
+            console.error('Error actualizando comentario:', error);
+            toast({
+              title: "Error",
+              description: "No se pudo guardar el comentario",
+              variant: "destructive",
+            });
+            return;
+          }
+        }
+      } else {
+        // Para otras notas, actualizar normalmente
+        const { error } = await supabase
+          .from('Notas')
+          .update({ comentario: nuevoComentario })
+          .eq('codigo_estudiantil', codigoEstudiantil)
+          .eq('materia', materiaSeleccionada)
+          .eq('grado', gradoSeleccionado)
+          .eq('salon', salonSeleccionado)
+          .eq('periodo', periodo)
+          .eq('nombre_actividad', nombreActividad);
+        
+        if (error) {
+          console.error('Error guardando comentario:', error);
+          toast({
+            title: "Error",
+            description: "No se pudo guardar el comentario",
+            variant: "destructive",
+          });
+          return;
+        }
       }
       
       // Actualizar estado local
@@ -766,6 +857,7 @@ const TablaNotas = () => {
         },
       }));
       
+      console.log('✅ Comentario guardado exitosamente');
       toast({
         title: nuevoComentario ? "Comentario guardado" : "Comentario eliminado",
       });
