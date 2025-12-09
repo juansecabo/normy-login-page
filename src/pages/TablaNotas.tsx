@@ -580,21 +580,25 @@ const TablaNotas = () => {
     return calcularFinalPeriodoConNotas(notas, codigoEstudiantil, periodo);
   }, [calcularFinalPeriodoConNotas, notas]);
 
-  // Calcular Final Definitiva (promedio de los 4 períodos)
+  // Calcular Final Definitiva (promedio de los 4 períodos, siempre divide entre 4)
   const calcularFinalDefinitiva = useCallback((codigoEstudiantil: string): number | null => {
-    const finalesPeriodos: number[] = [];
+    let suma = 0;
+    let tieneAlgunaNota = false;
     
     for (let p = 1; p <= 4; p++) {
       const finalPeriodo = calcularFinalPeriodo(codigoEstudiantil, p);
       if (finalPeriodo !== null) {
-        finalesPeriodos.push(finalPeriodo);
+        suma += finalPeriodo;
+        tieneAlgunaNota = true;
       }
+      // Si es null, cuenta como 0 (no sumamos nada)
     }
     
-    if (finalesPeriodos.length === 0) return null;
+    // Si no tiene ninguna nota en ningún período, mostrar "—"
+    if (!tieneAlgunaNota) return null;
     
-    const suma = finalesPeriodos.reduce((acc, val) => acc + val, 0);
-    const promedio = suma / finalesPeriodos.length;
+    // Siempre dividir entre 4 (los 4 períodos del año)
+    const promedio = suma / 4;
     
     // Redondear a 2 decimales (redondeo matemático estándar)
     return Math.round(promedio * 100) / 100;
