@@ -1231,7 +1231,7 @@ const TablaNotas = () => {
       descripcion = `El período está COMPLETO (100%). Se enviará el REPORTE FINAL con la nota definitiva a los padres de familia sobre:\nFinal ${nombrePeriodo}`;
     } else if (esCompleto && estudiantesIncompletos > 0) {
       // Porcentaje completo pero hay estudiantes sin notas
-      descripcion = `El período está completo (100%) pero hay ${estudiantesIncompletos} estudiante(s) con notas no registradas. Se enviará REPORTE FINAL a ${estudiantesCompletos.length} padres y REPORTE PARCIAL a ${estudiantesIncompletos} padres sobre:\nFinal ${nombrePeriodo}`;
+      descripcion = `El período está completo (100%) pero hay ${estudiantesIncompletos} estudiante(s) con notas no registradas. Se enviará REPORTE FINAL a los padres de los ${estudiantesCompletos.length} estudiante(s) con notas completas y REPORTE PARCIAL a los padres de ${estudiantesIncompletos} estudiante(s) sobre:\nFinal ${nombrePeriodo}`;
     } else {
       // Período incompleto
       descripcion = `El período está INCOMPLETO (${porcentajeUsado}/100%). Se enviará un REPORTE PARCIAL con las notas individuales de cada actividad a los padres de familia sobre:\nFinal ${nombrePeriodo}`;
@@ -1316,7 +1316,7 @@ const TablaNotas = () => {
       descripcion = `Todos los períodos están COMPLETOS (100%). Se enviará el REPORTE FINAL ANUAL con la nota definitiva del año a los padres de familia sobre:\nFinal Definitiva`;
     } else if (todosCompletos && estudiantesIncompletos > 0) {
       // Períodos completos pero hay estudiantes con notas faltantes
-      descripcion = `Todos los períodos están completos (100%) pero hay ${estudiantesIncompletos} estudiante(s) con notas no registradas. Se enviará REPORTE FINAL ANUAL a ${estudiantesCompletos.length} padres y REPORTE PARCIAL a ${estudiantesIncompletos} padres sobre:\nFinal Definitiva`;
+      descripcion = `Todos los períodos están completos (100%) pero hay ${estudiantesIncompletos} estudiante(s) con notas no registradas. Se enviará REPORTE FINAL ANUAL a los padres de los ${estudiantesCompletos.length} estudiante(s) con notas completas y REPORTE PARCIAL a los padres de ${estudiantesIncompletos} estudiante(s) sobre:\nFinal Definitiva`;
     } else {
       // Períodos incompletos
       descripcion = `Los períodos NO están completos (${promedioCompletitud}/100%). Se enviará un REPORTE PARCIAL ANUAL con las notas de cada período a los padres de familia sobre:\nFinal Definitiva`;
