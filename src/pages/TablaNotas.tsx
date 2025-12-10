@@ -1033,20 +1033,26 @@ const TablaNotas = () => {
 
   // Preparar notificación masiva para una actividad
   const handleNotificarActividad = (actividad: Actividad) => {
-    const datos = estudiantes
-      .filter(est => notas[est.codigo_estudiantil]?.[actividad.periodo]?.[actividad.id] !== undefined)
-      .map(est => ({
-        estudiante: {
-          codigo: est.codigo_estudiantil,
-          nombres: est.nombre_estudiante,
-          apellidos: est.apellidos_estudiante,
-        },
-        actividad: actividad.nombre,
-        nota: notas[est.codigo_estudiantil][actividad.periodo][actividad.id],
-        porcentaje: actividad.porcentaje,
-        comentario: comentarios[est.codigo_estudiantil]?.[actividad.periodo]?.[actividad.id] || null,
-        notificado: false,
-      }));
+    // Contar estudiantes con y sin nota
+    const estudiantesConNota = estudiantes.filter(est => 
+      notas[est.codigo_estudiantil]?.[actividad.periodo]?.[actividad.id] !== undefined
+    );
+    const estudiantesSinNota = estudiantes.length - estudiantesConNota.length;
+    
+    const datos = estudiantesConNota.map(est => ({
+      estudiante: {
+        codigo: est.codigo_estudiantil,
+        nombres: est.nombre_estudiante,
+        apellidos: est.apellidos_estudiante,
+      },
+      actividad: actividad.nombre,
+      nota: notas[est.codigo_estudiantil][actividad.periodo][actividad.id],
+      porcentaje: actividad.porcentaje,
+      comentario: comentarios[est.codigo_estudiantil]?.[actividad.periodo]?.[actividad.id] || null,
+      notificado: false,
+      tipo_reporte_estudiante: "completo",
+      razon_parcial: null,
+    }));
 
     if (datos.length === 0) {
       toast({
@@ -1057,9 +1063,17 @@ const TablaNotas = () => {
       return;
     }
 
+    // Construir mensaje según completitud
+    let descripcion = "";
+    if (estudiantesSinNota === 0) {
+      descripcion = `${actividad.nombre}`;
+    } else {
+      descripcion = `Hay ${estudiantesSinNota} estudiante(s) sin nota registrada en esta actividad. Solo se enviará notificación a los padres de los ${estudiantesConNota.length} estudiantes que SÍ tienen nota sobre:\n${actividad.nombre}`;
+    }
+
     setNotificacionPendiente({
       tipo: "actividad_individual",
-      descripcion: `${actividad.nombre} (${periodos.find(p => p.numero === actividad.periodo)?.nombre})`,
+      descripcion,
       datos,
     });
     setNotificacionModalOpen(true);
@@ -1069,33 +1083,50 @@ const TablaNotas = () => {
   const handleNotificarPeriodoCompleto = (periodo: number) => {
     const porcentajeUsado = getPorcentajeUsado(periodo);
     const esCompleto = porcentajeUsado === 100;
+    const actividadesDelPeriodo = getActividadesPorPeriodo(periodo);
+    const actividadesConPorcentaje = actividadesDelPeriodo.filter(a => a.porcentaje !== null && a.porcentaje > 0);
     
-    const datos = estudiantes
-      .filter(est => calcularFinalPeriodo(est.codigo_estudiantil, periodo) !== null)
-      .map(est => {
-        const actividadesDelPeriodo = getActividadesPorPeriodo(periodo);
-        const notasActividades = actividadesDelPeriodo
-          .filter(act => notas[est.codigo_estudiantil]?.[periodo]?.[act.id] !== undefined)
-          .map(act => ({
-            nombre: act.nombre,
-            nota: notas[est.codigo_estudiantil][periodo][act.id],
-            porcentaje: act.porcentaje,
-          }));
+    // Calcular estudiantes con todas las notas vs con notas faltantes
+    const estudiantesConFinal = estudiantes.filter(est => calcularFinalPeriodo(est.codigo_estudiantil, periodo) !== null);
+    
+    // Contar estudiantes con TODAS las actividades con porcentaje completadas
+    const estudiantesCompletos = estudiantesConFinal.filter(est => {
+      return actividadesConPorcentaje.every(act => 
+        notas[est.codigo_estudiantil]?.[periodo]?.[act.id] !== undefined
+      );
+    });
+    
+    const estudiantesIncompletos = estudiantesConFinal.length - estudiantesCompletos.length;
+    
+    const datos = estudiantesConFinal.map(est => {
+      const notasActividades = actividadesDelPeriodo
+        .filter(act => notas[est.codigo_estudiantil]?.[periodo]?.[act.id] !== undefined)
+        .map(act => ({
+          nombre: act.nombre,
+          nota: notas[est.codigo_estudiantil][periodo][act.id],
+          porcentaje: act.porcentaje,
+        }));
+      
+      const esteEstudianteCompleto = actividadesConPorcentaje.every(act => 
+        notas[est.codigo_estudiantil]?.[periodo]?.[act.id] !== undefined
+      );
 
-        return {
-          estudiante: {
-            codigo: est.codigo_estudiantil,
-            nombres: est.nombre_estudiante,
-            apellidos: est.apellidos_estudiante,
-          },
-          actividad: `Final ${periodos.find(p => p.numero === periodo)?.nombre}`,
-          nota: calcularFinalPeriodo(est.codigo_estudiantil, periodo),
-          porcentaje: null,
-          comentario: comentarios[est.codigo_estudiantil]?.[periodo]?.[`${periodo}-Final Periodo`] || null,
-          notificado: false,
-          detalleActividades: notasActividades,
-        };
-      });
+      return {
+        estudiante: {
+          codigo: est.codigo_estudiantil,
+          nombres: est.nombre_estudiante,
+          apellidos: est.apellidos_estudiante,
+        },
+        actividad: `Final ${periodos.find(p => p.numero === periodo)?.nombre}`,
+        nota: calcularFinalPeriodo(est.codigo_estudiantil, periodo),
+        porcentaje: null,
+        comentario: comentarios[est.codigo_estudiantil]?.[periodo]?.[`${periodo}-Final Periodo`] || null,
+        notificado: false,
+        detalleActividades: notasActividades,
+        tipo_reporte_estudiante: (esCompleto && esteEstudianteCompleto) ? "completo" : "parcial",
+        razon_parcial: !esCompleto ? "periodo_incompleto" : (!esteEstudianteCompleto ? "notas_faltantes" : null),
+      };
+    });
 
     if (datos.length === 0) {
       toast({
@@ -1106,9 +1137,20 @@ const TablaNotas = () => {
       return;
     }
 
-    const descripcion = esCompleto 
-      ? `REPORTE FINAL del ${periodos.find(p => p.numero === periodo)?.nombre} con la nota definitiva`
-      : `REPORTE PARCIAL del ${periodos.find(p => p.numero === periodo)?.nombre} (${porcentajeUsado}/100%)`;
+    // Construir mensaje detallado según completitud
+    const nombrePeriodo = periodos.find(p => p.numero === periodo)?.nombre;
+    let descripcion = "";
+    
+    if (esCompleto && estudiantesIncompletos === 0) {
+      // Todo completo
+      descripcion = `El período está COMPLETO (100%). Se enviará el REPORTE FINAL con la nota definitiva a los padres de familia sobre:\nFinal ${nombrePeriodo}`;
+    } else if (esCompleto && estudiantesIncompletos > 0) {
+      // Porcentaje completo pero hay estudiantes sin notas
+      descripcion = `El período está completo (100%) pero hay ${estudiantesIncompletos} estudiante(s) con notas no registradas. Se enviará REPORTE FINAL a ${estudiantesCompletos.length} padres y REPORTE PARCIAL a ${estudiantesIncompletos} padres sobre:\nFinal ${nombrePeriodo}`;
+    } else {
+      // Período incompleto
+      descripcion = `El período está INCOMPLETO (${porcentajeUsado}/100%). Se enviará un REPORTE PARCIAL con las notas individuales de cada actividad a los padres de familia sobre:\nFinal ${nombrePeriodo}`;
+    }
 
     setNotificacionPendiente({
       tipo: esCompleto ? "periodo_completo_definitivo" : "periodo_parcial",
@@ -1127,28 +1169,50 @@ const TablaNotas = () => {
     }));
     const todosCompletos = completitudPeriodos.every(p => p.porcentaje === 100);
     
-    const datos = estudiantes
-      .filter(est => calcularFinalDefinitiva(est.codigo_estudiantil) !== null)
-      .map(est => {
-        const finalesPeriodos = periodos.map(p => ({
-          periodo: p.nombre,
-          nota: calcularFinalPeriodo(est.codigo_estudiantil, p.numero),
-        }));
+    // Calcular promedio de completitud
+    const promedioCompletitud = Math.round((completitudPeriodos.reduce((sum, p) => sum + p.porcentaje, 0) / 4) * 100) / 100;
+    
+    // Contar estudiantes con año completo vs incompleto
+    const estudiantesConDefinitiva = estudiantes.filter(est => calcularFinalDefinitiva(est.codigo_estudiantil) !== null);
+    
+    // Un estudiante está completo si tiene nota en todos los períodos Y todos los períodos están al 100%
+    const estudiantesCompletos = estudiantesConDefinitiva.filter(est => {
+      if (!todosCompletos) return false;
+      // Verificar que tenga nota final en todos los períodos
+      for (let p = 1; p <= 4; p++) {
+        if (calcularFinalPeriodo(est.codigo_estudiantil, p) === null) return false;
+      }
+      return true;
+    });
+    
+    const estudiantesIncompletos = estudiantesConDefinitiva.length - estudiantesCompletos.length;
+    
+    const datos = estudiantesConDefinitiva.map(est => {
+      const finalesPeriodos = periodos.map(p => ({
+        periodo: p.nombre,
+        nota: calcularFinalPeriodo(est.codigo_estudiantil, p.numero),
+      }));
+      
+      const esteEstudianteCompleto = todosCompletos && periodos.every(p => 
+        calcularFinalPeriodo(est.codigo_estudiantil, p.numero) !== null
+      );
 
-        return {
-          estudiante: {
-            codigo: est.codigo_estudiantil,
-            nombres: est.nombre_estudiante,
-            apellidos: est.apellidos_estudiante,
-          },
-          actividad: "Final Definitiva",
-          nota: calcularFinalDefinitiva(est.codigo_estudiantil),
-          porcentaje: null,
-          comentario: comentarios[est.codigo_estudiantil]?.[0]?.['0-Final Definitiva'] || null,
-          notificado: false,
-          detallePeriodos: finalesPeriodos,
-        };
-      });
+      return {
+        estudiante: {
+          codigo: est.codigo_estudiantil,
+          nombres: est.nombre_estudiante,
+          apellidos: est.apellidos_estudiante,
+        },
+        actividad: "Final Definitiva",
+        nota: calcularFinalDefinitiva(est.codigo_estudiantil),
+        porcentaje: null,
+        comentario: comentarios[est.codigo_estudiantil]?.[0]?.['0-Final Definitiva'] || null,
+        notificado: false,
+        detallePeriodos: finalesPeriodos,
+        tipo_reporte_estudiante: esteEstudianteCompleto ? "completo" : "parcial",
+        razon_parcial: !todosCompletos ? "periodo_incompleto" : (!esteEstudianteCompleto ? "notas_faltantes" : null),
+      };
+    });
 
     if (datos.length === 0) {
       toast({
@@ -1159,10 +1223,19 @@ const TablaNotas = () => {
       return;
     }
 
-    const periodosIncompletos = completitudPeriodos.filter(p => p.porcentaje < 100);
-    const descripcion = todosCompletos
-      ? "REPORTE FINAL ANUAL con la nota definitiva del año"
-      : `REPORTE PARCIAL ANUAL (Períodos incompletos: ${periodosIncompletos.map(p => `P${p.periodo}: ${p.porcentaje}%`).join(', ')})`;
+    // Construir mensaje detallado según completitud
+    let descripcion = "";
+    
+    if (todosCompletos && estudiantesIncompletos === 0) {
+      // Todo completo
+      descripcion = `Todos los períodos están COMPLETOS (100%). Se enviará el REPORTE FINAL ANUAL con la nota definitiva del año a los padres de familia sobre:\nFinal Definitiva`;
+    } else if (todosCompletos && estudiantesIncompletos > 0) {
+      // Períodos completos pero hay estudiantes con notas faltantes
+      descripcion = `Todos los períodos están completos (100%) pero hay ${estudiantesIncompletos} estudiante(s) con notas no registradas. Se enviará REPORTE FINAL ANUAL a ${estudiantesCompletos.length} padres y REPORTE PARCIAL a ${estudiantesIncompletos} padres sobre:\nFinal Definitiva`;
+    } else {
+      // Períodos incompletos
+      descripcion = `Los períodos NO están completos (${promedioCompletitud}/100%). Se enviará un REPORTE PARCIAL ANUAL con las notas de cada período a los padres de familia sobre:\nFinal Definitiva`;
+    }
 
     setNotificacionPendiente({
       tipo: todosCompletos ? "definitiva_completa" : "definitiva_parcial",
@@ -1837,7 +1910,7 @@ const TablaNotas = () => {
                                           {finalDef !== null && (
                                             <DropdownMenuItem onClick={() => handleNotificarFinalDefinitivaIndividual(estudiante, finalDef)}>
                                               <Send className="w-4 h-4 mr-2" />
-                                              Notificar a padre
+                                              Notificar a padre(s)
                                             </DropdownMenuItem>
                                           )}
                                         </DropdownMenuContent>
