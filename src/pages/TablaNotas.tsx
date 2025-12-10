@@ -90,7 +90,6 @@ const TablaNotas = () => {
   const [actividades, setActividades] = useState<Actividad[]>([]);
   const [notas, setNotas] = useState<NotasEstudiantes>({});
   const [comentarios, setComentarios] = useState<ComentariosEstudiantes>({});
-  const [sessionValid, setSessionValid] = useState(false);
   
   // Estado para período activo (pestañas)
   const [periodoActivo, setPeriodoActivo] = useState<number>(1);
@@ -118,32 +117,29 @@ const TablaNotas = () => {
   const inputRefs = useRef<{ [key: string]: HTMLInputElement | null }>({});
   const isNavigating = useRef(false);
 
-  // PRIMER useEffect: Verificar sesión INMEDIATAMENTE
+  // useEffect UNIFICADO: Verificar sesión y cargar datos
   useEffect(() => {
-    const session = getSession();
-    
-    console.log('🔐 Verificando sesión en TablaNotas:', { 
-      codigo: session.codigo,
-      nombres: session.nombres 
-    });
-    
-    if (!session.codigo) {
-      console.log('❌ No hay sesión, redirigiendo a login');
-      navigate('/');
-      return;
-    }
-    
-    console.log('✅ Sesión válida');
-    setSessionValid(true);
-  }, [navigate]);
-
-  // SEGUNDO useEffect: Cargar datos SOLO si la sesión es válida
-  useEffect(() => {
-    if (!sessionValid) return;
-    
-    const storedMateria = localStorage.getItem("materiaSeleccionada");
-    const storedGrado = localStorage.getItem("gradoSeleccionado");
-    const storedSalon = localStorage.getItem("salonSeleccionado");
+    const inicializar = async () => {
+      // 1. Verificar sesión
+      const session = getSession();
+      
+      console.log('🔐 Verificando sesión en TablaNotas:', { 
+        codigo: session.codigo,
+        nombres: session.nombres 
+      });
+      
+      if (!session.codigo) {
+        console.log('❌ No hay sesión, redirigiendo a login');
+        navigate('/');
+        return;
+      }
+      
+      console.log('✅ Sesión válida');
+      
+      // 2. Verificar datos de navegación
+      const storedMateria = localStorage.getItem("materiaSeleccionada");
+      const storedGrado = localStorage.getItem("gradoSeleccionado");
+      const storedSalon = localStorage.getItem("salonSeleccionado");
 
     if (!storedMateria) {
       navigate("/dashboard");
@@ -160,11 +156,11 @@ const TablaNotas = () => {
       return;
     }
 
-    setMateriaSeleccionada(storedMateria);
-    setGradoSeleccionado(storedGrado);
-    setSalonSeleccionado(storedSalon);
+      setMateriaSeleccionada(storedMateria);
+      setGradoSeleccionado(storedGrado);
+      setSalonSeleccionado(storedSalon);
 
-    const fetchData = async () => {
+      // 3. Cargar datos
       try {
         console.log("=== DEBUG FILTRO ESTUDIANTES ===");
         console.log("Grado desde localStorage:", storedGrado);
@@ -290,7 +286,7 @@ const TablaNotas = () => {
       }
     };
 
-    fetchData();
+    inicializar();
   }, [navigate]);
 
   const handleLogout = () => {
