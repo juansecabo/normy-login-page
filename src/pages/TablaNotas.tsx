@@ -1894,13 +1894,14 @@ const TablaNotas = () => {
                           <td key={periodo.numero} className="border border-border p-1 text-center"></td>
                         ))}
                         {/* Botón Final Definitiva */}
-                        <td className="border border-border p-1 text-center min-w-[130px]">
+                        <td className="border border-border p-1 text-center">
                           {hayFinalDefinitiva() && (
                             <button
                               onClick={handleNotificarDefinitivaMasiva}
-                              className="w-full px-2 py-1.5 text-xs rounded-md bg-green-100 hover:bg-green-200 text-green-800 font-medium transition-colors"
+                              className="w-full px-1 py-1 text-xs rounded-md bg-green-100 hover:bg-green-200 text-green-800 transition-colors flex flex-col items-center justify-center h-10"
                             >
-                              📱 Notificar Final Definitiva
+                              <span className="text-[10px]">📱 Notificar</span>
+                              <span className="font-semibold text-[10px] leading-tight">Final Definitiva</span>
                             </button>
                           )}
                         </td>
@@ -1909,14 +1910,15 @@ const TablaNotas = () => {
                       <>
                         {/* Botones para cada actividad */}
                         {getActividadesPorPeriodo(periodoActivo).map((actividad) => (
-                          <td key={actividad.id} className="border border-border p-1 text-center min-w-[120px]">
+                          <td key={actividad.id} className="border border-border p-1 text-center">
                             {actividadTieneNotas(actividad) && (
                               <button
                                 onClick={() => handleNotificarActividad(actividad)}
-                                className="w-full px-2 py-1.5 text-xs rounded-md bg-green-100 hover:bg-green-200 text-green-800 font-medium transition-colors truncate"
+                                className="w-full px-1 py-1 text-xs rounded-md bg-green-100 hover:bg-green-200 text-green-800 transition-colors flex flex-col items-center justify-center h-10"
                                 title={`Notificar ${actividad.nombre}`}
                               >
-                                📱 Notificar {actividad.nombre}
+                                <span className="text-[10px]">📱 Notificar</span>
+                                <span className="font-semibold text-[10px] leading-tight truncate max-w-full">{actividad.nombre}</span>
                               </button>
                             )}
                           </td>
@@ -1924,13 +1926,14 @@ const TablaNotas = () => {
                         {/* Celda vacía bajo botón Agregar */}
                         <td className="border border-border p-1 min-w-[100px]"></td>
                         {/* Botón Final Periodo */}
-                        <td className="border border-border p-1 text-center min-w-[130px]">
+                        <td className="border border-border p-1 text-center">
                           {periodoTieneFinal(periodoActivo) && (
                             <button
                               onClick={() => handleNotificarPeriodoCompleto(periodoActivo)}
-                              className="w-full px-2 py-1.5 text-xs rounded-md bg-green-100 hover:bg-green-200 text-green-800 font-medium transition-colors"
+                              className="w-full px-1 py-1 text-xs rounded-md bg-green-100 hover:bg-green-200 text-green-800 transition-colors flex flex-col items-center justify-center h-10"
                             >
-                              📱 Notificar Final Periodo
+                              <span className="text-[10px]">📱 Notificar</span>
+                              <span className="font-semibold text-[10px] leading-tight">Final Periodo</span>
                             </button>
                           )}
                         </td>
