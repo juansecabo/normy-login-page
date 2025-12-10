@@ -117,12 +117,20 @@ const TablaNotas = () => {
   const isNavigating = useRef(false);
 
   useEffect(() => {
+    console.log("🔍 TablaNotas - Verificando sesión:", {
+      codigo: localStorage.getItem("codigo"),
+      materia: localStorage.getItem("materiaSeleccionada"),
+      grado: localStorage.getItem("gradoSeleccionado"),
+      salon: localStorage.getItem("salonSeleccionado")
+    });
+    
     const storedCodigo = localStorage.getItem("codigo");
     const storedMateria = localStorage.getItem("materiaSeleccionada");
     const storedGrado = localStorage.getItem("gradoSeleccionado");
     const storedSalon = localStorage.getItem("salonSeleccionado");
 
     if (!storedCodigo) {
+      console.log("❌ No hay código - redirigiendo a login");
       navigate("/");
       return;
     }
