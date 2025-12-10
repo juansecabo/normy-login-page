@@ -64,7 +64,7 @@ const FinalPeriodoCelda = ({
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={onNotificarPadre}>
                     <Send className="w-4 h-4 mr-2" />
-                    Notificar a padre
+                    Notificar a padre(s)
                   </DropdownMenuItem>
                 </>
               )}

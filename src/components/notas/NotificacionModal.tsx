@@ -13,8 +13,10 @@ import { Loader2 } from "lucide-react";
 
 export type TipoNotificacion = 
   | "actividad_individual" 
-  | "periodo_completo" 
-  | "definitiva" 
+  | "periodo_completo_definitivo"
+  | "periodo_parcial"
+  | "definitiva_completa"
+  | "definitiva_parcial"
   | "nota_individual";
 
 interface NotificacionModalProps {
@@ -50,12 +52,16 @@ const NotificacionModal = ({
     switch (tipoNotificacion) {
       case "actividad_individual":
         return "Notificar actividad";
-      case "periodo_completo":
-        return "Notificar período completo";
-      case "definitiva":
-        return "Notificar definitiva";
+      case "periodo_completo_definitivo":
+        return "Notificar REPORTE FINAL del período";
+      case "periodo_parcial":
+        return "Notificar REPORTE PARCIAL del período";
+      case "definitiva_completa":
+        return "Notificar REPORTE FINAL ANUAL";
+      case "definitiva_parcial":
+        return "Notificar REPORTE PARCIAL ANUAL";
       case "nota_individual":
-        return "Notificar a padre";
+        return "Notificar a padre(s)";
       default:
         return "Confirmar notificación";
     }

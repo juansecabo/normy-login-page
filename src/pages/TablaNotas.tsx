@@ -1067,6 +1067,9 @@ const TablaNotas = () => {
 
   // Preparar notificación masiva para período completo
   const handleNotificarPeriodoCompleto = (periodo: number) => {
+    const porcentajeUsado = getPorcentajeUsado(periodo);
+    const esCompleto = porcentajeUsado === 100;
+    
     const datos = estudiantes
       .filter(est => calcularFinalPeriodo(est.codigo_estudiantil, periodo) !== null)
       .map(est => {
@@ -1103,9 +1106,13 @@ const TablaNotas = () => {
       return;
     }
 
+    const descripcion = esCompleto 
+      ? `REPORTE FINAL del ${periodos.find(p => p.numero === periodo)?.nombre} con la nota definitiva`
+      : `REPORTE PARCIAL del ${periodos.find(p => p.numero === periodo)?.nombre} (${porcentajeUsado}/100%)`;
+
     setNotificacionPendiente({
-      tipo: "periodo_completo",
-      descripcion: `${periodos.find(p => p.numero === periodo)?.nombre} completo`,
+      tipo: esCompleto ? "periodo_completo_definitivo" : "periodo_parcial",
+      descripcion,
       datos,
     });
     setNotificacionModalOpen(true);
@@ -1113,6 +1120,13 @@ const TablaNotas = () => {
 
   // Preparar notificación masiva para Final Definitiva
   const handleNotificarDefinitivaMasiva = () => {
+    // Verificar completitud de todos los períodos
+    const completitudPeriodos = periodos.map(p => ({
+      periodo: p.numero,
+      porcentaje: getPorcentajeUsado(p.numero)
+    }));
+    const todosCompletos = completitudPeriodos.every(p => p.porcentaje === 100);
+    
     const datos = estudiantes
       .filter(est => calcularFinalDefinitiva(est.codigo_estudiantil) !== null)
       .map(est => {
@@ -1145,9 +1159,14 @@ const TablaNotas = () => {
       return;
     }
 
+    const periodosIncompletos = completitudPeriodos.filter(p => p.porcentaje < 100);
+    const descripcion = todosCompletos
+      ? "REPORTE FINAL ANUAL con la nota definitiva del año"
+      : `REPORTE PARCIAL ANUAL (Períodos incompletos: ${periodosIncompletos.map(p => `P${p.periodo}: ${p.porcentaje}%`).join(', ')})`;
+
     setNotificacionPendiente({
-      tipo: "definitiva",
-      descripcion: "Final Definitiva (año completo)",
+      tipo: todosCompletos ? "definitiva_completa" : "definitiva_parcial",
+      descripcion,
       datos,
     });
     setNotificacionModalOpen(true);
@@ -1158,14 +1177,31 @@ const TablaNotas = () => {
     if (!notificacionPendiente) return;
 
     const profesor = getProfesorData();
+    const esDefinitiva = notificacionPendiente.tipo === "definitiva_completa" || notificacionPendiente.tipo === "definitiva_parcial";
+    const esPeriodo = notificacionPendiente.tipo === "periodo_completo_definitivo" || notificacionPendiente.tipo === "periodo_parcial";
+    
+    // Construir objeto de completitud
+    const completitud: any = {};
+    if (esPeriodo) {
+      completitud.porcentaje_periodo = getPorcentajeUsado(periodoActivo);
+    }
+    if (esDefinitiva) {
+      completitud.periodos = periodos.map(p => ({
+        periodo: p.numero,
+        porcentaje: getPorcentajeUsado(p.numero)
+      }));
+    }
+
     const jsonNotificacion = {
       tipo_notificacion: notificacionPendiente.tipo,
+      completitud,
+      es_reporte_definitivo: notificacionPendiente.tipo === "periodo_completo_definitivo" || notificacionPendiente.tipo === "definitiva_completa",
       profesor,
       contexto: {
         materia: materiaSeleccionada,
         grado: gradoSeleccionado,
         salon: salonSeleccionado,
-        periodo: notificacionPendiente.tipo === "definitiva" ? 0 : periodoActivo,
+        periodo: esDefinitiva ? 0 : periodoActivo,
       },
       datos: notificacionPendiente.datos,
     };
@@ -1178,12 +1214,10 @@ const TablaNotas = () => {
     try {
       for (const dato of notificacionPendiente.datos) {
         const actividadNombre = dato.actividad;
-        const periodoNota = notificacionPendiente.tipo === "definitiva" ? 0 : 
-          (notificacionPendiente.tipo === "periodo_completo" ? periodoActivo : periodoActivo);
         
         // Determinar el período correcto basado en la actividad
         let periodoReal = periodoActivo;
-        if (notificacionPendiente.tipo === "definitiva") {
+        if (esDefinitiva) {
           periodoReal = 0;
         } else if (actividadNombre.includes("Final")) {
           // Si es "Final 1er Periodo", extraer el número del periodo
