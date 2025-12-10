@@ -982,23 +982,66 @@ const TablaNotas = () => {
     periodo: number,
     notaFinal: number
   ) => {
+    const porcentajeUsado = getPorcentajeUsado(periodo);
+    const esCompleto = porcentajeUsado === 100;
+    const actividadesDelPeriodo = getActividadesPorPeriodo(periodo);
+    const actividadesConPorcentaje = actividadesDelPeriodo.filter(a => a.porcentaje !== null && a.porcentaje > 0);
+    
+    // Verificar si este estudiante tiene todas las notas de actividades con porcentaje
+    const estudianteTieneTodasNotas = actividadesConPorcentaje.every(act => 
+      notas[estudiante.codigo_estudiantil]?.[periodo]?.[act.id] !== undefined
+    );
+    
+    const nombrePeriodo = periodos.find(p => p.numero === periodo)?.nombre;
+    const nombreCompleto = `${estudiante.nombre_estudiante} ${estudiante.apellidos_estudiante}`;
+    
+    // Determinar tipo de reporte y mensaje
+    let tipoReporte: "completo" | "parcial";
+    let razonParcial: "periodo_incompleto" | "notas_faltantes" | null = null;
+    let descripcion = "";
+    
+    if (esCompleto && estudianteTieneTodasNotas) {
+      tipoReporte = "completo";
+      descripcion = `El período está COMPLETO (100%). Se enviará REPORTE FINAL al/los padre(s) de ${nombreCompleto} sobre:\nFinal ${nombrePeriodo}`;
+    } else if (esCompleto && !estudianteTieneTodasNotas) {
+      tipoReporte = "parcial";
+      razonParcial = "notas_faltantes";
+      descripcion = `El período está completo (100%) pero ${nombreCompleto} tiene notas no registradas. Se enviará REPORTE PARCIAL al/los padre(s) sobre:\nFinal ${nombrePeriodo}`;
+    } else {
+      tipoReporte = "parcial";
+      razonParcial = "periodo_incompleto";
+      descripcion = `El período está INCOMPLETO (${porcentajeUsado}/100%). Se enviará REPORTE PARCIAL con las notas individuales al/los padre(s) de ${nombreCompleto} sobre:\nFinal ${nombrePeriodo}`;
+    }
+    
+    // Obtener detalle de actividades si es parcial
+    const notasActividades = actividadesDelPeriodo
+      .filter(act => notas[estudiante.codigo_estudiantil]?.[periodo]?.[act.id] !== undefined)
+      .map(act => ({
+        nombre: act.nombre,
+        nota: notas[estudiante.codigo_estudiantil][periodo][act.id],
+        porcentaje: act.porcentaje,
+      }));
+    
     const datos = [{
       estudiante: {
         codigo: estudiante.codigo_estudiantil,
         nombres: estudiante.nombre_estudiante,
         apellidos: estudiante.apellidos_estudiante,
       },
-      actividad: `Final ${periodos.find(p => p.numero === periodo)?.nombre}`,
+      actividad: `Final ${nombrePeriodo}`,
       nota: notaFinal,
       porcentaje: null,
       comentario: comentarios[estudiante.codigo_estudiantil]?.[periodo]?.[`${periodo}-Final Periodo`] || null,
       notificado: false,
+      detalleActividades: notasActividades,
+      tipo_reporte_estudiante: tipoReporte,
+      razon_parcial: razonParcial,
     }];
 
     setNotificacionPendiente({
-      tipo: "nota_individual",
-      descripcion: `Final ${periodos.find(p => p.numero === periodo)?.nombre}`,
-      nombreEstudiante: `${estudiante.nombre_estudiante} ${estudiante.apellidos_estudiante}`,
+      tipo: esCompleto && estudianteTieneTodasNotas ? "periodo_completo_definitivo" : "periodo_parcial",
+      descripcion,
+      nombreEstudiante: nombreCompleto,
       datos,
     });
     setNotificacionModalOpen(true);
@@ -1009,6 +1052,45 @@ const TablaNotas = () => {
     estudiante: Estudiante,
     notaFinal: number
   ) => {
+    // Verificar completitud de todos los períodos
+    const completitudPeriodos = periodos.map(p => ({
+      periodo: p.numero,
+      porcentaje: getPorcentajeUsado(p.numero)
+    }));
+    const todosCompletos = completitudPeriodos.every(p => p.porcentaje === 100);
+    const promedioCompletitud = Math.round((completitudPeriodos.reduce((sum, p) => sum + p.porcentaje, 0) / 4) * 100) / 100;
+    
+    // Verificar si este estudiante tiene notas en todos los períodos
+    const estudianteTieneTodasNotas = todosCompletos && periodos.every(p => 
+      calcularFinalPeriodo(estudiante.codigo_estudiantil, p.numero) !== null
+    );
+    
+    const nombreCompleto = `${estudiante.nombre_estudiante} ${estudiante.apellidos_estudiante}`;
+    
+    // Determinar tipo de reporte y mensaje
+    let tipoReporte: "completo" | "parcial";
+    let razonParcial: "periodo_incompleto" | "notas_faltantes" | null = null;
+    let descripcion = "";
+    
+    if (todosCompletos && estudianteTieneTodasNotas) {
+      tipoReporte = "completo";
+      descripcion = `Todos los períodos están COMPLETOS (100%). Se enviará REPORTE FINAL ANUAL al/los padre(s) de ${nombreCompleto} sobre:\nFinal Definitiva`;
+    } else if (todosCompletos && !estudianteTieneTodasNotas) {
+      tipoReporte = "parcial";
+      razonParcial = "notas_faltantes";
+      descripcion = `Todos los períodos están completos (100%) pero ${nombreCompleto} tiene notas no registradas. Se enviará REPORTE PARCIAL ANUAL al/los padre(s) sobre:\nFinal Definitiva`;
+    } else {
+      tipoReporte = "parcial";
+      razonParcial = "periodo_incompleto";
+      descripcion = `Los períodos NO están completos (${promedioCompletitud}/100%). Se enviará REPORTE PARCIAL ANUAL con las notas de cada período al/los padre(s) de ${nombreCompleto} sobre:\nFinal Definitiva`;
+    }
+    
+    // Obtener detalle de períodos
+    const finalesPeriodos = periodos.map(p => ({
+      periodo: p.nombre,
+      nota: calcularFinalPeriodo(estudiante.codigo_estudiantil, p.numero),
+    }));
+    
     const datos = [{
       estudiante: {
         codigo: estudiante.codigo_estudiantil,
@@ -1020,12 +1102,15 @@ const TablaNotas = () => {
       porcentaje: null,
       comentario: comentarios[estudiante.codigo_estudiantil]?.[0]?.['0-Final Definitiva'] || null,
       notificado: false,
+      detallePeriodos: finalesPeriodos,
+      tipo_reporte_estudiante: tipoReporte,
+      razon_parcial: razonParcial,
     }];
 
     setNotificacionPendiente({
-      tipo: "nota_individual",
-      descripcion: "Final Definitiva",
-      nombreEstudiante: `${estudiante.nombre_estudiante} ${estudiante.apellidos_estudiante}`,
+      tipo: todosCompletos && estudianteTieneTodasNotas ? "definitiva_completa" : "definitiva_parcial",
+      descripcion,
+      nombreEstudiante: nombreCompleto,
       datos,
     });
     setNotificacionModalOpen(true);
@@ -1066,7 +1151,7 @@ const TablaNotas = () => {
     // Construir mensaje según completitud
     let descripcion = "";
     if (estudiantesSinNota === 0) {
-      descripcion = `${actividad.nombre}`;
+      descripcion = `Se enviará notificación a todos los padres de familia sobre:\n${actividad.nombre}`;
     } else {
       descripcion = `Hay ${estudiantesSinNota} estudiante(s) sin nota registrada en esta actividad. Solo se enviará notificación a los padres de los ${estudiantesConNota.length} estudiantes que SÍ tienen nota sobre:\n${actividad.nombre}`;
     }

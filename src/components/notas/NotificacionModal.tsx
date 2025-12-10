@@ -68,14 +68,15 @@ const NotificacionModal = ({
   };
 
   const getMensaje = () => {
-    if (tipoNotificacion === "nota_individual" && nombreEstudiante) {
+    // Solo para nota_individual simple (actividad específica a un padre)
+    if (tipoNotificacion === "nota_individual" && nombreEstudiante && !descripcion.includes("\n")) {
       return (
         <>
           Se enviará notificación al/los padre(s) de <span className="font-medium text-foreground">{nombreEstudiante}</span> sobre:
         </>
       );
     }
-    // Para otros tipos, el mensaje detallado ya viene en descripcion
+    // Para otros tipos, el mensaje detallado ya viene completo en descripcion
     return null;
   };
 
