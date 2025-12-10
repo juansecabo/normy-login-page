@@ -535,26 +535,92 @@ const TablaNotas = () => {
       }
 
       // Eliminar del estado local de actividades
-      setActividades(prev => prev.filter(a => a.id !== actividadAEliminar.id));
+      const nuevasActividades = actividades.filter(a => a.id !== actividadAEliminar.id);
+      setActividades(nuevasActividades);
 
-      // Eliminar del estado local de notas
-      setNotas(prev => {
-        const nuevasNotas = { ...prev };
-        Object.keys(nuevasNotas).forEach(codigo => {
-          if (nuevasNotas[codigo]?.[actividadAEliminar.periodo]) {
-            delete nuevasNotas[codigo][actividadAEliminar.periodo][actividadAEliminar.id];
-          }
-        });
-        return nuevasNotas;
+      // Eliminar del estado local de notas y obtener nuevas notas
+      const nuevasNotas = { ...notas };
+      Object.keys(nuevasNotas).forEach(codigo => {
+        if (nuevasNotas[codigo]?.[actividadAEliminar.periodo]) {
+          delete nuevasNotas[codigo][actividadAEliminar.periodo][actividadAEliminar.id];
+        }
       });
+      setNotas(nuevasNotas);
 
       setDeleteDialogOpen(false);
+      const periodoEliminado = actividadAEliminar.periodo;
       setActividadAEliminar(null);
 
       toast({
         title: "Actividad eliminada",
         description: `"${actividadAEliminar.nombre}" y todas sus notas han sido eliminadas`,
       });
+      
+      // Recalcular y guardar Final Periodo y Final Definitiva para todos los estudiantes afectados
+      setTimeout(async () => {
+        console.log('=== RECALCULANDO FINALES DESPUÉS DE ELIMINAR ACTIVIDAD ===');
+        for (const est of estudiantes) {
+          // Calcular Final Periodo con las nuevas actividades
+          const actividadesDelPeriodo = nuevasActividades.filter(a => a.periodo === periodoEliminado);
+          const actividadesConPorcentaje = actividadesDelPeriodo.filter(a => a.porcentaje !== null && a.porcentaje > 0);
+          const notasEstudiante = nuevasNotas[est.codigo_estudiantil]?.[periodoEliminado] || {};
+          
+          let notaFinal: number | null = null;
+          if (actividadesConPorcentaje.length > 0) {
+            const actividadesConNotaYPorcentaje = actividadesConPorcentaje.filter(a => notasEstudiante[a.id] !== undefined);
+            if (actividadesConNotaYPorcentaje.length > 0) {
+              let sumaPonderada = 0;
+              actividadesConNotaYPorcentaje.forEach(act => {
+                const notaValue = notasEstudiante[act.id];
+                if (notaValue !== undefined && act.porcentaje) {
+                  sumaPonderada += notaValue * (act.porcentaje / 100);
+                }
+              });
+              notaFinal = Math.round(sumaPonderada * 100) / 100;
+            }
+          }
+          
+          await guardarFinalPeriodo(est.codigo_estudiantil, periodoEliminado, notaFinal);
+          
+          // Recalcular Final Definitiva
+          let suma = 0;
+          let tieneAlgunaNota = false;
+          for (let p = 1; p <= 4; p++) {
+            // Usar nuevas actividades para calcular
+            const actsPeriodo = nuevasActividades.filter(a => a.periodo === p);
+            const actsConPorc = actsPeriodo.filter(a => a.porcentaje !== null && a.porcentaje > 0);
+            const notasEst = nuevasNotas[est.codigo_estudiantil]?.[p] || {};
+            
+            let fp: number | null = null;
+            if (actsConPorc.length > 0) {
+              const actsConNotaYPorc = actsConPorc.filter(a => notasEst[a.id] !== undefined);
+              if (actsConNotaYPorc.length > 0) {
+                let sumPond = 0;
+                actsConNotaYPorc.forEach(act => {
+                  const nv = notasEst[act.id];
+                  if (nv !== undefined && act.porcentaje) {
+                    sumPond += nv * (act.porcentaje / 100);
+                  }
+                });
+                fp = Math.round(sumPond * 100) / 100;
+              }
+            }
+            
+            if (fp !== null) {
+              suma += fp;
+              tieneAlgunaNota = true;
+            }
+          }
+          
+          if (tieneAlgunaNota) {
+            const finalDef = Math.round((suma / 4) * 100) / 100;
+            await guardarFinalDefinitiva(est.codigo_estudiantil, finalDef);
+          } else {
+            await guardarFinalDefinitiva(est.codigo_estudiantil, null);
+          }
+        }
+        console.log('✅ Finales recalculados después de eliminar actividad');
+      }, 100);
     } catch (error) {
       console.error('Error:', error);
       toast({
@@ -640,11 +706,14 @@ const TablaNotas = () => {
 
   // Guardar nota final en Supabase
   const guardarFinalPeriodo = async (codigoEstudiantil: string, periodo: number, notaFinal: number | null) => {
+    console.log('=== INICIANDO guardarFinalPeriodo ===');
+    console.log('Parámetros:', { codigoEstudiantil, periodo, notaFinal });
+    
     const finalActividadId = `${periodo}-Final Periodo`;
     
     if (notaFinal === null) {
       // Eliminar si no hay nota final
-      await supabase
+      const { error } = await supabase
         .from('Notas')
         .delete()
         .eq('codigo_estudiantil', codigoEstudiantil)
@@ -653,9 +722,25 @@ const TablaNotas = () => {
         .eq('salon', salonSeleccionado)
         .eq('periodo', periodo)
         .eq('nombre_actividad', 'Final Periodo');
+      
+      console.log('Final Periodo eliminado para:', codigoEstudiantil, 'Error:', error);
     } else {
+      // Primero consultar desde Supabase si existe comentario para no perderlo
+      const { data: existente } = await supabase
+        .from('Notas')
+        .select('comentario')
+        .eq('codigo_estudiantil', codigoEstudiantil)
+        .eq('materia', materiaSeleccionada)
+        .eq('grado', gradoSeleccionado)
+        .eq('salon', salonSeleccionado)
+        .eq('periodo', periodo)
+        .eq('nombre_actividad', 'Final Periodo')
+        .maybeSingle();
+      
+      const comentarioExistente = existente?.comentario || comentarios[codigoEstudiantil]?.[periodo]?.[finalActividadId] || null;
+      
       // Upsert la nota final
-      await supabase
+      const { data, error } = await supabase
         .from('Notas')
         .upsert({
           codigo_estudiantil: codigoEstudiantil,
@@ -666,11 +751,18 @@ const TablaNotas = () => {
           nombre_actividad: 'Final Periodo',
           porcentaje: null,
           nota: notaFinal,
-          comentario: comentarios[codigoEstudiantil]?.[periodo]?.[finalActividadId] || null,
+          comentario: comentarioExistente,
           notificado: false,
         }, {
           onConflict: 'codigo_estudiantil,materia,grado,salon,periodo,nombre_actividad'
-        });
+        })
+        .select();
+      
+      if (error) {
+        console.error('ERROR guardando Final Periodo:', error);
+      } else {
+        console.log('✅ Final Periodo guardado en Supabase:', codigoEstudiantil, periodo, notaFinal);
+      }
     }
   };
 
@@ -1507,15 +1599,36 @@ const TablaNotas = () => {
             variant: "destructive",
           });
         } else {
-          // Actualizar estado local
-          setNotas(prev => {
-            const nuevasNotas = { ...prev };
-            if (nuevasNotas[codigoEstudiantil]?.[periodo]?.[actividadId] !== undefined) {
-              delete nuevasNotas[codigoEstudiantil][periodo][actividadId];
-            }
-            return nuevasNotas;
-          });
+          // Actualizar estado local y obtener nuevas notas
+          let nuevasNotas = { ...notas };
+          if (nuevasNotas[codigoEstudiantil]?.[periodo]?.[actividadId] !== undefined) {
+            delete nuevasNotas[codigoEstudiantil][periodo][actividadId];
+          }
+          setNotas(nuevasNotas);
           console.log("Nota eliminada correctamente");
+          
+          // Recalcular y guardar Final Periodo y Final Definitiva
+          setTimeout(async () => {
+            const notaFinal = calcularFinalPeriodoConNotas(nuevasNotas, codigoEstudiantil, periodo);
+            await guardarFinalPeriodo(codigoEstudiantil, periodo, notaFinal);
+            
+            // Recalcular y guardar Final Definitiva
+            let suma = 0;
+            let tieneAlgunaNota = false;
+            for (let p = 1; p <= 4; p++) {
+              const fp = calcularFinalPeriodoConNotas(nuevasNotas, codigoEstudiantil, p);
+              if (fp !== null) {
+                suma += fp;
+                tieneAlgunaNota = true;
+              }
+            }
+            if (tieneAlgunaNota) {
+              const finalDef = Math.round((suma / 4) * 100) / 100;
+              await guardarFinalDefinitiva(codigoEstudiantil, finalDef);
+            } else {
+              await guardarFinalDefinitiva(codigoEstudiantil, null);
+            }
+          }, 0);
         }
       } catch (error) {
         console.error('Error:', error);
