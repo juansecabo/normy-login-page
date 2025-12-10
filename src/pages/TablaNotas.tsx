@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import escudoImg from "@/assets/escudo.png";
-import { Plus, MoreVertical, Pencil, Trash2, Send } from "lucide-react";
+import { Plus, MoreVertical, Pencil, Trash2, Send, Calendar } from "lucide-react";
 import { getSession, clearSession } from "@/hooks/useSession";
 import {
   Dialog,
@@ -1503,29 +1503,40 @@ const TablaNotas = () => {
       <main className="flex-1 container mx-auto p-4 md:p-8">
         {/* Breadcrumb */}
         <div className="bg-card rounded-lg shadow-soft p-4 mb-6">
-          <div className="flex flex-wrap items-center gap-2 text-sm">
-            <button 
-              onClick={() => navigate("/dashboard")}
-              className="text-primary hover:underline"
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div className="flex flex-wrap items-center gap-2 text-sm">
+              <button 
+                onClick={() => navigate("/dashboard")}
+                className="text-primary hover:underline"
+              >
+                Materias
+              </button>
+              <span className="text-muted-foreground">→</span>
+              <button 
+                onClick={() => navigate("/seleccionar-grado")}
+                className="text-primary hover:underline"
+              >
+                {materiaSeleccionada}
+              </button>
+              <span className="text-muted-foreground">→</span>
+              <button 
+                onClick={() => navigate("/seleccionar-salon")}
+                className="text-primary hover:underline"
+              >
+                {gradoSeleccionado}
+              </button>
+              <span className="text-muted-foreground">→</span>
+              <span className="text-foreground font-medium">{salonSeleccionado}</span>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => navigate("/actividades-calendario")}
+              className="gap-2"
             >
-              Materias
-            </button>
-            <span className="text-muted-foreground">→</span>
-            <button 
-              onClick={() => navigate("/seleccionar-grado")}
-              className="text-primary hover:underline"
-            >
-              {materiaSeleccionada}
-            </button>
-            <span className="text-muted-foreground">→</span>
-            <button 
-              onClick={() => navigate("/seleccionar-salon")}
-              className="text-primary hover:underline"
-            >
-              {gradoSeleccionado}
-            </button>
-            <span className="text-muted-foreground">→</span>
-            <span className="text-foreground font-medium">{salonSeleccionado}</span>
+              <Calendar className="h-4 w-4" />
+              Ver Actividades Asignadas
+            </Button>
           </div>
         </div>
 
