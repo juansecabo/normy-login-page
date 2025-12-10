@@ -90,6 +90,7 @@ const TablaNotas = () => {
   const [actividades, setActividades] = useState<Actividad[]>([]);
   const [notas, setNotas] = useState<NotasEstudiantes>({});
   const [comentarios, setComentarios] = useState<ComentariosEstudiantes>({});
+  const [sessionValid, setSessionValid] = useState(false);
   
   // Estado para período activo (pestañas)
   const [periodoActivo, setPeriodoActivo] = useState<number>(1);
@@ -117,16 +118,32 @@ const TablaNotas = () => {
   const inputRefs = useRef<{ [key: string]: HTMLInputElement | null }>({});
   const isNavigating = useRef(false);
 
+  // PRIMER useEffect: Verificar sesión INMEDIATAMENTE
   useEffect(() => {
     const session = getSession();
+    
+    console.log('🔐 Verificando sesión en TablaNotas:', { 
+      codigo: session.codigo,
+      nombres: session.nombres 
+    });
+    
+    if (!session.codigo) {
+      console.log('❌ No hay sesión, redirigiendo a login');
+      navigate('/');
+      return;
+    }
+    
+    console.log('✅ Sesión válida');
+    setSessionValid(true);
+  }, [navigate]);
+
+  // SEGUNDO useEffect: Cargar datos SOLO si la sesión es válida
+  useEffect(() => {
+    if (!sessionValid) return;
+    
     const storedMateria = localStorage.getItem("materiaSeleccionada");
     const storedGrado = localStorage.getItem("gradoSeleccionado");
     const storedSalon = localStorage.getItem("salonSeleccionado");
-
-    if (!session.codigo) {
-      navigate("/");
-      return;
-    }
 
     if (!storedMateria) {
       navigate("/dashboard");
