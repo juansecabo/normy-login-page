@@ -57,9 +57,15 @@ const Index = () => {
       }
 
       // Login exitoso - guardar en localStorage
-      localStorage.setItem("codigo", data.codigo);
+      localStorage.setItem("codigo", String(data.codigo));
       localStorage.setItem("nombres", data.nombres || "");
       localStorage.setItem("apellidos", data.apellidos || "");
+      
+      console.log("✅ Sesión guardada:", {
+        codigo: localStorage.getItem("codigo"),
+        nombres: localStorage.getItem("nombres"),
+        apellidos: localStorage.getItem("apellidos")
+      });
 
       toast({
         title: "Bienvenido(a)",

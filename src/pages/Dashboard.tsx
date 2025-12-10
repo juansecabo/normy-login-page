@@ -14,11 +14,18 @@ const Dashboard = () => {
   const [loadingMaterias, setLoadingMaterias] = useState(true);
 
   useEffect(() => {
+    console.log("🔍 Dashboard - Verificando sesión:", {
+      codigo: localStorage.getItem("codigo"),
+      nombres: localStorage.getItem("nombres"),
+      apellidos: localStorage.getItem("apellidos")
+    });
+    
     const storedNombres = localStorage.getItem("nombres");
     const storedApellidos = localStorage.getItem("apellidos");
     const storedCodigo = localStorage.getItem("codigo");
 
     if (!storedCodigo) {
+      console.log("❌ No hay código - redirigiendo a login");
       navigate("/");
       return;
     }
