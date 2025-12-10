@@ -75,7 +75,25 @@ const NotificacionModal = ({
         </>
       );
     }
-    return "Se enviará notificación a los padres de familia sobre:";
+    // Para otros tipos, el mensaje detallado ya viene en descripcion
+    return null;
+  };
+
+  // Separar descripción en líneas si contiene saltos
+  const renderDescripcion = () => {
+    const lineas = descripcion.split('\n');
+    if (lineas.length === 1) {
+      return <span className="font-medium text-foreground">{descripcion}</span>;
+    }
+    return (
+      <div className="mt-2">
+        {lineas.map((linea, idx) => (
+          <div key={idx} className={idx === lineas.length - 1 ? "font-medium text-foreground mt-1" : ""}>
+            {linea}
+          </div>
+        ))}
+      </div>
+    );
   };
 
   return (
@@ -86,8 +104,8 @@ const NotificacionModal = ({
           <AlertDialogDescription asChild>
             <div>
               {getMensaje()}
-              <br />
-              <span className="font-medium text-foreground">{descripcion}</span>
+              {getMensaje() && <br />}
+              {renderDescripcion()}
             </div>
           </AlertDialogDescription>
         </AlertDialogHeader>
