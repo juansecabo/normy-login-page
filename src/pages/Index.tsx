@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-
+import { saveSession } from "@/hooks/useSession";
 const Index = () => {
   const [codigo, setCodigo] = useState("");
   const [loading, setLoading] = useState(false);
@@ -56,16 +56,12 @@ const Index = () => {
         return;
       }
 
-      // Login exitoso - guardar en localStorage
-      localStorage.setItem("codigo", String(data.codigo));
-      localStorage.setItem("nombres", data.nombres || "");
-      localStorage.setItem("apellidos", data.apellidos || "");
-      
-      console.log("✅ Sesión guardada:", {
-        codigo: localStorage.getItem("codigo"),
-        nombres: localStorage.getItem("nombres"),
-        apellidos: localStorage.getItem("apellidos")
-      });
+      // Login exitoso - guardar sesión
+      saveSession(
+        String(data.codigo),
+        data.nombres || "",
+        data.apellidos || ""
+      );
 
       toast({
         title: "Bienvenido(a)",

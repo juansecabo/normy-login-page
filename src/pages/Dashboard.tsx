@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import escudoImg from "@/assets/escudo.png";
-
+import { getSession, clearSession } from "@/hooks/useSession";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -14,24 +14,15 @@ const Dashboard = () => {
   const [loadingMaterias, setLoadingMaterias] = useState(true);
 
   useEffect(() => {
-    console.log("🔍 Dashboard - Verificando sesión:", {
-      codigo: localStorage.getItem("codigo"),
-      nombres: localStorage.getItem("nombres"),
-      apellidos: localStorage.getItem("apellidos")
-    });
+    const session = getSession();
     
-    const storedNombres = localStorage.getItem("nombres");
-    const storedApellidos = localStorage.getItem("apellidos");
-    const storedCodigo = localStorage.getItem("codigo");
-
-    if (!storedCodigo) {
-      console.log("❌ No hay código - redirigiendo a login");
+    if (!session.codigo) {
       navigate("/");
       return;
     }
 
-    setNombres(storedNombres || "");
-    setApellidos(storedApellidos || "");
+    setNombres(session.nombres || "");
+    setApellidos(session.apellidos || "");
 
     // Fetch materias del profesor
     const fetchMaterias = async () => {
@@ -40,7 +31,7 @@ const Dashboard = () => {
         const { data: profesor, error: profesorError } = await supabase
           .from('Internos')
           .select('id')
-          .eq('codigo', parseInt(storedCodigo))
+          .eq('codigo', parseInt(session.codigo!))
           .single();
 
         if (profesorError || !profesor) {
@@ -78,9 +69,7 @@ const Dashboard = () => {
   }, [navigate]);
 
   const handleLogout = () => {
-    localStorage.removeItem("codigo");
-    localStorage.removeItem("nombres");
-    localStorage.removeItem("apellidos");
+    clearSession();
     navigate("/");
   };
 
