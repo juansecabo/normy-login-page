@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import escudoImg from "@/assets/escudo.png";
-
+import { getSession, clearSession } from "@/hooks/useSession";
 
 const SeleccionarGrado = () => {
   const navigate = useNavigate();
@@ -13,10 +13,10 @@ const SeleccionarGrado = () => {
   const [loadingGrados, setLoadingGrados] = useState(true);
 
   useEffect(() => {
-    const storedCodigo = localStorage.getItem("codigo");
+    const session = getSession();
     const storedMateria = localStorage.getItem("materiaSeleccionada");
 
-    if (!storedCodigo) {
+    if (!session.codigo) {
       navigate("/");
       return;
     }
@@ -34,7 +34,7 @@ const SeleccionarGrado = () => {
         const { data: profesor, error: profesorError } = await supabase
           .from('Internos')
           .select('id')
-          .eq('codigo', parseInt(storedCodigo))
+          .eq('codigo', parseInt(session.codigo!))
           .single();
 
         if (profesorError || !profesor) {
@@ -78,11 +78,7 @@ const SeleccionarGrado = () => {
   }, [navigate]);
 
   const handleLogout = () => {
-    localStorage.removeItem("codigo");
-    localStorage.removeItem("nombres");
-    localStorage.removeItem("apellidos");
-    localStorage.removeItem("materiaSeleccionada");
-    localStorage.removeItem("gradoSeleccionado");
+    clearSession();
     navigate("/");
   };
 
