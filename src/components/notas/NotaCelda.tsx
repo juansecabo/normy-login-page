@@ -1,9 +1,10 @@
 import { useState } from "react";
-import { MoreVertical, MessageSquare, Trash2 } from "lucide-react";
+import { MoreVertical, MessageSquare, Trash2, Send } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
@@ -19,6 +20,7 @@ interface NotaCeldaProps {
   onClick: () => void;
   onAbrirComentario: () => void;
   onEliminarComentario: () => void;
+  onNotificarPadre?: () => void;
 }
 
 const NotaCelda = ({
@@ -33,6 +35,7 @@ const NotaCelda = ({
   onClick,
   onAbrirComentario,
   onEliminarComentario,
+  onNotificarPadre,
 }: NotaCeldaProps) => {
   const [showMenu, setShowMenu] = useState(false);
 
@@ -85,6 +88,15 @@ const NotaCelda = ({
                     <Trash2 className="w-4 h-4 mr-2" />
                     Eliminar comentario
                   </DropdownMenuItem>
+                )}
+                {nota !== undefined && onNotificarPadre && (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={onNotificarPadre}>
+                      <Send className="w-4 h-4 mr-2" />
+                      Notificar a padre
+                    </DropdownMenuItem>
+                  </>
                 )}
               </DropdownMenuContent>
             </DropdownMenu>
