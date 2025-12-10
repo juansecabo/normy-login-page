@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import escudoImg from "@/assets/escudo.png";
-import { Plus, MoreVertical, Pencil, Trash2 } from "lucide-react";
+import { Plus, MoreVertical, Pencil, Trash2, Send } from "lucide-react";
 import { getSession, clearSession } from "@/hooks/useSession";
 import {
   Dialog,
@@ -34,6 +34,7 @@ import { toast } from "@/hooks/use-toast";
 import NotaCelda from "@/components/notas/NotaCelda";
 import FinalPeriodoCelda from "@/components/notas/FinalPeriodoCelda";
 import ComentarioModal from "@/components/notas/ComentarioModal";
+import NotificacionModal, { TipoNotificacion } from "@/components/notas/NotificacionModal";
 
 interface Estudiante {
   codigo_estudiantil: string;
@@ -108,6 +109,14 @@ const TablaNotas = () => {
   // Modal state para comentarios
   const [comentarioModalOpen, setComentarioModalOpen] = useState(false);
   const [comentarioEditando, setComentarioEditando] = useState<ComentarioEditando | null>(null);
+  
+  // Modal state para notificaciones
+  const [notificacionModalOpen, setNotificacionModalOpen] = useState(false);
+  const [notificacionPendiente, setNotificacionPendiente] = useState<{
+    tipo: TipoNotificacion;
+    descripcion: string;
+    datos: any[];
+  } | null>(null);
   
   // Estado para celda en edición
   const [celdaEditando, setCeldaEditando] = useState<CeldaEditando | null>(null);
@@ -925,6 +934,312 @@ const TablaNotas = () => {
     }
   };
 
+  // ========== FUNCIONES DE NOTIFICACIÓN ==========
+  
+  // Obtener datos del profesor desde la sesión
+  const getProfesorData = () => {
+    const session = getSession();
+    return {
+      codigo: session.codigo,
+      nombres: session.nombres,
+      apellidos: session.apellidos,
+    };
+  };
+
+  // Preparar notificación para una nota individual
+  const handleNotificarNotaIndividual = (
+    estudiante: Estudiante,
+    actividad: Actividad,
+    nota: number,
+    periodo: number
+  ) => {
+    const datos = [{
+      estudiante: {
+        codigo: estudiante.codigo_estudiantil,
+        nombres: estudiante.nombre_estudiante,
+        apellidos: estudiante.apellidos_estudiante,
+      },
+      actividad: actividad.nombre,
+      nota,
+      porcentaje: actividad.porcentaje,
+      comentario: comentarios[estudiante.codigo_estudiantil]?.[periodo]?.[actividad.id] || null,
+      notificado: false,
+    }];
+
+    setNotificacionPendiente({
+      tipo: "nota_individual",
+      descripcion: `${actividad.nombre} - ${estudiante.nombre_estudiante} ${estudiante.apellidos_estudiante}`,
+      datos,
+    });
+    setNotificacionModalOpen(true);
+  };
+
+  // Preparar notificación para Final Periodo individual
+  const handleNotificarFinalPeriodoIndividual = (
+    estudiante: Estudiante,
+    periodo: number,
+    notaFinal: number
+  ) => {
+    const datos = [{
+      estudiante: {
+        codigo: estudiante.codigo_estudiantil,
+        nombres: estudiante.nombre_estudiante,
+        apellidos: estudiante.apellidos_estudiante,
+      },
+      actividad: `Final ${periodos.find(p => p.numero === periodo)?.nombre}`,
+      nota: notaFinal,
+      porcentaje: null,
+      comentario: comentarios[estudiante.codigo_estudiantil]?.[periodo]?.[`${periodo}-Final Periodo`] || null,
+      notificado: false,
+    }];
+
+    setNotificacionPendiente({
+      tipo: "nota_individual",
+      descripcion: `Final ${periodos.find(p => p.numero === periodo)?.nombre} - ${estudiante.nombre_estudiante} ${estudiante.apellidos_estudiante}`,
+      datos,
+    });
+    setNotificacionModalOpen(true);
+  };
+
+  // Preparar notificación para Final Definitiva individual
+  const handleNotificarFinalDefinitivaIndividual = (
+    estudiante: Estudiante,
+    notaFinal: number
+  ) => {
+    const datos = [{
+      estudiante: {
+        codigo: estudiante.codigo_estudiantil,
+        nombres: estudiante.nombre_estudiante,
+        apellidos: estudiante.apellidos_estudiante,
+      },
+      actividad: "Final Definitiva",
+      nota: notaFinal,
+      porcentaje: null,
+      comentario: comentarios[estudiante.codigo_estudiantil]?.[0]?.['0-Final Definitiva'] || null,
+      notificado: false,
+    }];
+
+    setNotificacionPendiente({
+      tipo: "definitiva",
+      descripcion: `Final Definitiva - ${estudiante.nombre_estudiante} ${estudiante.apellidos_estudiante}`,
+      datos,
+    });
+    setNotificacionModalOpen(true);
+  };
+
+  // Preparar notificación masiva para una actividad
+  const handleNotificarActividad = (actividad: Actividad) => {
+    const datos = estudiantes
+      .filter(est => notas[est.codigo_estudiantil]?.[actividad.periodo]?.[actividad.id] !== undefined)
+      .map(est => ({
+        estudiante: {
+          codigo: est.codigo_estudiantil,
+          nombres: est.nombre_estudiante,
+          apellidos: est.apellidos_estudiante,
+        },
+        actividad: actividad.nombre,
+        nota: notas[est.codigo_estudiantil][actividad.periodo][actividad.id],
+        porcentaje: actividad.porcentaje,
+        comentario: comentarios[est.codigo_estudiantil]?.[actividad.periodo]?.[actividad.id] || null,
+        notificado: false,
+      }));
+
+    if (datos.length === 0) {
+      toast({
+        title: "Sin notas",
+        description: "No hay notas registradas para esta actividad",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setNotificacionPendiente({
+      tipo: "actividad_individual",
+      descripcion: `${actividad.nombre} (${periodos.find(p => p.numero === actividad.periodo)?.nombre})`,
+      datos,
+    });
+    setNotificacionModalOpen(true);
+  };
+
+  // Preparar notificación masiva para período completo
+  const handleNotificarPeriodoCompleto = (periodo: number) => {
+    const datos = estudiantes
+      .filter(est => calcularFinalPeriodo(est.codigo_estudiantil, periodo) !== null)
+      .map(est => {
+        const actividadesDelPeriodo = getActividadesPorPeriodo(periodo);
+        const notasActividades = actividadesDelPeriodo
+          .filter(act => notas[est.codigo_estudiantil]?.[periodo]?.[act.id] !== undefined)
+          .map(act => ({
+            nombre: act.nombre,
+            nota: notas[est.codigo_estudiantil][periodo][act.id],
+            porcentaje: act.porcentaje,
+          }));
+
+        return {
+          estudiante: {
+            codigo: est.codigo_estudiantil,
+            nombres: est.nombre_estudiante,
+            apellidos: est.apellidos_estudiante,
+          },
+          actividad: `Final ${periodos.find(p => p.numero === periodo)?.nombre}`,
+          nota: calcularFinalPeriodo(est.codigo_estudiantil, periodo),
+          porcentaje: null,
+          comentario: comentarios[est.codigo_estudiantil]?.[periodo]?.[`${periodo}-Final Periodo`] || null,
+          notificado: false,
+          detalleActividades: notasActividades,
+        };
+      });
+
+    if (datos.length === 0) {
+      toast({
+        title: "Sin notas",
+        description: "No hay notas finales de período calculadas",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setNotificacionPendiente({
+      tipo: "periodo_completo",
+      descripcion: `${periodos.find(p => p.numero === periodo)?.nombre} completo`,
+      datos,
+    });
+    setNotificacionModalOpen(true);
+  };
+
+  // Preparar notificación masiva para Final Definitiva
+  const handleNotificarDefinitivaMasiva = () => {
+    const datos = estudiantes
+      .filter(est => calcularFinalDefinitiva(est.codigo_estudiantil) !== null)
+      .map(est => {
+        const finalesPeriodos = periodos.map(p => ({
+          periodo: p.nombre,
+          nota: calcularFinalPeriodo(est.codigo_estudiantil, p.numero),
+        }));
+
+        return {
+          estudiante: {
+            codigo: est.codigo_estudiantil,
+            nombres: est.nombre_estudiante,
+            apellidos: est.apellidos_estudiante,
+          },
+          actividad: "Final Definitiva",
+          nota: calcularFinalDefinitiva(est.codigo_estudiantil),
+          porcentaje: null,
+          comentario: comentarios[est.codigo_estudiantil]?.[0]?.['0-Final Definitiva'] || null,
+          notificado: false,
+          detallePeriodos: finalesPeriodos,
+        };
+      });
+
+    if (datos.length === 0) {
+      toast({
+        title: "Sin notas",
+        description: "No hay notas definitivas calculadas",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setNotificacionPendiente({
+      tipo: "definitiva",
+      descripcion: "Final Definitiva (año completo)",
+      datos,
+    });
+    setNotificacionModalOpen(true);
+  };
+
+  // Enviar notificación y marcar como notificado
+  const handleEnviarNotificacion = async () => {
+    if (!notificacionPendiente) return;
+
+    const profesor = getProfesorData();
+    const jsonNotificacion = {
+      tipo_notificacion: notificacionPendiente.tipo,
+      profesor,
+      contexto: {
+        materia: materiaSeleccionada,
+        grado: gradoSeleccionado,
+        salon: salonSeleccionado,
+        periodo: notificacionPendiente.tipo === "definitiva" ? 0 : periodoActivo,
+      },
+      datos: notificacionPendiente.datos,
+    };
+
+    // Por ahora solo log
+    console.log("=== DATOS NOTIFICACIÓN ===");
+    console.log(JSON.stringify(jsonNotificacion, null, 2));
+
+    // Marcar como notificado en Supabase
+    try {
+      for (const dato of notificacionPendiente.datos) {
+        const actividadNombre = dato.actividad;
+        const periodoNota = notificacionPendiente.tipo === "definitiva" ? 0 : 
+          (notificacionPendiente.tipo === "periodo_completo" ? periodoActivo : periodoActivo);
+        
+        // Determinar el período correcto basado en la actividad
+        let periodoReal = periodoActivo;
+        if (notificacionPendiente.tipo === "definitiva") {
+          periodoReal = 0;
+        } else if (actividadNombre.includes("Final")) {
+          // Si es "Final 1er Periodo", extraer el número del periodo
+          const match = actividadNombre.match(/(\d)/);
+          if (match) {
+            periodoReal = parseInt(match[1]);
+          }
+        }
+
+        const { error } = await supabase
+          .from('Notas')
+          .update({ notificado: true })
+          .eq('codigo_estudiantil', dato.estudiante.codigo)
+          .eq('materia', materiaSeleccionada)
+          .eq('grado', gradoSeleccionado)
+          .eq('salon', salonSeleccionado)
+          .eq('periodo', periodoReal)
+          .eq('nombre_actividad', actividadNombre === "Final Definitiva" ? "Final Definitiva" : 
+            actividadNombre.includes("Final") ? "Final Periodo" : actividadNombre);
+
+        if (error) {
+          console.error('Error marcando como notificado:', error);
+        }
+      }
+
+      toast({
+        title: "Notificación enviada",
+        description: `Se notificó a ${notificacionPendiente.datos.length} ${notificacionPendiente.datos.length === 1 ? 'padre' : 'padres'}`,
+      });
+    } catch (error) {
+      console.error('Error:', error);
+      toast({
+        title: "Error",
+        description: "Error al marcar como notificado",
+        variant: "destructive",
+      });
+    }
+
+    setNotificacionPendiente(null);
+  };
+
+  // Verificar si una actividad tiene al menos una nota
+  const actividadTieneNotas = (actividad: Actividad): boolean => {
+    return estudiantes.some(est => 
+      notas[est.codigo_estudiantil]?.[actividad.periodo]?.[actividad.id] !== undefined
+    );
+  };
+
+  // Verificar si un período tiene al menos un Final calculado
+  const periodoTieneFinal = (periodo: number): boolean => {
+    return estudiantes.some(est => calcularFinalPeriodo(est.codigo_estudiantil, periodo) !== null);
+  };
+
+  // Verificar si hay al menos una Final Definitiva calculada
+  const hayFinalDefinitiva = (): boolean => {
+    return estudiantes.some(est => calcularFinalDefinitiva(est.codigo_estudiantil) !== null);
+  };
+
+  // ========== FIN FUNCIONES DE NOTIFICACIÓN ==========
+
   // Función para enfocar la siguiente celda (abajo)
   const focusCeldaAbajo = useCallback((currentStudentIndex: number, actividadId: string, periodo: number) => {
     const nextStudentIndex = currentStudentIndex + 1;
@@ -1423,6 +1738,7 @@ const TablaNotas = () => {
                                     'Final Periodo',
                                     periodo.numero
                                   )}
+                                  onNotificarPadre={finalPeriodo !== null ? () => handleNotificarFinalPeriodoIndividual(estudiante, periodo.numero, finalPeriodo) : undefined}
                                 />
                               );
                             })}
@@ -1467,6 +1783,12 @@ const TablaNotas = () => {
                                               className="text-destructive focus:text-destructive"
                                             >
                                               Eliminar comentario
+                                            </DropdownMenuItem>
+                                          )}
+                                          {finalDef !== null && (
+                                            <DropdownMenuItem onClick={() => handleNotificarFinalDefinitivaIndividual(estudiante, finalDef)}>
+                                              <Send className="w-4 h-4 mr-2" />
+                                              Notificar a padre
                                             </DropdownMenuItem>
                                           )}
                                         </DropdownMenuContent>
@@ -1515,6 +1837,7 @@ const TablaNotas = () => {
                                     actividad.nombre,
                                     periodoActivo
                                   )}
+                                  onNotificarPadre={nota !== undefined ? () => handleNotificarNotaIndividual(estudiante, actividad, nota, periodoActivo) : undefined}
                                 />
                               );
                             })}
@@ -1523,23 +1846,29 @@ const TablaNotas = () => {
                               
                             </td>
                             {/* Celda Final Periodo */}
-                            <FinalPeriodoCelda
-                              notaFinal={calcularFinalPeriodo(estudiante.codigo_estudiantil, periodoActivo)}
-                              comentario={comentarios[estudiante.codigo_estudiantil]?.[periodoActivo]?.[`${periodoActivo}-Final Periodo`] || null}
-                              onAbrirComentario={() => handleAbrirComentario(
-                                estudiante.codigo_estudiantil,
-                                `${estudiante.nombre_estudiante} ${estudiante.apellidos_estudiante}`,
-                                `${periodoActivo}-Final Periodo`,
-                                'Final Periodo',
-                                periodoActivo
-                              )}
-                              onEliminarComentario={() => handleEliminarComentario(
-                                estudiante.codigo_estudiantil,
-                                `${periodoActivo}-Final Periodo`,
-                                'Final Periodo',
-                                periodoActivo
-                              )}
-                            />
+                            {(() => {
+                              const notaFinal = calcularFinalPeriodo(estudiante.codigo_estudiantil, periodoActivo);
+                              return (
+                                <FinalPeriodoCelda
+                                  notaFinal={notaFinal}
+                                  comentario={comentarios[estudiante.codigo_estudiantil]?.[periodoActivo]?.[`${periodoActivo}-Final Periodo`] || null}
+                                  onAbrirComentario={() => handleAbrirComentario(
+                                    estudiante.codigo_estudiantil,
+                                    `${estudiante.nombre_estudiante} ${estudiante.apellidos_estudiante}`,
+                                    `${periodoActivo}-Final Periodo`,
+                                    'Final Periodo',
+                                    periodoActivo
+                                  )}
+                                  onEliminarComentario={() => handleEliminarComentario(
+                                    estudiante.codigo_estudiantil,
+                                    `${periodoActivo}-Final Periodo`,
+                                    'Final Periodo',
+                                    periodoActivo
+                                  )}
+                                  onNotificarPadre={notaFinal !== null ? () => handleNotificarFinalPeriodoIndividual(estudiante, periodoActivo, notaFinal) : undefined}
+                                />
+                              );
+                            })()}
                           </>
                         )}
                       </tr>
@@ -1547,6 +1876,56 @@ const TablaNotas = () => {
                   })}
                 </tbody>
               </table>
+              
+              {/* Fila de botones de notificación */}
+              <div className="border-t border-border bg-muted/30 p-3">
+                <div className="flex flex-wrap gap-2 justify-end">
+                  {esFinalDefinitiva ? (
+                    /* Botón notificar Final Definitiva masiva */
+                    hayFinalDefinitiva() && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="text-xs bg-blue-50 hover:bg-blue-100 text-blue-700 border-blue-300"
+                        onClick={handleNotificarDefinitivaMasiva}
+                      >
+                        <Send className="w-3 h-3 mr-1" />
+                        📱 Notificar definitiva a todos
+                      </Button>
+                    )
+                  ) : (
+                    <>
+                      {/* Botones para notificar actividades individuales */}
+                      {getActividadesPorPeriodo(periodoActivo).map((actividad) => (
+                        actividadTieneNotas(actividad) && (
+                          <Button
+                            key={actividad.id}
+                            variant="outline"
+                            size="sm"
+                            className="text-xs bg-blue-50 hover:bg-blue-100 text-blue-700 border-blue-300"
+                            onClick={() => handleNotificarActividad(actividad)}
+                          >
+                            <Send className="w-3 h-3 mr-1" />
+                            📱 {actividad.nombre}
+                          </Button>
+                        )
+                      ))}
+                      {/* Botón notificar período completo */}
+                      {periodoTieneFinal(periodoActivo) && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="text-xs bg-green-50 hover:bg-green-100 text-green-700 border-green-300"
+                          onClick={() => handleNotificarPeriodoCompleto(periodoActivo)}
+                        >
+                          <Send className="w-3 h-3 mr-1" />
+                          📱 Notificar período completo
+                        </Button>
+                      )}
+                    </>
+                  )}
+                </div>
+              </div>
             </div>
           )}
         </div>
@@ -1630,6 +2009,16 @@ const TablaNotas = () => {
         nombreActividad={comentarioEditando?.nombreActividad || ""}
         comentarioActual={comentarioEditando ? (comentarios[comentarioEditando.codigoEstudiantil]?.[comentarioEditando.periodo]?.[comentarioEditando.actividadId] || null) : null}
         onGuardar={handleGuardarComentario}
+      />
+
+      {/* Modal para notificaciones */}
+      <NotificacionModal
+        open={notificacionModalOpen}
+        onOpenChange={setNotificacionModalOpen}
+        tipoNotificacion={notificacionPendiente?.tipo || "nota_individual"}
+        descripcion={notificacionPendiente?.descripcion || ""}
+        cantidadPadres={notificacionPendiente?.datos.length || 0}
+        onConfirmar={handleEnviarNotificacion}
       />
     </div>
   );
