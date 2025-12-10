@@ -22,7 +22,7 @@ interface NotificacionModalProps {
   onOpenChange: (open: boolean) => void;
   tipoNotificacion: TipoNotificacion;
   descripcion: string;
-  cantidadPadres: number;
+  nombreEstudiante?: string; // Solo para notificación individual
   onConfirmar: () => Promise<void>;
 }
 
@@ -31,7 +31,7 @@ const NotificacionModal = ({
   onOpenChange,
   tipoNotificacion,
   descripcion,
-  cantidadPadres,
+  nombreEstudiante,
   onConfirmar,
 }: NotificacionModalProps) => {
   const [enviando, setEnviando] = useState(false);
@@ -61,15 +61,28 @@ const NotificacionModal = ({
     }
   };
 
+  const getMensaje = () => {
+    if (tipoNotificacion === "nota_individual" && nombreEstudiante) {
+      return (
+        <>
+          Se enviará notificación al/los padre(s) de <span className="font-medium text-foreground">{nombreEstudiante}</span> sobre:
+        </>
+      );
+    }
+    return "Se enviará notificación a los padres de familia sobre:";
+  };
+
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>¿{getTituloTipo()}?</AlertDialogTitle>
-          <AlertDialogDescription>
-            Se enviará notificación a {cantidadPadres} {cantidadPadres === 1 ? "padre" : "padres"} sobre:
-            <br />
-            <span className="font-medium text-foreground">{descripcion}</span>
+          <AlertDialogDescription asChild>
+            <div>
+              {getMensaje()}
+              <br />
+              <span className="font-medium text-foreground">{descripcion}</span>
+            </div>
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>

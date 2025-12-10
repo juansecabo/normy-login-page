@@ -115,6 +115,7 @@ const TablaNotas = () => {
   const [notificacionPendiente, setNotificacionPendiente] = useState<{
     tipo: TipoNotificacion;
     descripcion: string;
+    nombreEstudiante?: string;
     datos: any[];
   } | null>(null);
   
@@ -968,7 +969,8 @@ const TablaNotas = () => {
 
     setNotificacionPendiente({
       tipo: "nota_individual",
-      descripcion: `${actividad.nombre} - ${estudiante.nombre_estudiante} ${estudiante.apellidos_estudiante}`,
+      descripcion: actividad.nombre,
+      nombreEstudiante: `${estudiante.nombre_estudiante} ${estudiante.apellidos_estudiante}`,
       datos,
     });
     setNotificacionModalOpen(true);
@@ -995,7 +997,8 @@ const TablaNotas = () => {
 
     setNotificacionPendiente({
       tipo: "nota_individual",
-      descripcion: `Final ${periodos.find(p => p.numero === periodo)?.nombre} - ${estudiante.nombre_estudiante} ${estudiante.apellidos_estudiante}`,
+      descripcion: `Final ${periodos.find(p => p.numero === periodo)?.nombre}`,
+      nombreEstudiante: `${estudiante.nombre_estudiante} ${estudiante.apellidos_estudiante}`,
       datos,
     });
     setNotificacionModalOpen(true);
@@ -1020,8 +1023,9 @@ const TablaNotas = () => {
     }];
 
     setNotificacionPendiente({
-      tipo: "definitiva",
-      descripcion: `Final Definitiva - ${estudiante.nombre_estudiante} ${estudiante.apellidos_estudiante}`,
+      tipo: "nota_individual",
+      descripcion: "Final Definitiva",
+      nombreEstudiante: `${estudiante.nombre_estudiante} ${estudiante.apellidos_estudiante}`,
       datos,
     });
     setNotificacionModalOpen(true);
@@ -1207,7 +1211,7 @@ const TablaNotas = () => {
 
       toast({
         title: "Notificación enviada",
-        description: `Se notificó a ${notificacionPendiente.datos.length} ${notificacionPendiente.datos.length === 1 ? 'padre' : 'padres'}`,
+        description: "Las notificaciones han sido programadas",
       });
     } catch (error) {
       console.error('Error:', error);
@@ -1616,7 +1620,7 @@ const TablaNotas = () => {
                             {periodo.nombre}
                           </th>
                         ))}
-                        <th className="border border-border/30 p-2 text-center text-xs font-semibold min-w-[130px] bg-primary">
+                        <th className="border border-border/30 p-2 text-center text-xs font-semibold min-w-[130px] bg-primary" id="col-final-definitiva">
                           Final Definitiva
                         </th>
                       </>
@@ -1875,57 +1879,66 @@ const TablaNotas = () => {
                     );
                   })}
                 </tbody>
+                {/* Fila de botones de notificación integrados en la tabla */}
+                <tfoot>
+                  <tr className="bg-muted/30">
+                    {/* Celdas fijas vacías */}
+                    <td className="sticky left-0 z-10 bg-muted/30 border border-border p-1"></td>
+                    <td className="sticky left-[100px] z-10 bg-muted/30 border border-border p-1"></td>
+                    <td className="sticky left-[280px] z-10 bg-muted/30 border border-border p-1"></td>
+                    
+                    {esFinalDefinitiva ? (
+                      <>
+                        {/* Celdas vacías para períodos */}
+                        {periodos.map((periodo) => (
+                          <td key={periodo.numero} className="border border-border p-1 text-center"></td>
+                        ))}
+                        {/* Botón Final Definitiva */}
+                        <td className="border border-border p-1 text-center min-w-[130px]">
+                          {hayFinalDefinitiva() && (
+                            <button
+                              onClick={handleNotificarDefinitivaMasiva}
+                              className="w-full px-2 py-1.5 text-xs rounded-md bg-green-100 hover:bg-green-200 text-green-800 font-medium transition-colors"
+                            >
+                              📱 Notificar Final Definitiva
+                            </button>
+                          )}
+                        </td>
+                      </>
+                    ) : (
+                      <>
+                        {/* Botones para cada actividad */}
+                        {getActividadesPorPeriodo(periodoActivo).map((actividad) => (
+                          <td key={actividad.id} className="border border-border p-1 text-center min-w-[120px]">
+                            {actividadTieneNotas(actividad) && (
+                              <button
+                                onClick={() => handleNotificarActividad(actividad)}
+                                className="w-full px-2 py-1.5 text-xs rounded-md bg-green-100 hover:bg-green-200 text-green-800 font-medium transition-colors truncate"
+                                title={`Notificar ${actividad.nombre}`}
+                              >
+                                📱 Notificar {actividad.nombre}
+                              </button>
+                            )}
+                          </td>
+                        ))}
+                        {/* Celda vacía bajo botón Agregar */}
+                        <td className="border border-border p-1 min-w-[100px]"></td>
+                        {/* Botón Final Periodo */}
+                        <td className="border border-border p-1 text-center min-w-[130px]">
+                          {periodoTieneFinal(periodoActivo) && (
+                            <button
+                              onClick={() => handleNotificarPeriodoCompleto(periodoActivo)}
+                              className="w-full px-2 py-1.5 text-xs rounded-md bg-green-100 hover:bg-green-200 text-green-800 font-medium transition-colors"
+                            >
+                              📱 Notificar Final Periodo
+                            </button>
+                          )}
+                        </td>
+                      </>
+                    )}
+                  </tr>
+                </tfoot>
               </table>
-              
-              {/* Fila de botones de notificación */}
-              <div className="border-t border-border bg-muted/30 p-3">
-                <div className="flex flex-wrap gap-2 justify-end">
-                  {esFinalDefinitiva ? (
-                    /* Botón notificar Final Definitiva masiva */
-                    hayFinalDefinitiva() && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="text-xs bg-blue-50 hover:bg-blue-100 text-blue-700 border-blue-300"
-                        onClick={handleNotificarDefinitivaMasiva}
-                      >
-                        <Send className="w-3 h-3 mr-1" />
-                        📱 Notificar definitiva a todos
-                      </Button>
-                    )
-                  ) : (
-                    <>
-                      {/* Botones para notificar actividades individuales */}
-                      {getActividadesPorPeriodo(periodoActivo).map((actividad) => (
-                        actividadTieneNotas(actividad) && (
-                          <Button
-                            key={actividad.id}
-                            variant="outline"
-                            size="sm"
-                            className="text-xs bg-blue-50 hover:bg-blue-100 text-blue-700 border-blue-300"
-                            onClick={() => handleNotificarActividad(actividad)}
-                          >
-                            <Send className="w-3 h-3 mr-1" />
-                            📱 {actividad.nombre}
-                          </Button>
-                        )
-                      ))}
-                      {/* Botón notificar período completo */}
-                      {periodoTieneFinal(periodoActivo) && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="text-xs bg-green-50 hover:bg-green-100 text-green-700 border-green-300"
-                          onClick={() => handleNotificarPeriodoCompleto(periodoActivo)}
-                        >
-                          <Send className="w-3 h-3 mr-1" />
-                          📱 Notificar período completo
-                        </Button>
-                      )}
-                    </>
-                  )}
-                </div>
-              </div>
             </div>
           )}
         </div>
@@ -2017,7 +2030,7 @@ const TablaNotas = () => {
         onOpenChange={setNotificacionModalOpen}
         tipoNotificacion={notificacionPendiente?.tipo || "nota_individual"}
         descripcion={notificacionPendiente?.descripcion || ""}
-        cantidadPadres={notificacionPendiente?.datos.length || 0}
+        nombreEstudiante={notificacionPendiente?.nombreEstudiante}
         onConfirmar={handleEnviarNotificacion}
       />
     </div>
