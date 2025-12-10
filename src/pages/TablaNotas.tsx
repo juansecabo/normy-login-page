@@ -141,20 +141,20 @@ const TablaNotas = () => {
       const storedGrado = localStorage.getItem("gradoSeleccionado");
       const storedSalon = localStorage.getItem("salonSeleccionado");
 
-    if (!storedMateria) {
-      navigate("/dashboard");
-      return;
-    }
+      if (!storedMateria) {
+        navigate("/dashboard");
+        return;
+      }
 
-    if (!storedGrado) {
-      navigate("/seleccionar-grado");
-      return;
-    }
+      if (!storedGrado) {
+        navigate("/seleccionar-grado");
+        return;
+      }
 
-    if (!storedSalon) {
-      navigate("/seleccionar-salon");
-      return;
-    }
+      if (!storedSalon) {
+        navigate("/seleccionar-salon");
+        return;
+      }
 
       setMateriaSeleccionada(storedMateria);
       setGradoSeleccionado(storedGrado);
