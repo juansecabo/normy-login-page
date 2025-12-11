@@ -1696,12 +1696,22 @@ const TablaNotas = () => {
             variant: "destructive",
           });
         } else {
-          // Actualizar estado local y obtener nuevas notas
+          // Actualizar estado local de notas
           let nuevasNotas = { ...notas };
           if (nuevasNotas[codigoEstudiantil]?.[periodo]?.[actividadId] !== undefined) {
             delete nuevasNotas[codigoEstudiantil][periodo][actividadId];
           }
           setNotas(nuevasNotas);
+          
+          // IMPORTANTE: Eliminar comentario del estado local para quitar indicador naranja
+          setComentarios(prev => {
+            const nuevosComentarios = { ...prev };
+            if (nuevosComentarios[codigoEstudiantil]?.[periodo]?.[actividadId] !== undefined) {
+              delete nuevosComentarios[codigoEstudiantil][periodo][actividadId];
+            }
+            return nuevosComentarios;
+          });
+          
           console.log("Nota eliminada correctamente");
           
           // Recalcular y guardar Final Periodo y Final Definitiva
