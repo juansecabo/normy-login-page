@@ -171,6 +171,8 @@ const TablaNotas = () => {
       setSalonSeleccionado(storedSalon);
 
       // 3. Cargar datos
+      const codigoProfesor = session.codigo;
+      
       try {
         console.log("=== DEBUG FILTRO ESTUDIANTES ===");
         console.log("Grado desde localStorage:", storedGrado);
@@ -195,7 +197,32 @@ const TablaNotas = () => {
 
         setEstudiantes(estudiantesData || []);
 
-        // Fetch notas existentes
+        // PRIMERO: Cargar actividades desde "Nombre de Actividades"
+        console.log("=== CARGANDO ACTIVIDADES DESDE NOMBRE DE ACTIVIDADES ===");
+        const { data: actividadesData, error: actividadesError } = await supabase
+          .from('Nombre de Actividades')
+          .select('*')
+          .eq('id_profesor', codigoProfesor)
+          .eq('materia', storedMateria)
+          .eq('grado', storedGrado)
+          .eq('salon', storedSalon)
+          .order('fecha_creacion', { ascending: true });
+
+        if (actividadesError) {
+          console.error('Error fetching actividades:', actividadesError);
+        } else if (actividadesData && actividadesData.length > 0) {
+          console.log("Actividades encontradas:", actividadesData.length);
+          const actividadesCargadas: Actividad[] = actividadesData.map(act => ({
+            id: `${act.periodo}-${act.nombre_actividad}`,
+            periodo: act.periodo,
+            nombre: act.nombre_actividad,
+            porcentaje: act.porcentaje,
+          }));
+          setActividades(actividadesCargadas);
+          console.log("Actividades cargadas:", actividadesCargadas);
+        }
+
+        // LUEGO: Fetch notas existentes
         console.log("=== CARGANDO NOTAS EXISTENTES ===");
         const { data: notasData, error: notasError } = await supabase
           .from('Notas')
@@ -212,10 +239,9 @@ const TablaNotas = () => {
           // Convertir notas de Supabase al formato local
           const notasFormateadas: NotasEstudiantes = {};
           const comentariosFormateados: ComentariosEstudiantes = {};
-          const actividadesMap = new Map<string, Actividad>();
           
           notasData.forEach((nota) => {
-            const { codigo_estudiantil, periodo, nombre_actividad, nota: valorNota, porcentaje, comentario } = nota;
+            const { codigo_estudiantil, periodo, nombre_actividad, nota: valorNota, comentario } = nota;
             
             // Cargar comentarios de Final Definitiva (periodo = 0)
             if (nombre_actividad === "Final Definitiva" && periodo === 0) {
@@ -251,16 +277,6 @@ const TablaNotas = () => {
             // Crear ID único para la actividad basado en periodo y nombre
             const actividadId = `${periodo}-${nombre_actividad}`;
             
-            // Agregar actividad si no existe
-            if (!actividadesMap.has(actividadId)) {
-              actividadesMap.set(actividadId, {
-                id: actividadId,
-                periodo,
-                nombre: nombre_actividad,
-                porcentaje: porcentaje || null,
-              });
-            }
-            
             // Agregar nota al estado
             if (!notasFormateadas[codigo_estudiantil]) {
               notasFormateadas[codigo_estudiantil] = {};
@@ -284,8 +300,6 @@ const TablaNotas = () => {
           
           setNotas(notasFormateadas);
           setComentarios(comentariosFormateados);
-          // Filtrar actividades que no sean "Final Periodo"
-          setActividades(Array.from(actividadesMap.values()).filter(a => a.nombre !== "Final Periodo"));
           console.log("Notas cargadas:", notasFormateadas);
           console.log("Comentarios cargados:", comentariosFormateados);
         }
@@ -434,6 +448,31 @@ const TablaNotas = () => {
         }
       }
 
+      // Actualizar en tabla "Nombre de Actividades"
+      const session = getSession();
+      try {
+        const { error } = await supabase
+          .from('Nombre de Actividades')
+          .update({ 
+            nombre_actividad: nombreNuevo,
+            porcentaje: porcentaje 
+          })
+          .eq('id_profesor', session.codigo)
+          .eq('materia', materiaSeleccionada)
+          .eq('grado', gradoSeleccionado)
+          .eq('salon', salonSeleccionado)
+          .eq('periodo', actividadEditando.periodo)
+          .eq('nombre_actividad', nombreAntiguo);
+        
+        if (error) {
+          console.error('Error actualizando actividad en Nombre de Actividades:', error);
+        } else {
+          console.log('✅ Actividad actualizada en Nombre de Actividades');
+        }
+      } catch (error) {
+        console.error('Error:', error);
+      }
+      
       // Si cambió el porcentaje, actualizar todas las notas en Supabase
       if (actividadEditando.porcentaje !== porcentaje) {
         try {
@@ -488,10 +527,49 @@ const TablaNotas = () => {
       });
     } else {
       // CREAR nueva actividad
+      const nombreTrimmed = nombreActividad.trim();
+      const actividadId = `${periodoActual}-${nombreTrimmed}`;
+      
+      // Guardar en tabla "Nombre de Actividades"
+      const session = getSession();
+      try {
+        const { error } = await supabase
+          .from('Nombre de Actividades')
+          .insert({
+            id_profesor: session.codigo,
+            materia: materiaSeleccionada,
+            grado: gradoSeleccionado,
+            salon: salonSeleccionado,
+            periodo: periodoActual,
+            nombre_actividad: nombreTrimmed,
+            porcentaje: porcentaje,
+          });
+        
+        if (error) {
+          console.error('Error guardando actividad:', error);
+          toast({
+            title: "Error",
+            description: "No se pudo guardar la actividad",
+            variant: "destructive",
+          });
+          return;
+        }
+        
+        console.log('✅ Actividad guardada en Nombre de Actividades');
+      } catch (error) {
+        console.error('Error:', error);
+        toast({
+          title: "Error",
+          description: "Error de conexión al guardar la actividad",
+          variant: "destructive",
+        });
+        return;
+      }
+      
       const nuevaActividad: Actividad = {
-        id: crypto.randomUUID(),
+        id: actividadId,
         periodo: periodoActual,
-        nombre: nombreActividad.trim(),
+        nombre: nombreTrimmed,
         porcentaje,
       };
 
@@ -513,8 +591,27 @@ const TablaNotas = () => {
   const handleEliminarActividad = async () => {
     if (!actividadAEliminar) return;
 
+    const session = getSession();
+    
     try {
-      // Eliminar todas las notas de esta actividad de Supabase
+      // PRIMERO: Eliminar de "Nombre de Actividades"
+      const { error: errorActividad } = await supabase
+        .from('Nombre de Actividades')
+        .delete()
+        .eq('id_profesor', session.codigo)
+        .eq('materia', materiaSeleccionada)
+        .eq('grado', gradoSeleccionado)
+        .eq('salon', salonSeleccionado)
+        .eq('periodo', actividadAEliminar.periodo)
+        .eq('nombre_actividad', actividadAEliminar.nombre);
+      
+      if (errorActividad) {
+        console.error('Error eliminando de Nombre de Actividades:', errorActividad);
+      } else {
+        console.log('✅ Actividad eliminada de Nombre de Actividades');
+      }
+      
+      // LUEGO: Eliminar todas las notas de esta actividad de Supabase
       const { error } = await supabase
         .from('Notas')
         .delete()
