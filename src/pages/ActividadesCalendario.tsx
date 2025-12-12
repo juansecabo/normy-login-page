@@ -218,6 +218,21 @@ const ActividadesCalendario = () => {
       return;
     }
 
+    // Validar que la fecha no sea pasada
+    const hoy = new Date();
+    hoy.setHours(0, 0, 0, 0);
+    const fechaSeleccionadaNormalizada = new Date(fechaSeleccionada);
+    fechaSeleccionadaNormalizada.setHours(0, 0, 0, 0);
+
+    if (fechaSeleccionadaNormalizada < hoy) {
+      toast({
+        title: "Fecha inválida",
+        description: "No se puede asignar actividades en fechas pasadas. Por favor selecciona una fecha actual o futura.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     const fechaFormateada = formatearFecha(fechaSeleccionada);
 
     try {
@@ -491,6 +506,11 @@ const ActividadesCalendario = () => {
                     onSelect={(date) => {
                       setFechaSeleccionada(date);
                       setPopoverOpen(false);
+                    }}
+                    disabled={(date) => {
+                      const hoy = new Date();
+                      hoy.setHours(0, 0, 0, 0);
+                      return date < hoy;
                     }}
                     initialFocus
                     locale={es}
