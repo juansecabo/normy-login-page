@@ -70,7 +70,8 @@ const ActividadesCalendario = () => {
   const [materiaSeleccionada, setMateriaSeleccionada] = useState("");
   const [gradoSeleccionado, setGradoSeleccionado] = useState("");
   const [salonSeleccionado, setSalonSeleccionado] = useState("");
-  const [profesorId, setProfesorId] = useState("");
+  const [profesorCodigo, setProfesorCodigo] = useState("");
+  const [profesorIdReal, setProfesorIdReal] = useState(""); // ID real (celular) del profesor
   const [profesorNombres, setProfesorNombres] = useState("");
   const [profesorApellidos, setProfesorApellidos] = useState("");
   const [actividades, setActividades] = useState<ActividadCalendario[]>([]);
@@ -96,9 +97,30 @@ const ActividadesCalendario = () => {
         return;
       }
 
-      setProfesorId(session.codigo);
+      setProfesorCodigo(session.codigo);
       setProfesorNombres(session.nombres);
       setProfesorApellidos(session.apellidos);
+
+      // Buscar el ID real (celular) del profesor desde la tabla Internos
+      const { data: profesorData, error: profesorError } = await supabase
+        .from('Internos')
+        .select('id')
+        .eq('codigo', session.codigo)
+        .single();
+
+      if (profesorError || !profesorData) {
+        console.error('Error obteniendo ID del profesor:', profesorError);
+        toast({
+          title: "Error",
+          description: "No se pudo obtener la información del profesor",
+          variant: "destructive",
+        });
+        navigate('/');
+        return;
+      }
+
+      const idProfesor = profesorData.id;
+      setProfesorIdReal(idProfesor);
 
       const storedMateria = localStorage.getItem("materiaSeleccionada");
       const storedGrado = localStorage.getItem("gradoSeleccionado");
@@ -113,14 +135,14 @@ const ActividadesCalendario = () => {
       setGradoSeleccionado(storedGrado);
       setSalonSeleccionado(storedSalon);
 
-      await cargarActividades(session.codigo, storedMateria, storedGrado, storedSalon);
+      await cargarActividades(idProfesor, storedMateria, storedGrado, storedSalon);
     };
 
     inicializar();
   }, [navigate]);
 
   const cargarActividades = async (
-    profId: string,
+    profIdReal: string,
     materia: string,
     grado: string,
     salon: string
@@ -130,7 +152,7 @@ const ActividadesCalendario = () => {
       const { data, error } = await supabase
         .from('Calendario Actividades')
         .select('*')
-        .eq('id_profesor', profId)
+        .eq('id_profesor', profIdReal)
         .eq('Materia', materia)
         .eq('Grado', grado)
         .eq('Salon', salon)
@@ -228,7 +250,7 @@ const ActividadesCalendario = () => {
         const { error } = await supabase
           .from('Calendario Actividades')
           .insert({
-            id_profesor: profesorId,
+            id_profesor: profesorIdReal,
             Nombres: profesorNombres,
             Apellidos: profesorApellidos,
             Materia: materiaSeleccionada,
@@ -255,7 +277,7 @@ const ActividadesCalendario = () => {
       }
 
       setModalOpen(false);
-      await cargarActividades(profesorId, materiaSeleccionada, gradoSeleccionado, salonSeleccionado);
+      await cargarActividades(profesorIdReal, materiaSeleccionada, gradoSeleccionado, salonSeleccionado);
     } catch (error) {
       console.error('Error:', error);
       toast({
@@ -297,7 +319,7 @@ const ActividadesCalendario = () => {
 
       setDeleteDialogOpen(false);
       setActividadAEliminar(null);
-      await cargarActividades(profesorId, materiaSeleccionada, gradoSeleccionado, salonSeleccionado);
+      await cargarActividades(profesorIdReal, materiaSeleccionada, gradoSeleccionado, salonSeleccionado);
     } catch (error) {
       console.error('Error:', error);
       toast({
