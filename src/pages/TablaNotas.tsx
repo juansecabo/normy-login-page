@@ -202,7 +202,7 @@ const TablaNotas = () => {
         const { data: actividadesData, error: actividadesError } = await supabase
           .from('Nombre de Actividades')
           .select('*')
-          .eq('id_profesor', codigoProfesor)
+          .eq('codigo_profesor', codigoProfesor)
           .eq('materia', storedMateria)
           .eq('grado', storedGrado)
           .eq('salon', storedSalon)
@@ -457,7 +457,7 @@ const TablaNotas = () => {
             nombre_actividad: nombreNuevo,
             porcentaje: porcentaje 
           })
-          .eq('id_profesor', session.codigo)
+          .eq('codigo_profesor', session.codigo)
           .eq('materia', materiaSeleccionada)
           .eq('grado', gradoSeleccionado)
           .eq('salon', salonSeleccionado)
@@ -536,7 +536,7 @@ const TablaNotas = () => {
         const { error } = await supabase
           .from('Nombre de Actividades')
           .insert({
-            id_profesor: session.codigo,
+            codigo_profesor: session.codigo,
             materia: materiaSeleccionada,
             grado: gradoSeleccionado,
             salon: salonSeleccionado,
@@ -598,7 +598,7 @@ const TablaNotas = () => {
       const { error: errorActividad } = await supabase
         .from('Nombre de Actividades')
         .delete()
-        .eq('id_profesor', session.codigo)
+        .eq('codigo_profesor', session.codigo)
         .eq('materia', materiaSeleccionada)
         .eq('grado', gradoSeleccionado)
         .eq('salon', salonSeleccionado)
