@@ -812,6 +812,10 @@ const TablaNotas = () => {
     
     const finalActividadId = `${periodo}-Final Periodo`;
     
+    // Calcular porcentaje total del período
+    const porcentajePeriodo = getPorcentajeUsado(periodo);
+    console.log('Porcentaje del período:', porcentajePeriodo);
+    
     if (notaFinal === null) {
       // Eliminar si no hay nota final
       const { error } = await supabase
@@ -840,7 +844,7 @@ const TablaNotas = () => {
       
       const comentarioExistente = existente?.comentario || comentarios[codigoEstudiantil]?.[periodo]?.[finalActividadId] || null;
       
-      // Upsert la nota final
+      // Upsert la nota final con el porcentaje del período
       const { data, error } = await supabase
         .from('Notas')
         .upsert({
@@ -850,7 +854,7 @@ const TablaNotas = () => {
           salon: salonSeleccionado,
           periodo,
           nombre_actividad: 'Final Periodo',
-          porcentaje: null,
+          porcentaje: porcentajePeriodo,
           nota: notaFinal,
           comentario: comentarioExistente,
           notificado: false,
@@ -862,7 +866,7 @@ const TablaNotas = () => {
       if (error) {
         console.error('ERROR guardando Final Periodo:', error);
       } else {
-        console.log('✅ Final Periodo guardado en Supabase:', codigoEstudiantil, periodo, notaFinal);
+        console.log('✅ Final Periodo guardado en Supabase:', codigoEstudiantil, periodo, notaFinal, 'porcentaje:', porcentajePeriodo);
       }
     }
   };
@@ -871,6 +875,10 @@ const TablaNotas = () => {
   const guardarFinalDefinitiva = async (codigoEstudiantil: string, notaFinal: number | null) => {
     console.log('=== INICIANDO guardarFinalDefinitiva ===');
     console.log('Parámetros:', { codigoEstudiantil, notaFinal, materia: materiaSeleccionada, grado: gradoSeleccionado, salon: salonSeleccionado });
+    
+    // Calcular porcentaje promedio anual (promedio de los 4 períodos)
+    const porcentajeAnual = Math.round(getPorcentajePromedioAnual());
+    console.log('Porcentaje anual promedio:', porcentajeAnual);
     
     if (notaFinal === null) {
       const { error } = await supabase
@@ -907,7 +915,7 @@ const TablaNotas = () => {
         salon: salonSeleccionado,
         periodo: 0,
         nombre_actividad: 'Final Definitiva',
-        porcentaje: null,
+        porcentaje: porcentajeAnual,
         nota: notaFinal,
         comentario: comentarioExistente,
         notificado: false,
@@ -929,7 +937,7 @@ const TablaNotas = () => {
       if (error) {
         console.error('ERROR guardando Final Definitiva:', error);
       } else {
-        console.log('✅ Final Definitiva guardada exitosamente:', codigoEstudiantil, notaFinal);
+        console.log('✅ Final Definitiva guardada exitosamente:', codigoEstudiantil, notaFinal, 'porcentaje:', porcentajeAnual);
       }
     }
   };
