@@ -31,10 +31,14 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
+import { toast as sonnerToast } from "sonner";
 import NotaCelda from "@/components/notas/NotaCelda";
 import FinalPeriodoCelda from "@/components/notas/FinalPeriodoCelda";
 import ComentarioModal from "@/components/notas/ComentarioModal";
 import NotificacionModal, { TipoNotificacion } from "@/components/notas/NotificacionModal";
+
+// Configuración del webhook de n8n
+const N8N_WEBHOOK_URL = 'https://n8n.srv966880.hstgr.cloud/webhook/notificar-notas';
 
 interface Estudiante {
   codigo_estudiantil: string;
@@ -1519,88 +1523,137 @@ const TablaNotas = () => {
     setNotificacionModalOpen(true);
   };
 
-  // Enviar notificación y marcar como notificado
+  // Función para enviar datos al webhook de n8n
+  const enviarNotificacionN8n = async (payload: any) => {
+    try {
+      console.log('📤 Enviando a n8n:', payload);
+      
+      const response = await fetch(N8N_WEBHOOK_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload)
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Error HTTP ${response.status}: ${errorText}`);
+      }
+
+      const resultado = await response.json();
+      console.log('✅ Respuesta de n8n:', resultado);
+      return { success: true, data: resultado };
+    } catch (error) {
+      console.error('❌ Error:', error);
+      return { 
+        success: false, 
+        error: error instanceof Error ? error.message : 'Error desconocido' 
+      };
+    }
+  };
+
+  // Enviar notificación simplificada a n8n
   const handleEnviarNotificacion = async () => {
     if (!notificacionPendiente) return;
 
-    const profesor = getProfesorData();
-    const esDefinitiva = notificacionPendiente.tipo === "definitiva_completa" || notificacionPendiente.tipo === "definitiva_parcial";
-    const esPeriodo = notificacionPendiente.tipo === "periodo_completo_definitivo" || notificacionPendiente.tipo === "periodo_parcial";
-    
-    // Construir objeto de completitud
-    const completitud: any = {};
-    if (esPeriodo) {
-      completitud.porcentaje_periodo = getPorcentajeUsado(periodoActivo);
-    }
-    if (esDefinitiva) {
-      completitud.periodos = periodos.map(p => ({
-        periodo: p.numero,
-        porcentaje: getPorcentajeUsado(p.numero)
-      }));
+    const session = getSession();
+    if (!session.codigo) {
+      toast({
+        title: "Error",
+        description: "Código del profesor no encontrado",
+        variant: "destructive",
+      });
+      return;
     }
 
-    const jsonNotificacion = {
-      tipo_notificacion: notificacionPendiente.tipo,
-      completitud,
-      es_reporte_definitivo: notificacionPendiente.tipo === "periodo_completo_definitivo" || notificacionPendiente.tipo === "definitiva_completa",
-      profesor,
+    const esDefinitiva = notificacionPendiente.tipo === "definitiva_completa" || notificacionPendiente.tipo === "definitiva_parcial";
+    
+    // Determinar tipo_boton basado en el tipo de notificación y cantidad de estudiantes
+    const esIndividual = notificacionPendiente.datos.length === 1;
+    let tipoBoton = "";
+    
+    if (notificacionPendiente.tipo === "actividad_individual" || notificacionPendiente.tipo === "nota_individual") {
+      tipoBoton = esIndividual ? "actividad_individual" : "actividad_masiva";
+    } else if (notificacionPendiente.tipo === "periodo_completo_definitivo" || notificacionPendiente.tipo === "periodo_parcial") {
+      tipoBoton = esIndividual ? "periodo_individual" : "periodo_masivo";
+    } else if (notificacionPendiente.tipo === "definitiva_completa" || notificacionPendiente.tipo === "definitiva_parcial") {
+      tipoBoton = esIndividual ? "definitiva_individual" : "definitiva_masivo";
+    }
+
+    // Extraer nombre de actividad si aplica
+    const nombreActividad = notificacionPendiente.datos[0]?.actividad || null;
+    const esActividadFinal = nombreActividad?.includes("Final");
+
+    // Preparar payload SIMPLE para n8n
+    const payload = {
+      tipo_boton: tipoBoton,
+      profesor_codigo: session.codigo,
       contexto: {
         materia: materiaSeleccionada,
         grado: gradoSeleccionado,
         salon: salonSeleccionado,
-        periodo: esDefinitiva ? 0 : periodoActivo,
+        periodo: esDefinitiva ? 0 : periodoActivo
       },
-      datos: notificacionPendiente.datos,
+      actividad: esActividadFinal ? null : nombreActividad,
+      estudiantes_codigos: notificacionPendiente.datos.map((d: any) => d.estudiante.codigo)
     };
 
-    // Por ahora solo log
-    console.log("=== DATOS NOTIFICACIÓN ===");
-    console.log(JSON.stringify(jsonNotificacion, null, 2));
+    // Cerrar modal
+    setNotificacionModalOpen(false);
 
-    // Marcar como notificado en Supabase
-    try {
-      for (const dato of notificacionPendiente.datos) {
-        const actividadNombre = dato.actividad;
-        
-        // Determinar el período correcto basado en la actividad
-        let periodoReal = periodoActivo;
-        if (esDefinitiva) {
-          periodoReal = 0;
-        } else if (actividadNombre.includes("Final")) {
-          // Si es "Final 1er Periodo", extraer el número del periodo
-          const match = actividadNombre.match(/(\d)/);
-          if (match) {
-            periodoReal = parseInt(match[1]);
+    // Mostrar loading
+    const toastId = sonnerToast.loading(
+      `Enviando notificaciones a padres de ${payload.estudiantes_codigos.length} estudiante(s)...`
+    );
+
+    // Enviar a n8n
+    const resultado = await enviarNotificacionN8n(payload);
+
+    // Quitar loading
+    sonnerToast.dismiss(toastId);
+
+    // Mostrar resultado
+    if (resultado.success) {
+      sonnerToast.success(
+        `✅ Notificaciones enviadas a padres de ${payload.estudiantes_codigos.length} estudiante(s)`,
+        { duration: 5000 }
+      );
+      
+      // Marcar como notificado en Supabase
+      try {
+        for (const dato of notificacionPendiente.datos) {
+          const actividadNombre = dato.actividad;
+          
+          let periodoReal = periodoActivo;
+          if (esDefinitiva) {
+            periodoReal = 0;
+          } else if (actividadNombre?.includes("Final")) {
+            const match = actividadNombre.match(/(\d)/);
+            if (match) {
+              periodoReal = parseInt(match[1]);
+            }
           }
-        }
 
-        const { error } = await supabase
-          .from('Notas')
-          .update({ notificado: true })
-          .eq('codigo_estudiantil', dato.estudiante.codigo)
-          .eq('materia', materiaSeleccionada)
-          .eq('grado', gradoSeleccionado)
-          .eq('salon', salonSeleccionado)
-          .eq('periodo', periodoReal)
-          .eq('nombre_actividad', actividadNombre === "Final Definitiva" ? "Final Definitiva" : 
-            actividadNombre.includes("Final") ? "Final Periodo" : actividadNombre);
-
-        if (error) {
-          console.error('Error marcando como notificado:', error);
+          await supabase
+            .from('Notas')
+            .update({ notificado: true })
+            .eq('codigo_estudiantil', dato.estudiante.codigo)
+            .eq('materia', materiaSeleccionada)
+            .eq('grado', gradoSeleccionado)
+            .eq('salon', salonSeleccionado)
+            .eq('periodo', periodoReal)
+            .eq('nombre_actividad', actividadNombre === "Final Definitiva" ? "Final Definitiva" : 
+              actividadNombre?.includes("Final") ? "Final Periodo" : actividadNombre);
         }
+      } catch (error) {
+        console.error('Error marcando como notificado:', error);
       }
-
-      toast({
-        title: "Notificación enviada",
-        description: "Las notificaciones han sido programadas",
-      });
-    } catch (error) {
-      console.error('Error:', error);
-      toast({
-        title: "Error",
-        description: "Error al marcar como notificado",
-        variant: "destructive",
-      });
+    } else {
+      sonnerToast.error(
+        `❌ Error: ${resultado.error}`,
+        { duration: 7000 }
+      );
     }
 
     setNotificacionPendiente(null);
