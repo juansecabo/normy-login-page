@@ -420,39 +420,7 @@ const TablaNotas = () => {
       const nombreAntiguo = actividadEditando.nombre;
       const nombreNuevo = nombreActividad.trim();
       
-      // Si cambió el nombre, actualizar todas las notas en Supabase
-      if (nombreAntiguo !== nombreNuevo) {
-        try {
-          const { error } = await supabase
-            .from('Notas')
-            .update({ nombre_actividad: nombreNuevo })
-            .eq('nombre_actividad', nombreAntiguo)
-            .eq('materia', materiaSeleccionada)
-            .eq('grado', gradoSeleccionado)
-            .eq('salon', salonSeleccionado)
-            .eq('periodo', actividadEditando.periodo);
-
-          if (error) {
-            console.error('Error actualizando nombre de actividad:', error);
-            toast({
-              title: "Error",
-              description: "No se pudo actualizar el nombre de la actividad",
-              variant: "destructive",
-            });
-            return;
-          }
-        } catch (error) {
-          console.error('Error:', error);
-          toast({
-            title: "Error",
-            description: "Error de conexión al actualizar",
-            variant: "destructive",
-          });
-          return;
-        }
-      }
-
-      // Actualizar en tabla "Nombre de Actividades"
+      // Actualizar en tabla "Nombre de Actividades" (el trigger de Supabase actualizará "Notas" automáticamente)
       const session = getSession();
       try {
         const { error } = await supabase
@@ -470,11 +438,22 @@ const TablaNotas = () => {
         
         if (error) {
           console.error('Error actualizando actividad en Nombre de Actividades:', error);
-        } else {
-          console.log('✅ Actividad actualizada en Nombre de Actividades');
+          toast({
+            title: "Error",
+            description: "No se pudo actualizar la actividad",
+            variant: "destructive",
+          });
+          return;
         }
+        console.log('✅ Actividad actualizada en Nombre de Actividades');
       } catch (error) {
         console.error('Error:', error);
+        toast({
+          title: "Error",
+          description: "Error de conexión al actualizar",
+          variant: "destructive",
+        });
+        return;
       }
       
       // Si cambió el porcentaje, actualizar todas las notas en Supabase
