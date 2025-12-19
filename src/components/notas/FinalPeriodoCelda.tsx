@@ -32,8 +32,8 @@ const FinalPeriodoCelda = ({
           {notaFinal !== null ? notaFinal.toFixed(2) : "—"}
         </span>
         
-        {/* Indicador de comentario */}
-        {comentario && (
+        {/* Indicador de comentario - solo mostrar si hay nota Y comentario */}
+        {notaFinal !== null && comentario && (
           <div className="absolute top-0 right-6 w-2 h-2 bg-amber-500 rounded-full" title={comentario} />
         )}
         
