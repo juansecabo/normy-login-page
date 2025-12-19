@@ -817,7 +817,8 @@ const TablaNotas = () => {
         .eq('nombre_actividad', 'Final Periodo')
         .maybeSingle();
       
-      const comentarioExistente = existente?.comentario || comentarios[codigoEstudiantil]?.[periodo]?.[finalActividadId] || null;
+      // Solo usar el comentario de Supabase, NO del estado local (evita recuperar comentarios eliminados)
+      const comentarioExistente = existente?.comentario || null;
       
       // Upsert la nota final
       const { data, error } = await supabase
@@ -1743,6 +1744,40 @@ const TablaNotas = () => {
             }
             return nuevosComentarios;
           });
+          
+          // Recalcular si todavía hay notas en el período
+          const notaFinalNueva = calcularFinalPeriodoConNotas(nuevasNotas, codigoEstudiantil, periodo);
+          
+          // Si no hay Final Periodo (null), también limpiar su comentario del estado local
+          if (notaFinalNueva === null) {
+            const finalPeriodoId = `${periodo}-Final Periodo`;
+            setComentarios(prev => {
+              const nuevosComentarios = { ...prev };
+              if (nuevosComentarios[codigoEstudiantil]?.[periodo]?.[finalPeriodoId] !== undefined) {
+                delete nuevosComentarios[codigoEstudiantil][periodo][finalPeriodoId];
+              }
+              return nuevosComentarios;
+            });
+            
+            // También limpiar comentario de Final Definitiva si ya no hay notas en ningún período
+            let tieneAlgunaNotaEnAlgunPeriodo = false;
+            for (let p = 1; p <= 4; p++) {
+              const fp = calcularFinalPeriodoConNotas(nuevasNotas, codigoEstudiantil, p);
+              if (fp !== null) {
+                tieneAlgunaNotaEnAlgunPeriodo = true;
+                break;
+              }
+            }
+            if (!tieneAlgunaNotaEnAlgunPeriodo) {
+              setComentarios(prev => {
+                const nuevosComentarios = { ...prev };
+                if (nuevosComentarios[codigoEstudiantil]?.[0]?.['0-Final Definitiva'] !== undefined) {
+                  delete nuevosComentarios[codigoEstudiantil][0]['0-Final Definitiva'];
+                }
+                return nuevosComentarios;
+              });
+            }
+          }
           
           console.log("Nota eliminada correctamente");
           
