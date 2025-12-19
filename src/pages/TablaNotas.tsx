@@ -1584,15 +1584,35 @@ const TablaNotas = () => {
     const nombreActividad = notificacionPendiente.datos[0]?.actividad || null;
     const esActividadFinal = nombreActividad?.includes("Final");
 
+    // Detectar el período real desde el nombre de la actividad
+    let periodoReal = periodoActivo;
+    
+    if (esDefinitiva) {
+      // Si es definitiva_individual o definitiva_masivo, usar periodo 0
+      periodoReal = 0;
+    } else if (esActividadFinal && nombreActividad) {
+      // Si es un "Final Periodo" (ej: "Final 1er Periodo")
+      // Extraer el número del período desde el nombre
+      if (nombreActividad.includes("1er")) periodoReal = 1;
+      else if (nombreActividad.includes("2do")) periodoReal = 2;
+      else if (nombreActividad.includes("3er")) periodoReal = 3;
+      else if (nombreActividad.includes("4to")) periodoReal = 4;
+      else if (nombreActividad.includes("Final Definitiva")) periodoReal = 0;
+    }
+
     // Preparar payload SIMPLE para n8n
     const payload = {
       tipo_boton: tipoBoton,
-      profesor_codigo: session.codigo,
+      profesor: {
+        codigo: session.codigo,
+        nombres: session.nombres,
+        apellidos: session.apellidos,
+      },
       contexto: {
         materia: materiaSeleccionada,
         grado: gradoSeleccionado,
         salon: salonSeleccionado,
-        periodo: esDefinitiva ? 0 : periodoActivo
+        periodo: periodoReal
       },
       actividad: esActividadFinal ? null : nombreActividad,
       estudiantes_codigos: notificacionPendiente.datos.map((d: any) => d.estudiante.codigo)
