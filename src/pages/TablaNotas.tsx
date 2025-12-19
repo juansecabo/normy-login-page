@@ -803,15 +803,6 @@ const TablaNotas = () => {
         .eq('periodo', periodo)
         .eq('nombre_actividad', 'Final Periodo');
       
-      // Limpiar el comentario del estado local para que no reaparezca
-      setComentarios(prev => {
-        const nuevo = { ...prev };
-        if (nuevo[codigoEstudiantil]?.[periodo]?.[finalActividadId]) {
-          delete nuevo[codigoEstudiantil][periodo][finalActividadId];
-        }
-        return nuevo;
-      });
-      
       console.log('Final Periodo eliminado para:', codigoEstudiantil, 'Error:', error);
     } else {
       // Primero consultar desde Supabase si existe comentario para no perderlo
@@ -870,17 +861,6 @@ const TablaNotas = () => {
         .eq('salon', salonSeleccionado)
         .eq('periodo', 0)
         .eq('nombre_actividad', 'Final Definitiva');
-      
-      // Limpiar el comentario del estado local para que no reaparezca
-      const finalDefActividadId = '0-Final Definitiva';
-      setComentarios(prev => {
-        const nuevo = { ...prev };
-        if (nuevo[codigoEstudiantil]?.[0]?.[finalDefActividadId]) {
-          delete nuevo[codigoEstudiantil][0][finalDefActividadId];
-        }
-        return nuevo;
-      });
-      
       console.log('Final Definitiva eliminada para:', codigoEstudiantil, 'Error:', error);
     } else {
       // Primero consultar desde Supabase si existe comentario para no perderlo
@@ -1584,35 +1564,15 @@ const TablaNotas = () => {
     const nombreActividad = notificacionPendiente.datos[0]?.actividad || null;
     const esActividadFinal = nombreActividad?.includes("Final");
 
-    // Detectar el período real desde el nombre de la actividad
-    let periodoReal = periodoActivo;
-    
-    if (esDefinitiva) {
-      // Si es definitiva_individual o definitiva_masivo, usar periodo 0
-      periodoReal = 0;
-    } else if (esActividadFinal && nombreActividad) {
-      // Si es un "Final Periodo" (ej: "Final 1er Periodo")
-      // Extraer el número del período desde el nombre
-      if (nombreActividad.includes("1er")) periodoReal = 1;
-      else if (nombreActividad.includes("2do")) periodoReal = 2;
-      else if (nombreActividad.includes("3er")) periodoReal = 3;
-      else if (nombreActividad.includes("4to")) periodoReal = 4;
-      else if (nombreActividad.includes("Final Definitiva")) periodoReal = 0;
-    }
-
     // Preparar payload SIMPLE para n8n
     const payload = {
       tipo_boton: tipoBoton,
-      profesor: {
-        codigo: session.codigo,
-        nombres: session.nombres,
-        apellidos: session.apellidos,
-      },
+      profesor_codigo: session.codigo,
       contexto: {
         materia: materiaSeleccionada,
         grado: gradoSeleccionado,
         salon: salonSeleccionado,
-        periodo: periodoReal
+        periodo: esDefinitiva ? 0 : periodoActivo
       },
       actividad: esActividadFinal ? null : nombreActividad,
       estudiantes_codigos: notificacionPendiente.datos.map((d: any) => d.estudiante.codigo)
@@ -2251,50 +2211,48 @@ const TablaNotas = () => {
                                     <span className={finalDef !== null ? "" : "text-muted-foreground"}>
                                       {finalDef !== null ? finalDef.toFixed(2) : "—"}
                                     </span>
-                                    {/* Indicador de comentario solo si hay nota */}
-                                    {finalDef !== null && comentario && (
+                                    {comentario && (
                                       <div className="absolute top-0 right-6 w-2 h-2 bg-amber-500 rounded-full" title={comentario} />
                                     )}
-                                    {/* Menú solo visible si hay nota final */}
-                                    {finalDef !== null && (
-                                      <div className="absolute right-0 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                        <DropdownMenu>
-                                          <DropdownMenuTrigger asChild>
-                                            <button className="p-1 hover:bg-muted rounded transition-colors">
-                                              <MoreVertical className="w-3 h-3 text-muted-foreground" />
-                                            </button>
-                                          </DropdownMenuTrigger>
-                                          <DropdownMenuContent align="end" className="bg-background z-50">
-                                            <DropdownMenuItem onClick={() => handleAbrirComentario(
-                                              estudiante.codigo_estudiantil,
-                                              `${estudiante.nombre_estudiante} ${estudiante.apellidos_estudiante}`,
-                                              '0-Final Definitiva',
-                                              'Final Definitiva',
-                                              0
-                                            )}>
-                                              {comentario ? "Editar comentario" : "Agregar comentario"}
+                                    <div className="absolute right-0 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                      <DropdownMenu>
+                                        <DropdownMenuTrigger asChild>
+                                          <button className="p-1 hover:bg-muted rounded transition-colors">
+                                            <MoreVertical className="w-3 h-3 text-muted-foreground" />
+                                          </button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent align="end" className="bg-background z-50">
+                                          <DropdownMenuItem onClick={() => handleAbrirComentario(
+                                            estudiante.codigo_estudiantil,
+                                            `${estudiante.nombre_estudiante} ${estudiante.apellidos_estudiante}`,
+                                            '0-Final Definitiva',
+                                            'Final Definitiva',
+                                            0
+                                          )}>
+                                            {comentario ? "Editar comentario" : "Agregar comentario"}
+                                          </DropdownMenuItem>
+                                          {comentario && (
+                                            <DropdownMenuItem 
+                                              onClick={() => handleEliminarComentario(
+                                                estudiante.codigo_estudiantil,
+                                                '0-Final Definitiva',
+                                                'Final Definitiva',
+                                                0
+                                              )}
+                                              className="text-destructive focus:text-destructive"
+                                            >
+                                              Eliminar comentario
                                             </DropdownMenuItem>
-                                            {comentario && (
-                                              <DropdownMenuItem 
-                                                onClick={() => handleEliminarComentario(
-                                                  estudiante.codigo_estudiantil,
-                                                  '0-Final Definitiva',
-                                                  'Final Definitiva',
-                                                  0
-                                                )}
-                                                className="text-destructive focus:text-destructive"
-                                              >
-                                                Eliminar comentario
-                                              </DropdownMenuItem>
-                                            )}
+                                          )}
+                                          {finalDef !== null && (
                                             <DropdownMenuItem onClick={() => handleNotificarFinalDefinitivaIndividual(estudiante, finalDef)}>
                                               <Send className="w-4 h-4 mr-2" />
                                               Notificar a padre(s)
                                             </DropdownMenuItem>
-                                          </DropdownMenuContent>
-                                        </DropdownMenu>
-                                      </div>
-                                    )}
+                                          )}
+                                        </DropdownMenuContent>
+                                      </DropdownMenu>
+                                    </div>
                                   </div>
                                 </td>
                               );
