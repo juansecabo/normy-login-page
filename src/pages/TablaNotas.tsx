@@ -814,7 +814,7 @@ const TablaNotas = () => {
       
       console.log('Final Periodo eliminado para:', codigoEstudiantil, 'Error:', error);
     } else {
-      // Primero consultar desde Supabase si existe comentario para no perderlo
+      // Consultar desde Supabase si existe comentario (fuente de verdad)
       const { data: existente } = await supabase
         .from('Notas')
         .select('comentario')
@@ -826,7 +826,8 @@ const TablaNotas = () => {
         .eq('nombre_actividad', 'Final Periodo')
         .maybeSingle();
       
-      const comentarioExistente = existente?.comentario || comentarios[codigoEstudiantil]?.[periodo]?.[finalActividadId] || null;
+      // SOLO usar el comentario de Supabase (no el estado local que puede estar desactualizado)
+      const comentarioExistente = existente?.comentario || null;
       
       // Upsert la nota final
       const { data, error } = await supabase
