@@ -2211,50 +2211,48 @@ const TablaNotas = () => {
                                     <span className={finalDef !== null ? "" : "text-muted-foreground"}>
                                       {finalDef !== null ? finalDef.toFixed(2) : "—"}
                                     </span>
-                                    {/* Indicador de comentario solo si hay nota Y comentario */}
-                                    {finalDef !== null && comentario && (
+                                    {comentario && (
                                       <div className="absolute top-0 right-6 w-2 h-2 bg-amber-500 rounded-full" title={comentario} />
                                     )}
-                                    {/* Menú solo si hay nota */}
-                                    {finalDef !== null && (
-                                      <div className="absolute right-0 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                        <DropdownMenu>
-                                          <DropdownMenuTrigger asChild>
-                                            <button className="p-1 hover:bg-muted rounded transition-colors">
-                                              <MoreVertical className="w-3 h-3 text-muted-foreground" />
-                                            </button>
-                                          </DropdownMenuTrigger>
-                                          <DropdownMenuContent align="end" className="bg-background z-50">
-                                            <DropdownMenuItem onClick={() => handleAbrirComentario(
-                                              estudiante.codigo_estudiantil,
-                                              `${estudiante.nombre_estudiante} ${estudiante.apellidos_estudiante}`,
-                                              '0-Final Definitiva',
-                                              'Final Definitiva',
-                                              0
-                                            )}>
-                                              {comentario ? "Editar comentario" : "Agregar comentario"}
+                                    <div className="absolute right-0 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                      <DropdownMenu>
+                                        <DropdownMenuTrigger asChild>
+                                          <button className="p-1 hover:bg-muted rounded transition-colors">
+                                            <MoreVertical className="w-3 h-3 text-muted-foreground" />
+                                          </button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent align="end" className="bg-background z-50">
+                                          <DropdownMenuItem onClick={() => handleAbrirComentario(
+                                            estudiante.codigo_estudiantil,
+                                            `${estudiante.nombre_estudiante} ${estudiante.apellidos_estudiante}`,
+                                            '0-Final Definitiva',
+                                            'Final Definitiva',
+                                            0
+                                          )}>
+                                            {comentario ? "Editar comentario" : "Agregar comentario"}
+                                          </DropdownMenuItem>
+                                          {comentario && (
+                                            <DropdownMenuItem 
+                                              onClick={() => handleEliminarComentario(
+                                                estudiante.codigo_estudiantil,
+                                                '0-Final Definitiva',
+                                                'Final Definitiva',
+                                                0
+                                              )}
+                                              className="text-destructive focus:text-destructive"
+                                            >
+                                              Eliminar comentario
                                             </DropdownMenuItem>
-                                            {comentario && (
-                                              <DropdownMenuItem 
-                                                onClick={() => handleEliminarComentario(
-                                                  estudiante.codigo_estudiantil,
-                                                  '0-Final Definitiva',
-                                                  'Final Definitiva',
-                                                  0
-                                                )}
-                                                className="text-destructive focus:text-destructive"
-                                              >
-                                                Eliminar comentario
-                                              </DropdownMenuItem>
-                                            )}
+                                          )}
+                                          {finalDef !== null && (
                                             <DropdownMenuItem onClick={() => handleNotificarFinalDefinitivaIndividual(estudiante, finalDef)}>
                                               <Send className="w-4 h-4 mr-2" />
                                               Notificar a padre(s)
                                             </DropdownMenuItem>
-                                          </DropdownMenuContent>
-                                        </DropdownMenu>
-                                      </div>
-                                    )}
+                                          )}
+                                        </DropdownMenuContent>
+                                      </DropdownMenu>
+                                    </div>
                                   </div>
                                 </td>
                               );
