@@ -37,40 +37,42 @@ const FinalPeriodoCelda = ({
           <div className="absolute top-0 right-6 w-2 h-2 bg-amber-500 rounded-full" title={comentario} />
         )}
         
-        {/* Menú de opciones (visible en hover) */}
-        <div className="absolute right-0 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity">
-          <DropdownMenu open={showMenu} onOpenChange={setShowMenu}>
-            <DropdownMenuTrigger asChild>
-              <button className="p-1 hover:bg-muted rounded transition-colors">
-                <MoreVertical className="w-3 h-3 text-muted-foreground" />
-              </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="bg-background z-50">
-              <DropdownMenuItem onClick={onAbrirComentario}>
-                <MessageSquare className="w-4 h-4 mr-2" />
-                {comentario ? "Editar comentario" : "Agregar comentario"}
-              </DropdownMenuItem>
-              {comentario && (
-                <DropdownMenuItem 
-                  onClick={onEliminarComentario}
-                  className="text-destructive focus:text-destructive"
-                >
-                  <Trash2 className="w-4 h-4 mr-2" />
-                  Eliminar comentario
+        {/* Menú de opciones (visible en hover, solo cuando hay nota) */}
+        {notaFinal !== null && (
+          <div className="absolute right-0 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity">
+            <DropdownMenu open={showMenu} onOpenChange={setShowMenu}>
+              <DropdownMenuTrigger asChild>
+                <button className="p-1 hover:bg-muted rounded transition-colors">
+                  <MoreVertical className="w-3 h-3 text-muted-foreground" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="bg-background z-50">
+                <DropdownMenuItem onClick={onAbrirComentario}>
+                  <MessageSquare className="w-4 h-4 mr-2" />
+                  {comentario ? "Editar comentario" : "Agregar comentario"}
                 </DropdownMenuItem>
-              )}
-              {notaFinal !== null && onNotificarPadre && (
-                <>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={onNotificarPadre}>
-                    <Send className="w-4 h-4 mr-2" />
-                    Notificar a padre(s)
+                {comentario && (
+                  <DropdownMenuItem 
+                    onClick={onEliminarComentario}
+                    className="text-destructive focus:text-destructive"
+                  >
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    Eliminar comentario
                   </DropdownMenuItem>
-                </>
-              )}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
+                )}
+                {onNotificarPadre && (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={onNotificarPadre}>
+                      <Send className="w-4 h-4 mr-2" />
+                      Notificar a padre(s)
+                    </DropdownMenuItem>
+                  </>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        )}
       </div>
     </td>
   );
