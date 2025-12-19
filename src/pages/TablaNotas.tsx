@@ -626,17 +626,6 @@ const TablaNotas = () => {
         }
       });
       setNotas(nuevasNotas);
-      
-      // También eliminar comentarios del estado local para esta actividad
-      setComentarios(prev => {
-        const nuevosComentarios = { ...prev };
-        Object.keys(nuevosComentarios).forEach(codigo => {
-          if (nuevosComentarios[codigo]?.[actividadAEliminar.periodo]) {
-            delete nuevosComentarios[codigo][actividadAEliminar.periodo][actividadAEliminar.id];
-          }
-        });
-        return nuevosComentarios;
-      });
 
       setDeleteDialogOpen(false);
       const periodoEliminado = actividadAEliminar.periodo;
@@ -1762,17 +1751,6 @@ const TablaNotas = () => {
             const notaFinal = calcularFinalPeriodoConNotas(nuevasNotas, codigoEstudiantil, periodo);
             await guardarFinalPeriodo(codigoEstudiantil, periodo, notaFinal);
             
-            // Si Final Periodo queda null, también eliminar su comentario del estado local
-            if (notaFinal === null) {
-              setComentarios(prev => {
-                const nuevosComentarios = { ...prev };
-                if (nuevosComentarios[codigoEstudiantil]?.[periodo]?.[`${periodo}-Final Periodo`]) {
-                  delete nuevosComentarios[codigoEstudiantil][periodo][`${periodo}-Final Periodo`];
-                }
-                return nuevosComentarios;
-              });
-            }
-            
             // Recalcular y guardar Final Definitiva
             let suma = 0;
             let tieneAlgunaNota = false;
@@ -1788,14 +1766,6 @@ const TablaNotas = () => {
               await guardarFinalDefinitiva(codigoEstudiantil, finalDef);
             } else {
               await guardarFinalDefinitiva(codigoEstudiantil, null);
-              // Si Final Definitiva queda null, también eliminar su comentario
-              setComentarios(prev => {
-                const nuevosComentarios = { ...prev };
-                if (nuevosComentarios[codigoEstudiantil]?.[0]?.['0-Final Definitiva']) {
-                  delete nuevosComentarios[codigoEstudiantil][0]['0-Final Definitiva'];
-                }
-                return nuevosComentarios;
-              });
             }
           }, 0);
         }
@@ -2244,46 +2214,45 @@ const TablaNotas = () => {
                                     {comentario && (
                                       <div className="absolute top-0 right-6 w-2 h-2 bg-amber-500 rounded-full" title={comentario} />
                                     )}
-                                    {/* Menú solo visible cuando hay nota */}
-                                    {finalDef !== null && (
-                                      <div className="absolute right-0 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                        <DropdownMenu>
-                                          <DropdownMenuTrigger asChild>
-                                            <button className="p-1 hover:bg-muted rounded transition-colors">
-                                              <MoreVertical className="w-3 h-3 text-muted-foreground" />
-                                            </button>
-                                          </DropdownMenuTrigger>
-                                          <DropdownMenuContent align="end" className="bg-background z-50">
-                                            <DropdownMenuItem onClick={() => handleAbrirComentario(
-                                              estudiante.codigo_estudiantil,
-                                              `${estudiante.nombre_estudiante} ${estudiante.apellidos_estudiante}`,
-                                              '0-Final Definitiva',
-                                              'Final Definitiva',
-                                              0
-                                            )}>
-                                              {comentario ? "Editar comentario" : "Agregar comentario"}
+                                    <div className="absolute right-0 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                      <DropdownMenu>
+                                        <DropdownMenuTrigger asChild>
+                                          <button className="p-1 hover:bg-muted rounded transition-colors">
+                                            <MoreVertical className="w-3 h-3 text-muted-foreground" />
+                                          </button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent align="end" className="bg-background z-50">
+                                          <DropdownMenuItem onClick={() => handleAbrirComentario(
+                                            estudiante.codigo_estudiantil,
+                                            `${estudiante.nombre_estudiante} ${estudiante.apellidos_estudiante}`,
+                                            '0-Final Definitiva',
+                                            'Final Definitiva',
+                                            0
+                                          )}>
+                                            {comentario ? "Editar comentario" : "Agregar comentario"}
+                                          </DropdownMenuItem>
+                                          {comentario && (
+                                            <DropdownMenuItem 
+                                              onClick={() => handleEliminarComentario(
+                                                estudiante.codigo_estudiantil,
+                                                '0-Final Definitiva',
+                                                'Final Definitiva',
+                                                0
+                                              )}
+                                              className="text-destructive focus:text-destructive"
+                                            >
+                                              Eliminar comentario
                                             </DropdownMenuItem>
-                                            {comentario && (
-                                              <DropdownMenuItem 
-                                                onClick={() => handleEliminarComentario(
-                                                  estudiante.codigo_estudiantil,
-                                                  '0-Final Definitiva',
-                                                  'Final Definitiva',
-                                                  0
-                                                )}
-                                                className="text-destructive focus:text-destructive"
-                                              >
-                                                Eliminar comentario
-                                              </DropdownMenuItem>
-                                            )}
+                                          )}
+                                          {finalDef !== null && (
                                             <DropdownMenuItem onClick={() => handleNotificarFinalDefinitivaIndividual(estudiante, finalDef)}>
                                               <Send className="w-4 h-4 mr-2" />
                                               Notificar a padre(s)
                                             </DropdownMenuItem>
-                                          </DropdownMenuContent>
-                                        </DropdownMenu>
-                                      </div>
-                                    )}
+                                          )}
+                                        </DropdownMenuContent>
+                                      </DropdownMenu>
+                                    </div>
                                   </div>
                                 </td>
                               );
