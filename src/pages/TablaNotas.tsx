@@ -803,6 +803,15 @@ const TablaNotas = () => {
         .eq('periodo', periodo)
         .eq('nombre_actividad', 'Final Periodo');
       
+      // Limpiar el comentario del estado local para que no reaparezca
+      setComentarios(prev => {
+        const nuevo = { ...prev };
+        if (nuevo[codigoEstudiantil]?.[periodo]?.[finalActividadId]) {
+          delete nuevo[codigoEstudiantil][periodo][finalActividadId];
+        }
+        return nuevo;
+      });
+      
       console.log('Final Periodo eliminado para:', codigoEstudiantil, 'Error:', error);
     } else {
       // Primero consultar desde Supabase si existe comentario para no perderlo
@@ -861,6 +870,17 @@ const TablaNotas = () => {
         .eq('salon', salonSeleccionado)
         .eq('periodo', 0)
         .eq('nombre_actividad', 'Final Definitiva');
+      
+      // Limpiar el comentario del estado local para que no reaparezca
+      const finalDefActividadId = '0-Final Definitiva';
+      setComentarios(prev => {
+        const nuevo = { ...prev };
+        if (nuevo[codigoEstudiantil]?.[0]?.[finalDefActividadId]) {
+          delete nuevo[codigoEstudiantil][0][finalDefActividadId];
+        }
+        return nuevo;
+      });
+      
       console.log('Final Definitiva eliminada para:', codigoEstudiantil, 'Error:', error);
     } else {
       // Primero consultar desde Supabase si existe comentario para no perderlo
