@@ -784,6 +784,21 @@ const TablaNotas = () => {
     return Math.round(promedio * 100) / 100;
   }, [calcularFinalPeriodo]);
 
+  // Verificar si un estudiante tiene AL MENOS UNA NOTA registrada en un período
+  // Independientemente de si la actividad tiene porcentaje asignado o no
+  const tieneAlgunaNotaEnPeriodo = useCallback((codigoEstudiantil: string, periodo: number): boolean => {
+    const notasEstudiante = notas[codigoEstudiantil]?.[periodo];
+    if (!notasEstudiante) return false;
+    
+    // Verificar si hay al menos una nota definida (diferente de undefined)
+    return Object.values(notasEstudiante).some(nota => nota !== undefined);
+  }, [notas]);
+
+  // Verificar si un estudiante tiene AL MENOS UNA NOTA en CUALQUIER período del año
+  const tieneAlgunaNotaEnAnio = useCallback((codigoEstudiantil: string): boolean => {
+    return [1, 2, 3, 4].some(periodo => tieneAlgunaNotaEnPeriodo(codigoEstudiantil, periodo));
+  }, [tieneAlgunaNotaEnPeriodo]);
+
   // Guardar nota final en Supabase
   const guardarFinalPeriodo = async (codigoEstudiantil: string, periodo: number, notaFinal: number | null) => {
     console.log('=== INICIANDO guardarFinalPeriodo ===');
@@ -2221,11 +2236,13 @@ const TablaNotas = () => {
                             {periodos.map((periodo) => {
                               const finalPeriodo = calcularFinalPeriodo(estudiante.codigo_estudiantil, periodo.numero);
                               const comentario = comentarios[estudiante.codigo_estudiantil]?.[periodo.numero]?.[`${periodo.numero}-Final Periodo`] || null;
+                              const tieneNotas = tieneAlgunaNotaEnPeriodo(estudiante.codigo_estudiantil, periodo.numero);
                               return (
                                 <FinalPeriodoCelda
                                   key={periodo.numero}
                                   notaFinal={finalPeriodo}
                                   comentario={comentario}
+                                  tieneAlgunaNota={tieneNotas}
                                   onAbrirComentario={() => handleAbrirComentario(
                                     estudiante.codigo_estudiantil,
                                     `${estudiante.nombre_estudiante} ${estudiante.apellidos_estudiante}`,
@@ -2239,7 +2256,7 @@ const TablaNotas = () => {
                                     'Final Periodo',
                                     periodo.numero
                                   )}
-                                  onNotificarPadre={finalPeriodo !== null ? () => handleNotificarFinalPeriodoIndividual(estudiante, periodo.numero, finalPeriodo) : undefined}
+                                  onNotificarPadre={tieneNotas ? () => handleNotificarFinalPeriodoIndividual(estudiante, periodo.numero, finalPeriodo) : undefined}
                                 />
                               );
                             })}
@@ -2247,6 +2264,7 @@ const TablaNotas = () => {
                             {(() => {
                               const finalDef = calcularFinalDefinitiva(estudiante.codigo_estudiantil);
                               const comentario = comentarios[estudiante.codigo_estudiantil]?.[0]?.['0-Final Definitiva'] || null;
+                              const tieneNotas = tieneAlgunaNotaEnAnio(estudiante.codigo_estudiantil);
                               return (
                                 <td className="border border-border p-1 text-center text-sm min-w-[130px] bg-primary/20 font-bold relative group">
                                   <div className="relative flex items-center justify-center h-8">
@@ -2256,45 +2274,48 @@ const TablaNotas = () => {
                                     {comentario && (
                                       <div className="absolute top-0 right-6 w-2 h-2 bg-amber-500 rounded-full" title={comentario} />
                                     )}
-                                    <div className="absolute right-0 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                      <DropdownMenu>
-                                        <DropdownMenuTrigger asChild>
-                                          <button className="p-1 hover:bg-muted rounded transition-colors">
-                                            <MoreVertical className="w-3 h-3 text-muted-foreground" />
-                                          </button>
-                                        </DropdownMenuTrigger>
-                                        <DropdownMenuContent align="end" className="bg-background z-50">
-                                          <DropdownMenuItem onClick={() => handleAbrirComentario(
-                                            estudiante.codigo_estudiantil,
-                                            `${estudiante.nombre_estudiante} ${estudiante.apellidos_estudiante}`,
-                                            '0-Final Definitiva',
-                                            'Final Definitiva',
-                                            0
-                                          )}>
-                                            {comentario ? "Editar comentario" : "Agregar comentario"}
-                                          </DropdownMenuItem>
-                                          {comentario && (
-                                            <DropdownMenuItem 
-                                              onClick={() => handleEliminarComentario(
-                                                estudiante.codigo_estudiantil,
-                                                '0-Final Definitiva',
-                                                'Final Definitiva',
-                                                0
-                                              )}
-                                              className="text-destructive focus:text-destructive"
-                                            >
-                                              Eliminar comentario
+                                    {/* Menú solo visible si tiene al menos una nota en cualquier período */}
+                                    {tieneNotas && (
+                                      <div className="absolute right-0 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <DropdownMenu>
+                                          <DropdownMenuTrigger asChild>
+                                            <button className="p-1 hover:bg-muted rounded transition-colors">
+                                              <MoreVertical className="w-3 h-3 text-muted-foreground" />
+                                            </button>
+                                          </DropdownMenuTrigger>
+                                          <DropdownMenuContent align="end" className="bg-background z-50">
+                                            <DropdownMenuItem onClick={() => handleAbrirComentario(
+                                              estudiante.codigo_estudiantil,
+                                              `${estudiante.nombre_estudiante} ${estudiante.apellidos_estudiante}`,
+                                              '0-Final Definitiva',
+                                              'Final Definitiva',
+                                              0
+                                            )}>
+                                              {comentario ? "Editar comentario" : "Agregar comentario"}
                                             </DropdownMenuItem>
-                                          )}
-                                          {finalDef !== null && (
-                                            <DropdownMenuItem onClick={() => handleNotificarFinalDefinitivaIndividual(estudiante, finalDef)}>
-                                              <Send className="w-4 h-4 mr-2" />
-                                              Notificar a padre(s)
-                                            </DropdownMenuItem>
-                                          )}
-                                        </DropdownMenuContent>
-                                      </DropdownMenu>
-                                    </div>
+                                            {comentario && (
+                                              <DropdownMenuItem 
+                                                onClick={() => handleEliminarComentario(
+                                                  estudiante.codigo_estudiantil,
+                                                  '0-Final Definitiva',
+                                                  'Final Definitiva',
+                                                  0
+                                                )}
+                                                className="text-destructive focus:text-destructive"
+                                              >
+                                                Eliminar comentario
+                                              </DropdownMenuItem>
+                                            )}
+                                            {finalDef !== null && (
+                                              <DropdownMenuItem onClick={() => handleNotificarFinalDefinitivaIndividual(estudiante, finalDef)}>
+                                                <Send className="w-4 h-4 mr-2" />
+                                                Notificar a padre(s)
+                                              </DropdownMenuItem>
+                                            )}
+                                          </DropdownMenuContent>
+                                        </DropdownMenu>
+                                      </div>
+                                    )}
                                   </div>
                                 </td>
                               );
@@ -2349,10 +2370,12 @@ const TablaNotas = () => {
                             {/* Celda Final Periodo */}
                             {(() => {
                               const notaFinal = calcularFinalPeriodo(estudiante.codigo_estudiantil, periodoActivo);
+                              const tieneNotas = tieneAlgunaNotaEnPeriodo(estudiante.codigo_estudiantil, periodoActivo);
                               return (
                                 <FinalPeriodoCelda
                                   notaFinal={notaFinal}
                                   comentario={comentarios[estudiante.codigo_estudiantil]?.[periodoActivo]?.[`${periodoActivo}-Final Periodo`] || null}
+                                  tieneAlgunaNota={tieneNotas}
                                   onAbrirComentario={() => handleAbrirComentario(
                                     estudiante.codigo_estudiantil,
                                     `${estudiante.nombre_estudiante} ${estudiante.apellidos_estudiante}`,
@@ -2366,7 +2389,7 @@ const TablaNotas = () => {
                                     'Final Periodo',
                                     periodoActivo
                                   )}
-                                  onNotificarPadre={notaFinal !== null ? () => handleNotificarFinalPeriodoIndividual(estudiante, periodoActivo, notaFinal) : undefined}
+                                  onNotificarPadre={tieneNotas ? () => handleNotificarFinalPeriodoIndividual(estudiante, periodoActivo, notaFinal) : undefined}
                                 />
                               );
                             })()}
