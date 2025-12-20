@@ -804,10 +804,22 @@ const TablaNotas = () => {
     console.log('=== INICIANDO guardarFinalPeriodo ===');
     console.log('Parámetros:', { codigoEstudiantil, periodo, notaFinal });
     
-    const finalActividadId = `${periodo}-Final Periodo`;
+    // Primero verificar si existe alguna nota para este estudiante en este periodo
+    const { data: notasExistentes } = await supabase
+      .from('Notas')
+      .select('id')
+      .eq('codigo_estudiantil', codigoEstudiantil)
+      .eq('materia', materiaSeleccionada)
+      .eq('grado', gradoSeleccionado)
+      .eq('salon', salonSeleccionado)
+      .eq('periodo', periodo)
+      .not('nombre_actividad', 'in', '("Final Periodo","Final Definitiva")')
+      .limit(1);
     
-    if (notaFinal === null) {
-      // Eliminar si no hay nota final
+    const tieneNotas = notasExistentes && notasExistentes.length > 0;
+    
+    if (!tieneNotas) {
+      // Solo eliminar si NO hay ninguna nota en el periodo
       const { error } = await supabase
         .from('Notas')
         .delete()
@@ -820,7 +832,7 @@ const TablaNotas = () => {
       
       console.log('Final Periodo eliminado para:', codigoEstudiantil, 'Error:', error);
     } else {
-      // Primero consultar desde Supabase si existe comentario para no perderlo
+      // Hay notas, hacer upsert (con nota NULL o con valor)
       const { data: existente } = await supabase
         .from('Notas')
         .select('comentario')
@@ -832,10 +844,8 @@ const TablaNotas = () => {
         .eq('nombre_actividad', 'Final Periodo')
         .maybeSingle();
       
-      // Solo usar comentario de Supabase, NO del estado local (para evitar que reaparezcan comentarios eliminados)
       const comentarioExistente = existente?.comentario || null;
       
-      // Upsert la nota final
       const { data, error } = await supabase
         .from('Notas')
         .upsert({
@@ -846,7 +856,7 @@ const TablaNotas = () => {
           periodo,
           nombre_actividad: 'Final Periodo',
           porcentaje: null,
-          nota: notaFinal,
+          nota: notaFinal,  // Puede ser null, eso está bien
           comentario: comentarioExistente,
           notificado: false,
         }, {
@@ -867,7 +877,21 @@ const TablaNotas = () => {
     console.log('=== INICIANDO guardarFinalDefinitiva ===');
     console.log('Parámetros:', { codigoEstudiantil, notaFinal, materia: materiaSeleccionada, grado: gradoSeleccionado, salon: salonSeleccionado });
     
-    if (notaFinal === null) {
+    // Verificar si existe algún Final Periodo para este estudiante
+    const { data: finalesPeriodo } = await supabase
+      .from('Notas')
+      .select('id')
+      .eq('codigo_estudiantil', codigoEstudiantil)
+      .eq('materia', materiaSeleccionada)
+      .eq('grado', gradoSeleccionado)
+      .eq('salon', salonSeleccionado)
+      .eq('nombre_actividad', 'Final Periodo')
+      .limit(1);
+    
+    const tienePeriodos = finalesPeriodo && finalesPeriodo.length > 0;
+    
+    if (!tienePeriodos) {
+      // Solo eliminar si NO hay ningún Final Periodo
       const { error } = await supabase
         .from('Notas')
         .delete()
@@ -879,7 +903,7 @@ const TablaNotas = () => {
         .eq('nombre_actividad', 'Final Definitiva');
       console.log('Final Definitiva eliminada para:', codigoEstudiantil, 'Error:', error);
     } else {
-      // Primero consultar desde Supabase si existe comentario para no perderlo
+      // Hay períodos, hacer upsert (con nota NULL o con valor)
       const { data: existente, error: errorConsulta } = await supabase
         .from('Notas')
         .select('comentario')
@@ -903,7 +927,7 @@ const TablaNotas = () => {
         periodo: 0,
         nombre_actividad: 'Final Definitiva',
         porcentaje: null,
-        nota: notaFinal,
+        nota: notaFinal,  // Puede ser null, eso está bien
         comentario: comentarioExistente,
         notificado: false,
       };
