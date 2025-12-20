@@ -351,6 +351,20 @@ const TablaNotas = () => {
     return Math.round(promedio * 100) / 100;
   };
 
+  // Verificar si al menos un período tiene porcentaje completo (100%) para un estudiante
+  const tieneAlMenosUnPeriodoCompleto = (codigoEstudiantil: string): boolean => {
+    for (let periodo = 1; periodo <= 4; periodo++) {
+      const porcentajeUsado = getPorcentajeUsado(periodo);
+      const finalPeriodo = calcularFinalPeriodo(codigoEstudiantil, periodo);
+      
+      // Período completo: porcentaje = 100% Y tiene nota final calculada
+      if (porcentajeUsado === 100 && finalPeriodo !== null) {
+        return true;
+      }
+    }
+    return false;
+  };
+
   const handleAbrirModal = (periodo: number) => {
     setPeriodoActual(periodo);
     setNombreActividad("");
@@ -1710,9 +1724,10 @@ const TablaNotas = () => {
     return estudiantes.some(est => calcularFinalPeriodo(est.codigo_estudiantil, periodo) !== null);
   };
 
-  // Verificar si hay al menos una Final Definitiva calculada
+  // Verificar si hay al menos un estudiante que pueda recibir notificación de Final Definitiva
+  // (debe tener al menos un período completo al 100%)
   const hayFinalDefinitiva = (): boolean => {
-    return estudiantes.some(est => calcularFinalDefinitiva(est.codigo_estudiantil) !== null);
+    return estudiantes.some(est => tieneAlMenosUnPeriodoCompleto(est.codigo_estudiantil));
   };
 
   // ========== FIN FUNCIONES DE NOTIFICACIÓN ==========
@@ -2330,7 +2345,7 @@ const TablaNotas = () => {
                                                 Eliminar comentario
                                               </DropdownMenuItem>
                                             )}
-                                            {finalDef !== null && (
+                                            {tieneAlMenosUnPeriodoCompleto(estudiante.codigo_estudiantil) && (
                                               <DropdownMenuItem onClick={() => handleNotificarFinalDefinitivaIndividual(estudiante, finalDef)}>
                                                 <Send className="w-4 h-4 mr-2" />
                                                 Notificar a padre(s)
