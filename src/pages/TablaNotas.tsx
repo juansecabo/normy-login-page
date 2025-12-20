@@ -817,7 +817,8 @@ const TablaNotas = () => {
         .eq('nombre_actividad', 'Final Periodo')
         .maybeSingle();
       
-      const comentarioExistente = existente?.comentario || comentarios[codigoEstudiantil]?.[periodo]?.[finalActividadId] || null;
+      // Solo usar comentario de Supabase, NO del estado local (para evitar que reaparezcan comentarios eliminados)
+      const comentarioExistente = existente?.comentario || null;
       
       // Upsert la nota final
       const { data, error } = await supabase
@@ -1771,6 +1772,18 @@ const TablaNotas = () => {
             const notaFinal = calcularFinalPeriodoConNotas(nuevasNotas, codigoEstudiantil, periodo);
             await guardarFinalPeriodo(codigoEstudiantil, periodo, notaFinal);
             
+            // Si ya no hay nota final, eliminar el comentario del Final Periodo del estado local
+            if (notaFinal === null) {
+              setComentarios(prev => {
+                const nuevosComentarios = { ...prev };
+                const finalPeriodoId = `${periodo}-Final Periodo`;
+                if (nuevosComentarios[codigoEstudiantil]?.[periodo]?.[finalPeriodoId] !== undefined) {
+                  delete nuevosComentarios[codigoEstudiantil][periodo][finalPeriodoId];
+                }
+                return nuevosComentarios;
+              });
+            }
+            
             // Recalcular y guardar Final Definitiva
             let suma = 0;
             let tieneAlgunaNota = false;
@@ -1786,6 +1799,15 @@ const TablaNotas = () => {
               await guardarFinalDefinitiva(codigoEstudiantil, finalDef);
             } else {
               await guardarFinalDefinitiva(codigoEstudiantil, null);
+              // Eliminar comentario del Final Definitiva del estado local
+              setComentarios(prev => {
+                const nuevosComentarios = { ...prev };
+                const finalDefId = '0-Final Definitiva';
+                if (nuevosComentarios[codigoEstudiantil]?.[0]?.[finalDefId] !== undefined) {
+                  delete nuevosComentarios[codigoEstudiantil][0][finalDefId];
+                }
+                return nuevosComentarios;
+              });
             }
           }, 0);
         }
