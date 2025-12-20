@@ -1512,15 +1512,12 @@ const TablaNotas = () => {
 
   // Preparar notificación masiva para Final Definitiva
   const handleNotificarDefinitivaMasiva = () => {
-    // Verificar completitud de todos los períodos
+    // Verificar completitud de todos los períodos (actividades asignadas)
     const completitudPeriodos = periodos.map(p => ({
       periodo: p.numero,
       porcentaje: getPorcentajeUsado(p.numero)
     }));
-    const todosCompletos = completitudPeriodos.every(p => p.porcentaje === 100);
-    
-    // Calcular promedio de completitud
-    const promedioCompletitud = Math.round((completitudPeriodos.reduce((sum, p) => sum + p.porcentaje, 0) / 4) * 100) / 100;
+    const todosConActividadesCompletas = completitudPeriodos.every(p => p.porcentaje === 100);
     
     // Filtrar SOLO estudiantes que cumplen los requisitos:
     // 1. Tienen Final Definitiva calculada
@@ -1533,21 +1530,40 @@ const TablaNotas = () => {
       return tieneAlMenosUnPeriodoCompletoConTodasNotas(est.codigo_estudiantil);
     });
     
-    // Contar estudiantes excluidos
-    const estudiantesConDefinitivaTotal = estudiantes.filter(est => calcularFinalDefinitiva(est.codigo_estudiantil) !== null);
-    const estudiantesExcluidos = estudiantesConDefinitivaTotal.length - estudiantesElegibles.length;
+    if (estudiantesElegibles.length === 0) {
+      toast({
+        title: "Sin estudiantes elegibles",
+        description: "Ningún estudiante tiene al menos un período completo (100% con todas las notas registradas)",
+        variant: "destructive",
+      });
+      return;
+    }
     
-    // Un estudiante está completo si tiene nota en todos los períodos Y todos los períodos están al 100%
+    // Contar estudiantes excluidos (total menos elegibles)
+    const estudiantesExcluidos = estudiantes.length - estudiantesElegibles.length;
+    
+    // Clasificar estudiantes por tipo de reporte:
+    // Completo = tiene los 4 períodos al 100% con TODAS las notas en cada uno
     const estudiantesCompletos = estudiantesElegibles.filter(est => {
-      if (!todosCompletos) return false;
-      // Verificar que tenga nota final en todos los períodos
       for (let p = 1; p <= 4; p++) {
-        if (calcularFinalPeriodo(est.codigo_estudiantil, p) === null) return false;
+        const porcentaje = getPorcentajeUsado(p);
+        if (porcentaje !== 100) return false;
+        
+        const finalPeriodo = calcularFinalPeriodo(est.codigo_estudiantil, p);
+        if (finalPeriodo === null) return false;
+        
+        const actividadesDelPeriodo = getActividadesPorPeriodo(p);
+        const actividadesConPorcentaje = actividadesDelPeriodo.filter(a => a.porcentaje !== null && a.porcentaje > 0);
+        const todasCalificadas = actividadesConPorcentaje.every(act => 
+          notas[est.codigo_estudiantil]?.[p]?.[act.id] !== undefined
+        );
+        
+        if (!todasCalificadas) return false;
       }
       return true;
     });
     
-    const estudiantesIncompletos = estudiantesElegibles.length - estudiantesCompletos.length;
+    const estudiantesParciales = estudiantesElegibles.length - estudiantesCompletos.length;
     
     const datos = estudiantesElegibles.map(est => {
       const finalesPeriodos = periodos.map(p => ({
@@ -1555,9 +1571,25 @@ const TablaNotas = () => {
         nota: calcularFinalPeriodo(est.codigo_estudiantil, p.numero),
       }));
       
-      const esteEstudianteCompleto = todosCompletos && periodos.every(p => 
-        calcularFinalPeriodo(est.codigo_estudiantil, p.numero) !== null
-      );
+      // Verificar si este estudiante tiene todos los períodos completos con notas
+      const esteEstudianteCompleto = (() => {
+        for (let p = 1; p <= 4; p++) {
+          const porcentaje = getPorcentajeUsado(p);
+          if (porcentaje !== 100) return false;
+          
+          const finalPeriodo = calcularFinalPeriodo(est.codigo_estudiantil, p);
+          if (finalPeriodo === null) return false;
+          
+          const actividadesDelPeriodo = getActividadesPorPeriodo(p);
+          const actividadesConPorcentaje = actividadesDelPeriodo.filter(a => a.porcentaje !== null && a.porcentaje > 0);
+          const todasCalificadas = actividadesConPorcentaje.every(act => 
+            notas[est.codigo_estudiantil]?.[p]?.[act.id] !== undefined
+          );
+          
+          if (!todasCalificadas) return false;
+        }
+        return true;
+      })();
 
       return {
         estudiante: {
@@ -1572,44 +1604,48 @@ const TablaNotas = () => {
         notificado: false,
         detallePeriodos: finalesPeriodos,
         tipo_reporte_estudiante: esteEstudianteCompleto ? "completo" : "parcial",
-        razon_parcial: !todosCompletos ? "periodo_incompleto" : (!esteEstudianteCompleto ? "notas_faltantes" : null),
+        razon_parcial: !esteEstudianteCompleto ? "notas_faltantes_periodo" : null,
       };
     });
-
-    if (datos.length === 0) {
-      toast({
-        title: "Sin estudiantes elegibles",
-        description: "Ningún estudiante cumple los requisitos para notificar Final Definitiva (al menos un período al 100% con todas las notas)",
-        variant: "destructive",
-      });
-      return;
-    }
 
     // Construir mensaje detallado según completitud
     let descripcion = "";
     
-    if (todosCompletos && estudiantesIncompletos === 0) {
-      // Todo completo
-      descripcion = `Todos los períodos están COMPLETOS (100%). Se enviará el REPORTE FINAL ANUAL a ${estudiantesElegibles.length} estudiante(s) sobre:\nFinal Definitiva`;
-      if (estudiantesExcluidos > 0) {
-        descripcion += `\n\n⚠️ Se excluirán ${estudiantesExcluidos} estudiante(s) que no tienen todas las notas.`;
+    if (todosConActividadesCompletas) {
+      descripcion = "Todos los períodos tienen actividades asignadas al 100%.\n\n";
+      
+      if (estudiantesCompletos.length > 0 && estudiantesParciales === 0) {
+        // Todos recibirán reporte completo
+        descripcion += `Se enviará REPORTE FINAL COMPLETO a ${estudiantesCompletos.length} estudiante(s) sobre:\nFinal Definitiva (4 períodos completados)`;
+      } else if (estudiantesCompletos.length > 0 && estudiantesParciales > 0) {
+        // Mezcla de completos y parciales
+        descripcion += `Se enviará notificación a ${estudiantesElegibles.length} estudiante(s):\n`;
+        descripcion += `• ${estudiantesCompletos.length} recibirá(n) REPORTE FINAL COMPLETO (4 períodos)\n`;
+        descripcion += `• ${estudiantesParciales} recibirá(n) REPORTE PARCIAL (períodos completados individualmente)`;
+      } else {
+        // Solo parciales
+        descripcion += `Se enviará REPORTE PARCIAL a ${estudiantesParciales} estudiante(s) sobre:\nFinal Definitiva (períodos completados individualmente)`;
       }
-    } else if (todosCompletos && estudiantesIncompletos > 0) {
-      // Períodos completos pero hay estudiantes con notas faltantes
-      descripcion = `Todos los períodos están completos (100%). Se enviará notificación a ${estudiantesCompletos.length} estudiante(s) con todas sus notas sobre:\nFinal Definitiva`;
+      
       if (estudiantesExcluidos > 0) {
-        descripcion += `\n\n⚠️ Se excluirán ${estudiantesExcluidos} estudiante(s) sin notas completas.`;
+        descripcion += `\n\n⚠️ Se excluirá(n) ${estudiantesExcluidos} estudiante(s) que no tiene(n) ningún período completado al 100%.`;
       }
     } else {
-      // Períodos incompletos - reporte parcial
-      descripcion = `Se enviará REPORTE PARCIAL a ${estudiantesElegibles.length} estudiante(s) que tienen al menos un período completo con todas las notas sobre:\nFinal Definitiva`;
+      // No todos los períodos tienen actividades al 100%
+      const promedioCompletitud = Math.round((completitudPeriodos.reduce((sum, p) => sum + p.porcentaje, 0) / 4));
+      
+      descripcion = `Los períodos NO tienen todas las actividades asignadas (promedio: ${promedioCompletitud}%).\n\n`;
+      descripcion += `Se enviará REPORTE PARCIAL a ${estudiantesElegibles.length} estudiante(s) sobre:\nFinal Definitiva (períodos con actividades completadas)`;
+      
       if (estudiantesExcluidos > 0) {
-        descripcion += `\n\n⚠️ Se excluirán ${estudiantesExcluidos} estudiante(s) que no cumplen los requisitos.`;
+        descripcion += `\n\n⚠️ Se excluirá(n) ${estudiantesExcluidos} estudiante(s) sin períodos elegibles.`;
       }
     }
 
     setNotificacionPendiente({
-      tipo: todosCompletos ? "definitiva_completa" : "definitiva_parcial",
+      tipo: todosConActividadesCompletas && estudiantesCompletos.length === estudiantesElegibles.length 
+        ? "definitiva_completa" 
+        : "definitiva_parcial",
       descripcion,
       datos,
     });
