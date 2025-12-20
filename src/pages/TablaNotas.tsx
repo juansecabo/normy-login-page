@@ -351,17 +351,33 @@ const TablaNotas = () => {
     return Math.round(promedio * 100) / 100;
   };
 
-  // Verificar si al menos un período tiene porcentaje completo (100%) para un estudiante
-  const tieneAlMenosUnPeriodoCompleto = (codigoEstudiantil: string): boolean => {
+  // Verificar si al menos un período tiene porcentaje completo (100%) Y el estudiante tiene TODAS las notas
+  const tieneAlMenosUnPeriodoCompletoConTodasNotas = (codigoEstudiantil: string): boolean => {
     for (let periodo = 1; periodo <= 4; periodo++) {
+      // 1. Verificar que el período esté al 100%
       const porcentajeUsado = getPorcentajeUsado(periodo);
-      const finalPeriodo = calcularFinalPeriodo(codigoEstudiantil, periodo);
+      if (porcentajeUsado !== 100) continue;
       
-      // Período completo: porcentaje = 100% Y tiene nota final calculada
-      if (porcentajeUsado === 100 && finalPeriodo !== null) {
+      // 2. Verificar que el estudiante tenga Final Periodo calculado
+      const finalPeriodo = calcularFinalPeriodo(codigoEstudiantil, periodo);
+      if (finalPeriodo === null) continue;
+      
+      // 3. Verificar que el estudiante tenga TODAS las actividades con porcentaje calificadas
+      const actividadesDelPeriodo = getActividadesPorPeriodo(periodo);
+      const actividadesConPorcentaje = actividadesDelPeriodo.filter(a => a.porcentaje !== null && a.porcentaje > 0);
+      
+      const todasCalificadas = actividadesConPorcentaje.every(actividad => {
+        const nota = notas[codigoEstudiantil]?.[periodo]?.[actividad.id];
+        return nota !== undefined;
+      });
+      
+      // Si este período cumple TODAS las condiciones, retornar true
+      if (todasCalificadas) {
         return true;
       }
     }
+    
+    // Ningún período cumple todas las condiciones
     return false;
   };
 
@@ -1727,7 +1743,7 @@ const TablaNotas = () => {
   // Verificar si hay al menos un estudiante que pueda recibir notificación de Final Definitiva
   // (debe tener al menos un período completo al 100%)
   const hayFinalDefinitiva = (): boolean => {
-    return estudiantes.some(est => tieneAlMenosUnPeriodoCompleto(est.codigo_estudiantil));
+    return estudiantes.some(est => tieneAlMenosUnPeriodoCompletoConTodasNotas(est.codigo_estudiantil));
   };
 
   // ========== FIN FUNCIONES DE NOTIFICACIÓN ==========
@@ -2345,7 +2361,7 @@ const TablaNotas = () => {
                                                 Eliminar comentario
                                               </DropdownMenuItem>
                                             )}
-                                            {tieneAlMenosUnPeriodoCompleto(estudiante.codigo_estudiantil) && (
+                                            {tieneAlMenosUnPeriodoCompletoConTodasNotas(estudiante.codigo_estudiantil) && (
                                               <DropdownMenuItem onClick={() => handleNotificarFinalDefinitivaIndividual(estudiante, finalDef)}>
                                                 <Send className="w-4 h-4 mr-2" />
                                                 Notificar a padre(s)
