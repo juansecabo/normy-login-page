@@ -1420,6 +1420,9 @@ const TablaNotas = () => {
       return finalPeriodo !== null;
     });
     
+    // Calcular estudiantes excluidos (sin ninguna nota)
+    const estudiantesExcluidos = estudiantes.length - estudiantesElegibles.length;
+    
     // Contar estudiantes con TODAS las actividades completadas (para el mensaje)
     const estudiantesCompletos = estudiantesElegibles.filter(est => {
       return actividadesConPorcentaje.every(act => 
@@ -1481,11 +1484,28 @@ const TablaNotas = () => {
         descripcion = `El período está completo (100%).\n\nSe enviará REPORTE PARCIAL a ${estudiantesParciales} estudiante(s) sobre:\nFinal ${nombrePeriodo} Periodo (tienen notas pendientes)`;
       } else {
         // Mezcla de completos y parciales
-        descripcion = `El período está completo (100%).\n\nSe enviará notificación a ${estudiantesElegibles.length} estudiante(s):\n• ${estudiantesCompletos.length} recibirá REPORTE FINAL (todas las notas registradas)\n• ${estudiantesParciales} recibirá REPORTE PARCIAL (notas pendientes)\n\nSobre: Final ${nombrePeriodo} Periodo`;
+        descripcion = `El período está completo (100%).\n\nSe enviará notificación a ${estudiantesElegibles.length} estudiante(s):\n• ${estudiantesCompletos.length} recibirá REPORTE FINAL (todas las notas registradas)\n• ${estudiantesParciales} recibirá REPORTE PARCIAL (notas pendientes)`;
+      }
+      
+      // Agregar info de excluidos si hay
+      if (estudiantesExcluidos > 0) {
+        descripcion += `\n\n⚠️ Se excluirá ${estudiantesExcluidos} estudiante(s) sin ninguna nota registrada.`;
+      }
+      
+      // Agregar sobre qué es la notificación (solo si no es mezcla, porque ya lo tiene)
+      if (estudiantesCompletos.length === estudiantesElegibles.length || estudiantesParciales === estudiantesElegibles.length) {
+        // Ya tiene el "sobre" incluido en el mensaje
+      } else {
+        descripcion += `\n\nSobre: Final ${nombrePeriodo} Periodo`;
       }
     } else {
       // Período incompleto
       descripcion = `El período está INCOMPLETO (${porcentajeUsado.toFixed(2)}/100%).\n\nSe enviará REPORTE PARCIAL a ${estudiantesElegibles.length} estudiante(s) sobre:\nFinal ${nombrePeriodo} Periodo`;
+      
+      // Agregar info de excluidos si hay
+      if (estudiantesExcluidos > 0) {
+        descripcion += `\n\n⚠️ Se excluirá ${estudiantesExcluidos} estudiante(s) sin ninguna nota registrada.`;
+      }
     }
 
     setNotificacionPendiente({
