@@ -1413,23 +1413,12 @@ const TablaNotas = () => {
     const actividadesDelPeriodo = getActividadesPorPeriodo(periodo);
     const actividadesConPorcentaje = actividadesDelPeriodo.filter(a => a.porcentaje !== null && a.porcentaje > 0);
     
-    // Filtrar SOLO estudiantes que tienen Final Periodo Y (si el período está completo) todas las notas
+    // Para Final Periodo, SOLO verificar que tenga Final Periodo calculado
+    // NO importa si tiene todas las notas o no (unos tendrán reporte completo, otros parcial)
     const estudiantesElegibles = estudiantes.filter(est => {
       const finalPeriodo = calcularFinalPeriodo(est.codigo_estudiantil, periodo);
-      if (finalPeriodo === null) return false;
-      
-      // Si el período NO está completo, permitir cualquier estudiante con final
-      if (!esCompleto) return true;
-      
-      // Si el período SÍ está completo (100%), verificar que tenga TODAS las notas
-      return actividadesConPorcentaje.every(act => 
-        notas[est.codigo_estudiantil]?.[periodo]?.[act.id] !== undefined
-      );
+      return finalPeriodo !== null;
     });
-    
-    // Contar estudiantes excluidos
-    const estudiantesConFinalTotal = estudiantes.filter(est => calcularFinalPeriodo(est.codigo_estudiantil, periodo) !== null);
-    const estudiantesExcluidos = estudiantesConFinalTotal.length - estudiantesElegibles.length;
     
     // Contar estudiantes con TODAS las actividades completadas (para el mensaje)
     const estudiantesCompletos = estudiantesElegibles.filter(est => {
@@ -1438,7 +1427,7 @@ const TablaNotas = () => {
       );
     });
     
-    const estudiantesIncompletos = estudiantesElegibles.length - estudiantesCompletos.length;
+    const estudiantesParciales = estudiantesElegibles.length - estudiantesCompletos.length;
     
     const datos = estudiantesElegibles.map(est => {
       const notasActividades = actividadesDelPeriodo
@@ -1472,10 +1461,8 @@ const TablaNotas = () => {
 
     if (datos.length === 0) {
       toast({
-        title: "Sin estudiantes elegibles",
-        description: esCompleto 
-          ? "Ningún estudiante tiene todas las notas registradas en este período" 
-          : "No hay notas finales de período calculadas",
+        title: "Sin notas",
+        description: "No hay notas finales de período calculadas",
         variant: "destructive",
       });
       return;
@@ -1485,21 +1472,20 @@ const TablaNotas = () => {
     const nombrePeriodo = periodos.find(p => p.numero === periodo)?.nombre;
     let descripcion = "";
     
-    if (esCompleto && estudiantesIncompletos === 0) {
-      // Todo completo
-      descripcion = `El período está COMPLETO (100%). Se enviará el REPORTE FINAL con la nota definitiva a ${estudiantesElegibles.length} estudiante(s) sobre:\nFinal ${nombrePeriodo}`;
-      if (estudiantesExcluidos > 0) {
-        descripcion += `\n\n⚠️ Se excluirán ${estudiantesExcluidos} estudiante(s) que no tienen todas las notas registradas.`;
-      }
-    } else if (esCompleto && estudiantesIncompletos > 0) {
-      // Porcentaje completo pero hay estudiantes sin notas
-      descripcion = `El período está completo (100%). Se enviará REPORTE FINAL a ${estudiantesCompletos.length} estudiante(s) con notas completas sobre:\nFinal ${nombrePeriodo}`;
-      if (estudiantesExcluidos > 0) {
-        descripcion += `\n\n⚠️ Se excluirán ${estudiantesExcluidos} estudiante(s) sin notas completas.`;
+    if (esCompleto) {
+      if (estudiantesCompletos.length === estudiantesElegibles.length) {
+        // Todos tienen todas las notas
+        descripcion = `El período está COMPLETO (100%).\n\nSe enviará REPORTE FINAL a ${estudiantesElegibles.length} estudiante(s) sobre:\nFinal ${nombrePeriodo} Periodo`;
+      } else if (estudiantesParciales === estudiantesElegibles.length) {
+        // Todos tienen notas parciales
+        descripcion = `El período está completo (100%).\n\nSe enviará REPORTE PARCIAL a ${estudiantesParciales} estudiante(s) sobre:\nFinal ${nombrePeriodo} Periodo (tienen notas pendientes)`;
+      } else {
+        // Mezcla de completos y parciales
+        descripcion = `El período está completo (100%).\n\nSe enviará notificación a ${estudiantesElegibles.length} estudiante(s):\n• ${estudiantesCompletos.length} recibirá REPORTE FINAL (todas las notas registradas)\n• ${estudiantesParciales} recibirá REPORTE PARCIAL (notas pendientes)\n\nSobre: Final ${nombrePeriodo} Periodo`;
       }
     } else {
       // Período incompleto
-      descripcion = `El período está INCOMPLETO (${porcentajeUsado}/100%). Se enviará un REPORTE PARCIAL a ${estudiantesElegibles.length} estudiante(s) sobre:\nFinal ${nombrePeriodo}`;
+      descripcion = `El período está INCOMPLETO (${porcentajeUsado.toFixed(2)}/100%).\n\nSe enviará REPORTE PARCIAL a ${estudiantesElegibles.length} estudiante(s) sobre:\nFinal ${nombrePeriodo} Periodo`;
     }
 
     setNotificacionPendiente({
