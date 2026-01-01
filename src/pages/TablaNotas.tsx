@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import escudoImg from "@/assets/escudo.png";
@@ -2119,14 +2119,14 @@ const TablaNotas = () => {
       {/* Header */}
       <header className="bg-primary text-primary-foreground py-3 px-4 shadow-md">
         <div className="container mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-3">
+          <Link to="/dashboard" className="flex items-center gap-3 hover:opacity-80 transition-opacity cursor-pointer">
             <img
               src={escudoImg}
               alt="Escudo"
               className="w-16 h-16 object-contain -my-2"
             />
             <h1 className="text-xl font-bold">Notas Normy</h1>
-          </div>
+          </Link>
           <Button
             variant="secondary"
             onClick={handleLogout}
