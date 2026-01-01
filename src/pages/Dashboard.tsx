@@ -159,13 +159,13 @@ const Dashboard = () => {
         <div className="max-w-4xl mx-auto mt-8">
           <button
             onClick={() => navigate("/normy-examinadora")}
-            className="w-full p-6 rounded-xl border-2 border-primary bg-gradient-to-r from-primary/90 to-green-600 text-white font-semibold text-lg flex items-center justify-center gap-4 transition-all duration-200 hover:shadow-lg hover:scale-[1.02] hover:from-green-600 hover:to-primary"
+            className="p-6 rounded-lg border-2 border-border bg-gradient-to-r from-white to-green-100 text-foreground font-medium flex items-center justify-center gap-3 transition-all duration-200 hover:shadow-md hover:border-primary hover:to-green-200"
           >
             <span>Normy Examinadora</span>
             <img
               src={normyExaminadoraImg}
               alt="Normy Examinadora"
-              className="w-16 h-16 object-contain rounded-full bg-white p-1"
+              className="w-12 h-12 object-contain"
             />
           </button>
         </div>

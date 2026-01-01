@@ -191,15 +191,25 @@ const NormyExaminadora = () => {
 
       {/* Main Content */}
       <main className="flex-1 container mx-auto p-8">
+        {/* Back button at top */}
+        <div className="max-w-3xl mx-auto mb-4">
+          <Button
+            variant="outline"
+            onClick={() => navigate("/dashboard")}
+          >
+            ← Volver al Dashboard
+          </Button>
+        </div>
+
         {/* Title Section */}
         <div className="bg-card rounded-lg shadow-soft p-8 max-w-3xl mx-auto text-center mb-8">
-          <div className="flex items-center justify-center gap-4 mb-4">
+          <div className="flex items-center justify-center gap-6 mb-4">
             <img
               src={normyImg}
               alt="Normy Examinadora"
-              className="w-20 h-20 object-contain rounded-full"
+              className="w-28 h-28 object-contain"
             />
-            <div>
+            <div className="text-left">
               <h2 className="text-2xl lg:text-3xl font-bold text-foreground">
                 Normy Examinadora
               </h2>
@@ -390,16 +400,6 @@ const NormyExaminadora = () => {
               </Button>
             </div>
           )}
-        </div>
-
-        {/* Back button */}
-        <div className="text-center mt-6">
-          <Button
-            variant="outline"
-            onClick={() => navigate("/dashboard")}
-          >
-            ← Volver al Dashboard
-          </Button>
         </div>
       </main>
     </div>
