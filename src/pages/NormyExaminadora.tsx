@@ -14,7 +14,7 @@ import { supabase } from "@/integrations/supabase/client";
 import escudoImg from "@/assets/escudo.png";
 import normyImg from "@/assets/normy-examinadora.png";
 import { getSession, clearSession } from "@/hooks/useSession";
-import { Upload, FileText, X } from "lucide-react";
+import { Upload, FileText, X, Loader2 } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
@@ -172,57 +172,99 @@ const NormyExaminadora = () => {
     }
   };
 
-  const handleCrear = async () => {
-    // Debug log
-    console.log({
-      tipoActividad,
-      materiaSeleccionada,
-      gradoSeleccionado,
-      salonSeleccionado,
-      tema,
-      instrucciones,
-      archivos,
-      soloDeArchivos,
-      preguntasMultiple,
-      preguntasAbiertas
+  // Helper to convert file to base64
+  const fileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => {
+        const result = reader.result as string;
+        // Remove the data:mime/type;base64, prefix
+        const base64 = result.split(',')[1];
+        resolve(base64);
+      };
+      reader.onerror = error => reject(error);
     });
+  };
 
-    // Build payload in exact UI order
-    const payload: Record<string, unknown> = {
-      timestamp: new Date().toISOString(),
-      nombre: nombres,
-      apellidos: apellidos,
-      tipoActividad,
-      materiaSeleccionada,
-      gradoSeleccionado,
-    };
+  // Calculate total file size
+  const totalFileSize = archivos.reduce((acc, file) => acc + file.size, 0);
+  const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20MB
 
-    // Optional: salonSeleccionado (after gradoSeleccionado)
-    if (salonSeleccionado) {
-      payload.salonSeleccionado = salonSeleccionado;
+  // Format file size for display
+  const formatFileSize = (bytes: number): string => {
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  };
+
+  // Get display label for tipoActividad
+  const getTipoActividadLabel = (tipo: string): string => {
+    switch (tipo) {
+      case 'evaluacion': return 'evaluación';
+      case 'taller': return 'taller';
+      case 'quiz': return 'quiz';
+      default: return tipo;
     }
+  };
 
-    // Required: tema
-    payload.tema = tema;
-
-    // Optional: instrucciones
-    if (instrucciones && instrucciones.trim()) {
-      payload.instrucciones = instrucciones.trim();
+  const handleCrear = async () => {
+    // Validate total file size
+    if (totalFileSize > MAX_FILE_SIZE) {
+      toast({
+        title: "Error",
+        description: "Los archivos son demasiado grandes. El límite es 20MB en total.",
+        variant: "destructive",
+      });
+      return;
     }
-
-    // Optional: archivos + soloDeArchivos (only if there are files)
-    if (archivos.length > 0) {
-      payload.archivos = archivos.map(f => ({ nombre: f.name, tipo: f.type, tamaño: f.size }));
-      payload.soloDeArchivos = soloDeArchivos;
-    }
-
-    // Always include these last two
-    payload.preguntasMultiple = preguntasMultiple;
-    payload.preguntasAbiertas = preguntasAbiertas;
 
     setEnviando(true);
 
     try {
+      // Convert all files to base64
+      const archivosConBase64 = await Promise.all(
+        archivos.map(async (file) => ({
+          nombre: file.name,
+          tipo: file.type,
+          tamaño: file.size,
+          contenidoBase64: await fileToBase64(file),
+        }))
+      );
+
+      // Build payload in exact UI order
+      const payload: Record<string, unknown> = {
+        timestamp: new Date().toISOString(),
+        nombre: nombres,
+        apellidos: apellidos,
+        tipoActividad,
+        materiaSeleccionada,
+        gradoSeleccionado,
+      };
+
+      // Optional: salonSeleccionado (after gradoSeleccionado)
+      if (salonSeleccionado) {
+        payload.salonSeleccionado = salonSeleccionado;
+      }
+
+      // Required: tema
+      payload.tema = tema;
+
+      // Optional: instrucciones
+      if (instrucciones && instrucciones.trim()) {
+        payload.instrucciones = instrucciones.trim();
+      }
+
+      // Optional: archivos + soloDeArchivos (only if there are files)
+      if (archivosConBase64.length > 0) {
+        payload.archivos = archivosConBase64;
+        payload.soloDeArchivos = soloDeArchivos;
+      }
+
+      // Always include these last two
+      payload.preguntasMultiple = preguntasMultiple;
+      payload.preguntasAbiertas = preguntasAbiertas;
+
       const response = await fetch(
         "https://n8n.srv966880.hstgr.cloud/webhook-test/41f121b5-276e-453a-98b2-f300227e2e99",
         {
@@ -235,17 +277,32 @@ const NormyExaminadora = () => {
         }
       );
 
-      console.log("Webhook response:", response);
+      if (!response.ok) {
+        throw new Error(`Error del servidor: ${response.status}`);
+      }
+
+      // Get the DOCX file from response
+      const blob = await response.blob();
       
+      // Create download link
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${tipoActividad}_${materiaSeleccionada}_${tema}.docx`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+
       toast({
-        title: "Solicitud enviada",
-        description: "La actividad fue enviada correctamente. Revisa el historial de tu webhook para confirmar.",
+        title: "¡Éxito!",
+        description: `${getTipoActividadLabel(tipoActividad).charAt(0).toUpperCase() + getTipoActividadLabel(tipoActividad).slice(1)} generada exitosamente`,
       });
     } catch (error) {
       console.error("Error enviando al webhook:", error);
       toast({
         title: "Error",
-        description: "No se pudo enviar la actividad. Intenta de nuevo.",
+        description: error instanceof Error ? error.message : "No se pudo generar la actividad. Intenta de nuevo.",
         variant: "destructive",
       });
     } finally {
@@ -438,6 +495,10 @@ const NormyExaminadora = () => {
                 </div>
                 {archivos.length > 0 && (
                   <div className="space-y-2 mt-4">
+                    <div className={`text-sm font-medium ${totalFileSize > MAX_FILE_SIZE ? 'text-destructive' : 'text-muted-foreground'}`}>
+                      {archivos.length} archivo{archivos.length > 1 ? 's' : ''} ({formatFileSize(totalFileSize)})
+                      {totalFileSize > MAX_FILE_SIZE && ' - Excede el límite de 20MB'}
+                    </div>
                     {archivos.map((file, index) => (
                       <div
                         key={index}
@@ -508,9 +569,16 @@ const NormyExaminadora = () => {
               <Button
                 onClick={handleCrear}
                 className="w-full bg-gradient-to-r from-primary to-green-600 hover:from-green-600 hover:to-primary text-white font-semibold py-6 text-lg"
-                disabled={!tipoActividad || !materiaSeleccionada || !gradoSeleccionado || !tema || enviando}
+                disabled={!tipoActividad || !materiaSeleccionada || !gradoSeleccionado || !tema || enviando || totalFileSize > MAX_FILE_SIZE}
               >
-                {enviando ? "Enviando..." : "Crear"}
+                {enviando ? (
+                  <>
+                    <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                    Generando {getTipoActividadLabel(tipoActividad)}...
+                  </>
+                ) : (
+                  "Crear"
+                )}
               </Button>
             </div>
           )}
