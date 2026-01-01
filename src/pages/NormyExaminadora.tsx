@@ -187,7 +187,7 @@ const NormyExaminadora = () => {
       preguntasAbiertas
     });
 
-    // Build payload with required fields
+    // Build payload with required fields (always include these)
     const payload: Record<string, unknown> = {
       timestamp: new Date().toISOString(),
       nombre: nombres,
@@ -198,6 +198,7 @@ const NormyExaminadora = () => {
       tema,
       preguntasMultiple,
       preguntasAbiertas,
+      soloDeArchivos,
     };
 
     // Add optional fields only if they have value
@@ -209,9 +210,6 @@ const NormyExaminadora = () => {
     }
     if (archivos.length > 0) {
       payload.archivos = archivos.map(f => ({ nombre: f.name, tipo: f.type, tamaño: f.size }));
-    }
-    if (soloDeArchivos === true) {
-      payload.soloDeArchivos = soloDeArchivos;
     }
 
     setEnviando(true);
