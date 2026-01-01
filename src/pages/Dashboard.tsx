@@ -161,7 +161,7 @@ const Dashboard = () => {
             onClick={() => navigate("/normy-examinadora")}
             className="relative overflow-hidden p-6 rounded-lg bg-gradient-to-r from-green-400 to-green-500 text-white font-bold text-lg transition-all duration-200 hover:shadow-md hover:scale-[1.02] hover:from-green-500 hover:to-green-400 min-w-[240px]"
           >
-            Normy Examinadora
+            <span className="relative z-10">Normy Examinadora</span>
             <img
               src={normyExaminadoraImg}
               alt="Normy Examinadora"
