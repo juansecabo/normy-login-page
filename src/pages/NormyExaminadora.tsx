@@ -17,6 +17,7 @@ import { getSession, clearSession } from "@/hooks/useSession";
 import { Upload, FileText, X } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
+import { useToast } from "@/hooks/use-toast";
 
 interface Asignacion {
   "Materia(s)": string[];
@@ -26,8 +27,10 @@ interface Asignacion {
 
 const NormyExaminadora = () => {
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [nombres, setNombres] = useState("");
   const [apellidos, setApellidos] = useState("");
+  const [enviando, setEnviando] = useState(false);
   
   // Form state
   const [tipoActividad, setTipoActividad] = useState<string>("");
@@ -169,8 +172,8 @@ const NormyExaminadora = () => {
     }
   };
 
-  const handleCrear = () => {
-    // TODO: Implement creation logic
+  const handleCrear = async () => {
+    // Debug log
     console.log({
       tipoActividad,
       materiaSeleccionada,
@@ -183,6 +186,69 @@ const NormyExaminadora = () => {
       preguntasMultiple,
       preguntasAbiertas
     });
+
+    // Build payload with required fields
+    const payload: Record<string, unknown> = {
+      timestamp: new Date().toISOString(),
+      nombre: nombres,
+      apellidos: apellidos,
+      tipoActividad,
+      materiaSeleccionada,
+      gradoSeleccionado,
+      tema,
+    };
+
+    // Add optional fields only if they have value
+    if (salonSeleccionado) {
+      payload.salonSeleccionado = salonSeleccionado;
+    }
+    if (instrucciones && instrucciones.trim()) {
+      payload.instrucciones = instrucciones.trim();
+    }
+    if (archivos.length > 0) {
+      payload.archivos = archivos.map(f => ({ nombre: f.name, tipo: f.type, tamaño: f.size }));
+    }
+    if (soloDeArchivos === true) {
+      payload.soloDeArchivos = soloDeArchivos;
+    }
+    if (preguntasMultiple !== 5) {
+      payload.preguntasMultiple = preguntasMultiple;
+    }
+    if (preguntasAbiertas !== 0) {
+      payload.preguntasAbiertas = preguntasAbiertas;
+    }
+
+    setEnviando(true);
+
+    try {
+      const response = await fetch(
+        "https://n8n.srv966880.hstgr.cloud/webhook-test/41f121b5-276e-453a-98b2-f300227e2e99",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          mode: "no-cors",
+          body: JSON.stringify(payload),
+        }
+      );
+
+      console.log("Webhook response:", response);
+      
+      toast({
+        title: "Solicitud enviada",
+        description: "La actividad fue enviada correctamente. Revisa el historial de tu webhook para confirmar.",
+      });
+    } catch (error) {
+      console.error("Error enviando al webhook:", error);
+      toast({
+        title: "Error",
+        description: "No se pudo enviar la actividad. Intenta de nuevo.",
+        variant: "destructive",
+      });
+    } finally {
+      setEnviando(false);
+    }
   };
 
   return (
@@ -440,9 +506,9 @@ const NormyExaminadora = () => {
               <Button
                 onClick={handleCrear}
                 className="w-full bg-gradient-to-r from-primary to-green-600 hover:from-green-600 hover:to-primary text-white font-semibold py-6 text-lg"
-                disabled={!tipoActividad || !materiaSeleccionada || !gradoSeleccionado || !tema}
+                disabled={!tipoActividad || !materiaSeleccionada || !gradoSeleccionado || !tema || enviando}
               >
-                Crear
+                {enviando ? "Enviando..." : "Crear"}
               </Button>
             </div>
           )}
