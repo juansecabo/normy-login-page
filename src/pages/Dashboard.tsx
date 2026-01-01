@@ -165,7 +165,7 @@ const Dashboard = () => {
             <img
               src={normyExaminadoraImg}
               alt="Normy Examinadora"
-              className="absolute right-0 bottom-0 h-full w-auto object-contain opacity-30"
+              className="absolute right-0 bottom-0 h-full w-auto object-contain opacity-40"
             />
           </button>
         </div>
