@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import escudoImg from "@/assets/escudo.png";
+import normyExaminadoraImg from "@/assets/normy-examinadora.png";
 import { getSession, clearSession } from "@/hooks/useSession";
 
 const Dashboard = () => {
@@ -152,6 +153,21 @@ const Dashboard = () => {
               })}
             </div>
           )}
+        </div>
+
+        {/* Botón Normy Examinadora */}
+        <div className="flex justify-center mt-8">
+          <button
+            onClick={() => navigate("/normy-examinadora")}
+            className="relative overflow-hidden p-6 rounded-lg bg-gradient-to-r from-green-400 to-green-500 text-white font-bold text-lg transition-all duration-200 hover:shadow-md hover:scale-[1.02] hover:from-green-500 hover:to-green-400 min-w-[240px]"
+          >
+            <span className="relative z-10">Normy Examinadora</span>
+            <img
+              src={normyExaminadoraImg}
+              alt="Normy Examinadora"
+              className="absolute right-0 bottom-0 h-full w-auto object-contain opacity-40"
+            />
+          </button>
         </div>
       </main>
     </div>
