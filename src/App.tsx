@@ -9,7 +9,6 @@ import SeleccionarGrado from "./pages/SeleccionarGrado";
 import SeleccionarSalon from "./pages/SeleccionarSalon";
 import TablaNotas from "./pages/TablaNotas";
 import ActividadesCalendario from "./pages/ActividadesCalendario";
-import NormyExaminadora from "./pages/NormyExaminadora";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -27,7 +26,6 @@ const App = () => (
           <Route path="/seleccionar-salon" element={<SeleccionarSalon />} />
           <Route path="/tabla-notas" element={<TablaNotas />} />
           <Route path="/actividades-calendario" element={<ActividadesCalendario />} />
-          <Route path="/normy-examinadora" element={<NormyExaminadora />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
