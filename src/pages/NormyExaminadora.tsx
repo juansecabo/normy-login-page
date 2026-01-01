@@ -226,7 +226,7 @@ const NormyExaminadora = () => {
           <img
             src={normyImg}
             alt="Normy Examinadora"
-            className="absolute right-0 top-1/2 -translate-y-1/2 h-full w-auto object-contain opacity-30 pointer-events-none"
+            className="absolute right-0 top-1/2 -translate-y-1/2 h-full w-auto object-contain pointer-events-none"
           />
           <div className="relative z-10">
             <h2 className="text-2xl lg:text-3xl font-bold text-foreground">
