@@ -156,16 +156,16 @@ const Dashboard = () => {
         </div>
 
         {/* Botón Normy Examinadora */}
-        <div className="max-w-4xl mx-auto mt-8">
+        <div className="max-w-4xl mx-auto mt-8 flex justify-center">
           <button
             onClick={() => navigate("/normy-examinadora")}
-            className="p-6 rounded-lg border-2 border-border bg-gradient-to-r from-white to-green-100 text-foreground font-medium flex items-center justify-center gap-3 transition-all duration-200 hover:shadow-md hover:border-primary hover:to-green-200"
+            className="relative overflow-hidden p-6 pr-24 rounded-lg border-2 border-primary bg-gradient-to-r from-primary to-green-500 text-white font-semibold flex items-center justify-center transition-all duration-200 hover:shadow-lg hover:from-green-500 hover:to-primary"
           >
-            <span>Normy Examinadora</span>
+            <span className="relative z-10">Normy Examinadora</span>
             <img
               src={normyExaminadoraImg}
               alt="Normy Examinadora"
-              className="w-12 h-12 object-contain"
+              className="absolute right-0 top-1/2 -translate-y-1/2 h-20 object-contain opacity-90 mix-blend-luminosity"
             />
           </button>
         </div>
