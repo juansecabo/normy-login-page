@@ -77,13 +77,13 @@ const Dashboard = () => {
   return (
     <div className="min-h-screen bg-background flex flex-col">
       {/* Header */}
-      <header className="bg-primary text-primary-foreground p-4 shadow-md">
+      <header className="bg-primary text-primary-foreground py-1 px-4 shadow-md">
         <div className="container mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
             <img
               src={escudoImg}
               alt="Escudo"
-              className="w-14 h-14 object-contain"
+              className="w-16 h-16 object-contain -my-2"
             />
             <h1 className="text-xl font-bold">Notas Normy</h1>
           </div>
