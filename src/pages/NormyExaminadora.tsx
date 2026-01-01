@@ -196,6 +196,8 @@ const NormyExaminadora = () => {
       materiaSeleccionada,
       gradoSeleccionado,
       tema,
+      preguntasMultiple,
+      preguntasAbiertas,
     };
 
     // Add optional fields only if they have value
@@ -210,12 +212,6 @@ const NormyExaminadora = () => {
     }
     if (soloDeArchivos === true) {
       payload.soloDeArchivos = soloDeArchivos;
-    }
-    if (preguntasMultiple !== 5) {
-      payload.preguntasMultiple = preguntasMultiple;
-    }
-    if (preguntasAbiertas !== 0) {
-      payload.preguntasAbiertas = preguntasAbiertas;
     }
 
     setEnviando(true);
