@@ -159,14 +159,25 @@ const Dashboard = () => {
         <div className="max-w-4xl mx-auto mt-8">
           <button
             onClick={() => navigate("/normy-examinadora")}
-            className="w-full p-6 rounded-xl border-2 border-primary bg-gradient-to-r from-primary/90 to-green-600 text-white font-semibold text-lg flex items-center justify-center gap-4 transition-all duration-200 hover:shadow-lg hover:scale-[1.02] hover:from-green-600 hover:to-primary"
+            className="relative w-full p-8 rounded-xl border-2 border-primary overflow-hidden transition-all duration-200 hover:shadow-lg hover:scale-[1.02]"
+            style={{
+              background: 'linear-gradient(135deg, hsl(142, 76%, 36%) 0%, hsl(142, 71%, 45%) 50%, hsl(142, 64%, 52%) 100%)'
+            }}
           >
-            <span>Normy Examinadora</span>
-            <img
-              src={normyExaminadoraImg}
-              alt="Normy Examinadora"
-              className="w-16 h-16 object-contain rounded-full bg-white p-1"
+            {/* Imagen de fondo semi-transparente */}
+            <div 
+              className="absolute right-0 top-1/2 -translate-y-1/2 w-32 h-32 opacity-35 pointer-events-none"
+              style={{
+                backgroundImage: `url(${normyExaminadoraImg})`,
+                backgroundSize: 'contain',
+                backgroundRepeat: 'no-repeat',
+                backgroundPosition: 'center'
+              }}
             />
+            {/* Texto */}
+            <span className="relative z-10 text-white font-bold text-2xl drop-shadow-md">
+              Normy Examinadora
+            </span>
           </button>
         </div>
       </main>
