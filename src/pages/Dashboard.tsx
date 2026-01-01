@@ -83,7 +83,7 @@ const Dashboard = () => {
             <img
               src={escudoImg}
               alt="Escudo"
-              className="w-10 h-10 object-contain"
+              className="w-14 h-14 object-contain"
             />
             <h1 className="text-xl font-bold">Notas Normy</h1>
           </div>
