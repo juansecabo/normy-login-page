@@ -210,13 +210,13 @@ const NormyExaminadora = () => {
       payload.instrucciones = instrucciones.trim();
     }
 
-    // Optional: archivos
+    // Optional: archivos + soloDeArchivos (only if there are files)
     if (archivos.length > 0) {
       payload.archivos = archivos.map(f => ({ nombre: f.name, tipo: f.type, tamaño: f.size }));
+      payload.soloDeArchivos = soloDeArchivos;
     }
 
-    // Always include these last three
-    payload.soloDeArchivos = soloDeArchivos;
+    // Always include these last two
     payload.preguntasMultiple = preguntasMultiple;
     payload.preguntasAbiertas = preguntasAbiertas;
 
