@@ -187,7 +187,7 @@ const NormyExaminadora = () => {
       preguntasAbiertas
     });
 
-    // Build payload with required fields (always include these)
+    // Build payload in exact UI order
     const payload: Record<string, unknown> = {
       timestamp: new Date().toISOString(),
       nombre: nombres,
@@ -195,22 +195,30 @@ const NormyExaminadora = () => {
       tipoActividad,
       materiaSeleccionada,
       gradoSeleccionado,
-      tema,
-      preguntasMultiple,
-      preguntasAbiertas,
-      soloDeArchivos,
     };
 
-    // Add optional fields only if they have value
+    // Optional: salonSeleccionado (after gradoSeleccionado)
     if (salonSeleccionado) {
       payload.salonSeleccionado = salonSeleccionado;
     }
+
+    // Required: tema
+    payload.tema = tema;
+
+    // Optional: instrucciones
     if (instrucciones && instrucciones.trim()) {
       payload.instrucciones = instrucciones.trim();
     }
+
+    // Optional: archivos
     if (archivos.length > 0) {
       payload.archivos = archivos.map(f => ({ nombre: f.name, tipo: f.type, tamaño: f.size }));
     }
+
+    // Always include these last three
+    payload.soloDeArchivos = soloDeArchivos;
+    payload.preguntasMultiple = preguntasMultiple;
+    payload.preguntasAbiertas = preguntasAbiertas;
 
     setEnviando(true);
 
