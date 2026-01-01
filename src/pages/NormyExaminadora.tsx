@@ -198,12 +198,12 @@ const NormyExaminadora = () => {
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   };
 
-  // Get display label for tipoActividad
+  // Get display label for tipoActividad (capitalized)
   const getTipoActividadLabel = (tipo: string): string => {
     switch (tipo) {
-      case 'evaluacion': return 'evaluación';
-      case 'taller': return 'taller';
-      case 'quiz': return 'quiz';
+      case 'evaluacion': return 'Evaluación';
+      case 'taller': return 'Taller';
+      case 'quiz': return 'Quiz';
       default: return tipo;
     }
   };
@@ -288,7 +288,7 @@ const NormyExaminadora = () => {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `${tipoActividad}_${materiaSeleccionada}_${tema}.docx`;
+      a.download = `${getTipoActividadLabel(tipoActividad)}_${materiaSeleccionada}_${tema}.docx`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -296,7 +296,7 @@ const NormyExaminadora = () => {
 
       toast({
         title: "¡Éxito!",
-        description: `${getTipoActividadLabel(tipoActividad).charAt(0).toUpperCase() + getTipoActividadLabel(tipoActividad).slice(1)} generada exitosamente`,
+        description: `${getTipoActividadLabel(tipoActividad)} generada exitosamente`,
       });
     } catch (error) {
       console.error("Error enviando al webhook:", error);
