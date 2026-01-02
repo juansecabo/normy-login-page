@@ -18,6 +18,7 @@ import { Upload, FileText, X, Loader2 } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
+import { subirArchivos, ArchivoSubido } from "@/lib/storage";
 
 interface Asignacion {
   "Materia(s)": string[];
@@ -172,20 +173,6 @@ const NormyExaminadora = () => {
     }
   };
 
-  // Helper to convert file to base64
-  const fileToBase64 = (file: File): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onload = () => {
-        const result = reader.result as string;
-        // Remove the data:mime/type;base64, prefix
-        const base64 = result.split(',')[1];
-        resolve(base64);
-      };
-      reader.onerror = error => reject(error);
-    });
-  };
 
   // Calculate total file size
   const totalFileSize = archivos.reduce((acc, file) => acc + file.size, 0);
@@ -222,15 +209,11 @@ const NormyExaminadora = () => {
     setEnviando(true);
 
     try {
-      // Convert all files to base64
-      const archivosConBase64 = await Promise.all(
-        archivos.map(async (file) => ({
-          nombre: file.name,
-          tipo: file.type,
-          tamaño: file.size,
-          contenidoBase64: await fileToBase64(file),
-        }))
-      );
+      // Upload files to Supabase Storage and get URLs
+      let archivosSubidos: ArchivoSubido[] = [];
+      if (archivos.length > 0) {
+        archivosSubidos = await subirArchivos(archivos);
+      }
 
       // Build payload in exact UI order
       const payload: Record<string, unknown> = {
@@ -256,8 +239,8 @@ const NormyExaminadora = () => {
       }
 
       // Optional: archivos + soloDeArchivos (only if there are files)
-      if (archivosConBase64.length > 0) {
-        payload.archivos = archivosConBase64;
+      if (archivosSubidos.length > 0) {
+        payload.archivos = archivosSubidos;
         payload.soloDeArchivos = soloDeArchivos;
       }
 
