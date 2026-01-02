@@ -189,7 +189,7 @@ const NormyExaminadora = () => {
 
   // Calculate total file size
   const totalFileSize = archivos.reduce((acc, file) => acc + file.size, 0);
-  const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20MB
+  const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 
   // Format file size for display
   const formatFileSize = (bytes: number): string => {
@@ -213,7 +213,7 @@ const NormyExaminadora = () => {
     if (totalFileSize > MAX_FILE_SIZE) {
       toast({
         title: "Error",
-        description: "Los archivos son demasiado grandes. El límite es 20MB en total.",
+        description: "Los archivos son demasiado grandes. El límite es 5MB en total.",
         variant: "destructive",
       });
       return;
@@ -499,7 +499,7 @@ const NormyExaminadora = () => {
                   <div className="space-y-2 mt-4">
                     <div className={`text-sm font-medium ${totalFileSize > MAX_FILE_SIZE ? 'text-destructive' : 'text-muted-foreground'}`}>
                       {archivos.length} archivo{archivos.length > 1 ? 's' : ''} ({formatFileSize(totalFileSize)})
-                      {totalFileSize > MAX_FILE_SIZE && ' - Excede el límite de 20MB'}
+                      {totalFileSize > MAX_FILE_SIZE && ' - Excede el límite de 5MB'}
                     </div>
                     {archivos.map((file, index) => (
                       <div
