@@ -2180,8 +2180,8 @@ const TablaNotas = () => {
 
         {/* Pestañas de Períodos */}
         <div className="bg-card rounded-lg shadow-soft overflow-hidden">
-          {/* Tab Headers - horizontal scroll on mobile */}
-          <div className="flex overflow-x-auto border-b border-border">
+          {/* Tab Headers - fill width on mobile, no scroll */}
+          <div className="flex w-full border-b border-border">
             {periodos.map((periodo) => {
               const porcentajeUsado = getPorcentajeUsado(periodo.numero);
               const isActive = periodoActivo === periodo.numero;
@@ -2189,7 +2189,7 @@ const TablaNotas = () => {
                 <button
                   key={periodo.numero}
                   onClick={() => setPeriodoActivo(periodo.numero)}
-                  className={`flex-shrink-0 px-3 md:px-4 py-2 md:py-3 text-xs md:text-sm font-medium transition-colors relative whitespace-nowrap
+                  className={`flex-1 min-w-0 px-1 md:px-4 py-2 md:py-3 text-[10px] md:text-sm font-medium transition-colors relative text-center
                     ${isActive 
                       ? 'bg-primary text-primary-foreground' 
                       : 'bg-muted/30 text-muted-foreground hover:bg-muted hover:text-foreground'
@@ -2197,8 +2197,9 @@ const TablaNotas = () => {
                 >
                   <span className="hidden md:inline">{periodo.nombre}</span>
                   <span className="md:hidden">{periodo.numero === 1 ? '1er' : periodo.numero === 2 ? '2do' : periodo.numero === 3 ? '3er' : '4to'}</span>
-                  <span className={`ml-1 md:ml-2 text-xs ${isActive ? 'text-primary-foreground/80' : 'text-muted-foreground'}`}>
-                    ({porcentajeUsado}%)
+                  <span className={`ml-0.5 md:ml-2 text-[9px] md:text-xs ${isActive ? 'text-primary-foreground/80' : 'text-muted-foreground'}`}>
+                    <span className="hidden md:inline">({porcentajeUsado}%)</span>
+                    <span className="md:hidden block">({porcentajeUsado}%)</span>
                   </span>
                   {isActive && (
                     <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary-foreground" />
@@ -2213,19 +2214,19 @@ const TablaNotas = () => {
               return (
                 <button
                   onClick={() => setPeriodoActivo(0)}
-                  className={`flex-shrink-0 px-3 md:px-4 py-2 md:py-3 text-xs md:text-sm font-medium transition-colors relative whitespace-nowrap
+                  className={`flex-1 min-w-0 px-1 md:px-4 py-2 md:py-3 text-[10px] md:text-sm font-medium transition-colors relative text-center
                     ${esFinalDefinitiva 
                       ? 'bg-primary text-primary-foreground' 
                       : 'bg-muted/30 text-muted-foreground hover:bg-muted hover:text-foreground'
                     }`}
                 >
-                  <span className="flex items-center justify-center gap-1">
+                  <span className="flex flex-col md:flex-row items-center justify-center gap-0 md:gap-1">
                     <span className="hidden md:inline">Final Definitiva</span>
                     <span className="md:hidden">Final</span>
-                    <span className={estaCompleto ? 'text-green-300' : ''}>
+                    <span className={`text-[9px] md:text-xs ${estaCompleto ? 'text-green-300' : ''}`}>
                       ({porcentajePromedio}<span className="hidden md:inline">/100</span>%)
+                      {estaCompleto && <span className="ml-0.5">✓</span>}
                     </span>
-                    {estaCompleto && <span>✓</span>}
                   </span>
                   {esFinalDefinitiva && (
                     <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary-foreground" />
