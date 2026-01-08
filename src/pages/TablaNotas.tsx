@@ -36,7 +36,6 @@ import NotaCelda from "@/components/notas/NotaCelda";
 import FinalPeriodoCelda from "@/components/notas/FinalPeriodoCelda";
 import ComentarioModal from "@/components/notas/ComentarioModal";
 import NotificacionModal, { TipoNotificacion } from "@/components/notas/NotificacionModal";
-import { useIsMobile } from "@/hooks/use-mobile";
 
 // Configuración del webhook de n8n
 const N8N_WEBHOOK_URL = 'https://n8n.srv966880.hstgr.cloud/webhook/notificar-notas';
@@ -88,7 +87,6 @@ interface ComentarioEditando {
 
 const TablaNotas = () => {
   const navigate = useNavigate();
-  const isMobile = useIsMobile();
   const [materiaSeleccionada, setMateriaSeleccionada] = useState("");
   const [gradoSeleccionado, setGradoSeleccionado] = useState("");
   const [salonSeleccionado, setSalonSeleccionado] = useState("");
@@ -2119,20 +2117,20 @@ const TablaNotas = () => {
   return (
     <div className="min-h-screen bg-background flex flex-col">
       {/* Header */}
-      <header className="bg-primary text-primary-foreground py-2 md:py-3 px-3 md:px-4 shadow-md">
-        <div className="container mx-auto flex items-center justify-between gap-2">
-          <Link to="/dashboard" className="flex items-center gap-2 md:gap-3 hover:opacity-80 transition-opacity cursor-pointer min-w-0">
+      <header className="bg-primary text-primary-foreground py-3 px-4 shadow-md">
+        <div className="container mx-auto flex items-center justify-between">
+          <Link to="/dashboard" className="flex items-center gap-3 hover:opacity-80 transition-opacity cursor-pointer">
             <img
               src={escudoImg}
               alt="Escudo"
-              className="w-10 h-10 md:w-16 md:h-16 object-contain -my-1 md:-my-2 flex-shrink-0"
+              className="w-16 h-16 object-contain -my-2"
             />
-            <h1 className="text-base md:text-xl font-bold truncate">Notas Normy</h1>
+            <h1 className="text-xl font-bold">Notas Normy</h1>
           </Link>
           <Button
             variant="secondary"
             onClick={handleLogout}
-            className="font-medium text-xs md:text-sm px-2 md:px-4 py-1 md:py-2 flex-shrink-0"
+            className="font-medium"
           >
             Cerrar sesión
           </Button>
@@ -2187,21 +2185,20 @@ const TablaNotas = () => {
             {periodos.map((periodo) => {
               const porcentajeUsado = getPorcentajeUsado(periodo.numero);
               const isActive = periodoActivo === periodo.numero;
-              // Etiquetas abreviadas para móvil: "1°" en lugar de "1er Periodo"
-              const labelMobile = `${periodo.numero}° (${porcentajeUsado}%)`;
-              const labelDesktop = `${periodo.nombre} (${porcentajeUsado}%)`;
               return (
                 <button
                   key={periodo.numero}
                   onClick={() => setPeriodoActivo(periodo.numero)}
-                  className={`flex-1 px-2 md:px-4 py-2 md:py-3 text-xs md:text-sm font-medium transition-colors relative
+                  className={`flex-1 px-4 py-3 text-sm font-medium transition-colors relative
                     ${isActive 
                       ? 'bg-primary text-primary-foreground' 
                       : 'bg-muted/30 text-muted-foreground hover:bg-muted hover:text-foreground'
                     }`}
                 >
-                  <span className="md:hidden">{labelMobile}</span>
-                  <span className="hidden md:inline">{labelDesktop}</span>
+                  <span>{periodo.nombre}</span>
+                  <span className={`ml-2 text-xs ${isActive ? 'text-primary-foreground/80' : 'text-muted-foreground'}`}>
+                    ({porcentajeUsado}%)
+                  </span>
                   {isActive && (
                     <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary-foreground" />
                   )}
@@ -2212,25 +2209,21 @@ const TablaNotas = () => {
             {(() => {
               const porcentajePromedio = getPorcentajePromedioAnual();
               const estaCompleto = porcentajePromedio === 100;
-              // Etiqueta abreviada para móvil
-              const labelMobile = `Final (${porcentajePromedio}%)`;
-              const labelDesktop = `Final Definitiva (${porcentajePromedio}/100%)`;
               return (
                 <button
                   onClick={() => setPeriodoActivo(0)}
-                  className={`flex-1 px-2 md:px-4 py-2 md:py-3 text-xs md:text-sm font-medium transition-colors relative
+                  className={`flex-1 px-4 py-3 text-sm font-medium transition-colors relative
                     ${esFinalDefinitiva 
                       ? 'bg-primary text-primary-foreground' 
                       : 'bg-muted/30 text-muted-foreground hover:bg-muted hover:text-foreground'
                     }`}
                 >
-                  <span className="md:hidden flex items-center justify-center gap-1">
-                    {labelMobile}
-                    {estaCompleto && <span className="text-green-300">✓</span>}
-                  </span>
-                  <span className="hidden md:flex items-center justify-center gap-1">
-                    {labelDesktop}
-                    {estaCompleto && <span className="text-green-300">✓</span>}
+                  <span className="flex items-center justify-center gap-1">
+                    Final Definitiva 
+                    <span className={estaCompleto ? 'text-green-300' : ''}>
+                      ({porcentajePromedio}/100%)
+                    </span>
+                    {estaCompleto && <span>✓</span>}
                   </span>
                   {esFinalDefinitiva && (
                     <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary-foreground" />
@@ -2254,16 +2247,17 @@ const TablaNotas = () => {
               <table className="w-full border-collapse">
                 <thead>
                   <tr className="bg-primary text-primary-foreground">
-                    {/* Columnas fijas en desktop, no sticky en móvil */}
-                    <th className={`${isMobile ? '' : 'sticky left-0 z-20'} bg-primary border border-border/30 w-[100px] min-w-[100px] p-3 text-left font-semibold`}>
+                    {/* Columnas fijas */}
+                    <th className="sticky left-0 z-20 bg-primary border border-border/30 w-[100px] min-w-[100px] p-3 text-left font-semibold">
                       Código
                     </th>
-                    <th className={`${isMobile ? '' : 'sticky left-[100px] z-20'} bg-primary border border-border/30 w-[180px] min-w-[180px] p-3 text-left font-semibold`}>
+                    <th className="sticky left-[100px] z-20 bg-primary border border-border/30 w-[180px] min-w-[180px] p-3 text-left font-semibold">
                       Apellidos
                     </th>
-                    <th className={`${isMobile ? '' : 'sticky left-[280px] z-20'} bg-primary border border-border/30 w-[150px] min-w-[150px] p-3 text-left font-semibold`}>
+                    <th className="sticky left-[280px] z-20 bg-primary border border-border/30 w-[150px] min-w-[150px] p-3 text-left font-semibold">
                       Nombre
                     </th>
+                    
                     {/* Vista Final Definitiva */}
                     {esFinalDefinitiva ? (
                       <>
@@ -2362,14 +2356,14 @@ const TablaNotas = () => {
                         key={estudiante.codigo_estudiantil}
                         className={rowBg}
                       >
-                        {/* Fixed columns on desktop, scrollable on mobile */}
-                        <td className={`${isMobile ? '' : 'sticky left-0 z-10'} border border-border p-3 text-sm ${rowBg}`}>
+                        {/* Fixed columns */}
+                        <td className={`sticky left-0 z-10 border border-border p-3 text-sm ${rowBg}`}>
                           {estudiante.codigo_estudiantil}
                         </td>
-                        <td className={`${isMobile ? '' : 'sticky left-[100px] z-10'} border border-border p-3 text-sm font-medium ${rowBg}`}>
+                        <td className={`sticky left-[100px] z-10 border border-border p-3 text-sm font-medium ${rowBg}`}>
                           {estudiante.apellidos_estudiante}
                         </td>
-                        <td className={`${isMobile ? '' : 'sticky left-[280px] z-10'} border border-border p-3 text-sm ${rowBg}`}>
+                        <td className={`sticky left-[280px] z-10 border border-border p-3 text-sm ${rowBg}`}>
                           {estudiante.nombre_estudiante}
                         </td>
                         

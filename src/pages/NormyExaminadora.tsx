@@ -19,7 +19,6 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { subirArchivos, ArchivoSubido } from "@/lib/storage";
-import { useIsMobile } from "@/hooks/use-mobile";
 
 interface Asignacion {
   "Materia(s)": string[];
@@ -29,7 +28,6 @@ interface Asignacion {
 
 const NormyExaminadora = () => {
   const navigate = useNavigate();
-  const isMobile = useIsMobile();
   const { toast } = useToast();
   const [nombres, setNombres] = useState("");
   const [apellidos, setApellidos] = useState("");
@@ -300,20 +298,20 @@ const NormyExaminadora = () => {
   return (
     <div className="min-h-screen bg-background flex flex-col">
       {/* Header */}
-      <header className="bg-primary text-primary-foreground py-2 md:py-3 px-3 md:px-4 shadow-md">
-        <div className="container mx-auto flex items-center justify-between gap-2">
-          <Link to="/dashboard" className="flex items-center gap-2 md:gap-3 hover:opacity-80 transition-opacity cursor-pointer min-w-0">
+      <header className="bg-primary text-primary-foreground py-3 px-4 shadow-md">
+        <div className="container mx-auto flex items-center justify-between">
+          <Link to="/dashboard" className="flex items-center gap-3 hover:opacity-80 transition-opacity cursor-pointer">
             <img
               src={escudoImg}
               alt="Escudo"
-              className="w-10 h-10 md:w-16 md:h-16 object-contain -my-1 md:-my-2 flex-shrink-0"
+              className="w-16 h-16 object-contain -my-2"
             />
-            <h1 className="text-base md:text-xl font-bold truncate">Notas Normy</h1>
+            <h1 className="text-xl font-bold">Notas Normy</h1>
           </Link>
           <Button
             variant="secondary"
             onClick={handleLogout}
-            className="font-medium text-xs md:text-sm px-2 md:px-4 py-1 md:py-2 flex-shrink-0"
+            className="font-medium"
           >
             Cerrar sesión
           </Button>
@@ -333,36 +331,24 @@ const NormyExaminadora = () => {
         </div>
 
         {/* Title Section with Normy in background */}
-        <div className="bg-card rounded-lg shadow-soft p-6 md:p-8 max-w-3xl mx-auto text-center mb-8 relative overflow-hidden">
-          {/* Normy in background - hidden on mobile, shown on desktop */}
-          {!isMobile && (
-            <img
-              src={normyImg}
-              alt="Normy Examinadora"
-              className="absolute right-0 top-1/2 -translate-y-1/2 h-full w-auto object-contain pointer-events-none"
-            />
-          )}
+        <div className="bg-card rounded-lg shadow-soft p-8 max-w-3xl mx-auto text-center mb-8 relative overflow-hidden">
+          {/* Normy in background */}
+          <img
+            src={normyImg}
+            alt="Normy Examinadora"
+            className="absolute right-0 top-1/2 -translate-y-1/2 h-full w-auto object-contain pointer-events-none"
+          />
           <div className="relative z-10">
-            <h2 className="text-xl md:text-2xl lg:text-3xl font-bold text-foreground">
+            <h2 className="text-2xl lg:text-3xl font-bold text-foreground">
               Normy Examinadora
             </h2>
-            <p className="text-sm md:text-base text-muted-foreground">
+            <p className="text-muted-foreground">
               Crea tus actividades académicas
             </p>
-            <p className="text-base md:text-lg text-primary font-semibold mt-4">
+            <p className="text-lg text-primary font-semibold mt-4">
               {nombres} {apellidos}
             </p>
           </div>
-          {/* Normy below text on mobile */}
-          {isMobile && (
-            <div className="mt-4 flex justify-center">
-              <img
-                src={normyImg}
-                alt="Normy Examinadora"
-                className="h-32 w-auto object-contain"
-              />
-            </div>
-          )}
         </div>
 
         {/* Form Section */}
