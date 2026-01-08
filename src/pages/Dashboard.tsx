@@ -77,20 +77,20 @@ const Dashboard = () => {
   return (
     <div className="min-h-screen bg-background flex flex-col">
       {/* Header */}
-      <header className="bg-primary text-primary-foreground py-3 px-4 shadow-md">
+      <header className="bg-primary text-primary-foreground py-2 md:py-3 px-3 md:px-4 shadow-md">
         <div className="container mx-auto flex items-center justify-between">
-          <Link to="/dashboard" className="flex items-center gap-3 hover:opacity-80 transition-opacity cursor-pointer">
+          <Link to="/dashboard" className="flex items-center gap-2 md:gap-3 hover:opacity-80 transition-opacity cursor-pointer">
             <img
               src={escudoImg}
               alt="Escudo"
-              className="w-16 h-16 object-contain -my-2"
+              className="w-10 h-10 md:w-16 md:h-16 object-contain md:-my-2"
             />
-            <h1 className="text-xl font-bold">Notas Normy</h1>
+            <h1 className="text-base md:text-xl font-bold">Notas Normy</h1>
           </Link>
           <Button
             variant="secondary"
             onClick={handleLogout}
-            className="font-medium"
+            className="font-medium text-xs md:text-sm px-2 md:px-4 py-1 md:py-2"
           >
             Cerrar sesión
           </Button>
