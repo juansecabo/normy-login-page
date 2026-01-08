@@ -2117,20 +2117,20 @@ const TablaNotas = () => {
   return (
     <div className="min-h-screen bg-background flex flex-col">
       {/* Header */}
-      <header className="bg-primary text-primary-foreground py-2 md:py-3 px-3 md:px-4 shadow-md">
-        <div className="container mx-auto flex items-center justify-between gap-2">
-          <Link to="/dashboard" className="flex items-center gap-2 md:gap-3 hover:opacity-80 transition-opacity cursor-pointer min-w-0">
+      <header className="bg-primary text-primary-foreground py-3 px-4 shadow-md">
+        <div className="container mx-auto flex items-center justify-between">
+          <Link to="/dashboard" className="flex items-center gap-3 hover:opacity-80 transition-opacity cursor-pointer">
             <img
               src={escudoImg}
               alt="Escudo"
-              className="w-10 h-10 md:w-16 md:h-16 object-contain flex-shrink-0"
+              className="w-16 h-16 object-contain -my-2"
             />
-            <h1 className="text-base md:text-xl font-bold truncate">Notas Normy</h1>
+            <h1 className="text-xl font-bold">Notas Normy</h1>
           </Link>
           <Button
             variant="secondary"
             onClick={handleLogout}
-            className="font-medium text-xs md:text-sm px-2 md:px-4 py-1 md:py-2 flex-shrink-0"
+            className="font-medium"
           >
             Cerrar sesión
           </Button>
@@ -2180,8 +2180,8 @@ const TablaNotas = () => {
 
         {/* Pestañas de Períodos */}
         <div className="bg-card rounded-lg shadow-soft overflow-hidden">
-          {/* Tab Headers - scrollable on mobile */}
-          <div className="flex border-b border-border overflow-x-auto">
+          {/* Tab Headers */}
+          <div className="flex border-b border-border">
             {periodos.map((periodo) => {
               const porcentajeUsado = getPorcentajeUsado(periodo.numero);
               const isActive = periodoActivo === periodo.numero;
@@ -2189,15 +2189,14 @@ const TablaNotas = () => {
                 <button
                   key={periodo.numero}
                   onClick={() => setPeriodoActivo(periodo.numero)}
-                  className={`flex-shrink-0 px-2 md:px-4 py-2 md:py-3 text-xs md:text-sm font-medium transition-colors relative whitespace-nowrap
+                  className={`flex-1 px-4 py-3 text-sm font-medium transition-colors relative
                     ${isActive 
                       ? 'bg-primary text-primary-foreground' 
                       : 'bg-muted/30 text-muted-foreground hover:bg-muted hover:text-foreground'
                     }`}
                 >
-                  <span className="hidden md:inline">{periodo.nombre}</span>
-                  <span className="md:hidden">{periodo.numero}° Per</span>
-                  <span className={`ml-1 md:ml-2 text-xs ${isActive ? 'text-primary-foreground/80' : 'text-muted-foreground'}`}>
+                  <span>{periodo.nombre}</span>
+                  <span className={`ml-2 text-xs ${isActive ? 'text-primary-foreground/80' : 'text-muted-foreground'}`}>
                     ({porcentajeUsado}%)
                   </span>
                   {isActive && (
@@ -2213,15 +2212,14 @@ const TablaNotas = () => {
               return (
                 <button
                   onClick={() => setPeriodoActivo(0)}
-                  className={`flex-shrink-0 px-2 md:px-4 py-2 md:py-3 text-xs md:text-sm font-medium transition-colors relative whitespace-nowrap
+                  className={`flex-1 px-4 py-3 text-sm font-medium transition-colors relative
                     ${esFinalDefinitiva 
                       ? 'bg-primary text-primary-foreground' 
                       : 'bg-muted/30 text-muted-foreground hover:bg-muted hover:text-foreground'
                     }`}
                 >
                   <span className="flex items-center justify-center gap-1">
-                    <span className="hidden md:inline">Final Definitiva</span>
-                    <span className="md:hidden">Final</span>
+                    Final Definitiva 
                     <span className={estaCompleto ? 'text-green-300' : ''}>
                       ({porcentajePromedio}/100%)
                     </span>
@@ -2249,14 +2247,14 @@ const TablaNotas = () => {
               <table className="w-full border-collapse">
                 <thead>
                   <tr className="bg-primary text-primary-foreground">
-                    {/* Columnas fijas en desktop, scrollable en mobile */}
-                    <th className="md:sticky md:left-0 z-20 bg-primary border border-border/30 w-[100px] min-w-[100px] p-2 md:p-3 text-left font-semibold text-xs md:text-sm">
+                    {/* Columnas fijas */}
+                    <th className="sticky left-0 z-20 bg-primary border border-border/30 w-[100px] min-w-[100px] p-3 text-left font-semibold">
                       Código
                     </th>
-                    <th className="md:sticky md:left-[100px] z-20 bg-primary border border-border/30 w-[180px] min-w-[180px] p-2 md:p-3 text-left font-semibold text-xs md:text-sm">
+                    <th className="sticky left-[100px] z-20 bg-primary border border-border/30 w-[180px] min-w-[180px] p-3 text-left font-semibold">
                       Apellidos
                     </th>
-                    <th className="md:sticky md:left-[280px] z-20 bg-primary border border-border/30 w-[150px] min-w-[150px] p-2 md:p-3 text-left font-semibold text-xs md:text-sm">
+                    <th className="sticky left-[280px] z-20 bg-primary border border-border/30 w-[150px] min-w-[150px] p-3 text-left font-semibold">
                       Nombre
                     </th>
                     
@@ -2358,14 +2356,14 @@ const TablaNotas = () => {
                         key={estudiante.codigo_estudiantil}
                         className={rowBg}
                       >
-                        {/* Fixed columns on desktop, scrollable on mobile */}
-                        <td className={`md:sticky md:left-0 z-10 border border-border p-2 md:p-3 text-xs md:text-sm ${rowBg}`}>
+                        {/* Fixed columns */}
+                        <td className={`sticky left-0 z-10 border border-border p-3 text-sm ${rowBg}`}>
                           {estudiante.codigo_estudiantil}
                         </td>
-                        <td className={`md:sticky md:left-[100px] z-10 border border-border p-2 md:p-3 text-xs md:text-sm font-medium ${rowBg}`}>
+                        <td className={`sticky left-[100px] z-10 border border-border p-3 text-sm font-medium ${rowBg}`}>
                           {estudiante.apellidos_estudiante}
                         </td>
-                        <td className={`md:sticky md:left-[280px] z-10 border border-border p-2 md:p-3 text-xs md:text-sm ${rowBg}`}>
+                        <td className={`sticky left-[280px] z-10 border border-border p-3 text-sm ${rowBg}`}>
                           {estudiante.nombre_estudiante}
                         </td>
                         
@@ -2541,10 +2539,10 @@ const TablaNotas = () => {
                 {/* Fila de botones de notificación integrados en la tabla */}
                 <tfoot>
                   <tr className="bg-muted/30">
-                    {/* Celdas fijas vacías - fixed on desktop, scrollable on mobile */}
-                    <td className="md:sticky md:left-0 z-10 bg-muted/30 border border-border p-1"></td>
-                    <td className="md:sticky md:left-[100px] z-10 bg-muted/30 border border-border p-1"></td>
-                    <td className="md:sticky md:left-[280px] z-10 bg-muted/30 border border-border p-1"></td>
+                    {/* Celdas fijas vacías */}
+                    <td className="sticky left-0 z-10 bg-muted/30 border border-border p-1"></td>
+                    <td className="sticky left-[100px] z-10 bg-muted/30 border border-border p-1"></td>
+                    <td className="sticky left-[280px] z-10 bg-muted/30 border border-border p-1"></td>
                     
                     {esFinalDefinitiva ? (
                       <>
