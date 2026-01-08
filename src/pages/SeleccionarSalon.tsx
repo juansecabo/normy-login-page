@@ -94,23 +94,22 @@ const SeleccionarSalon = () => {
   return (
     <div className="min-h-screen bg-background flex flex-col">
       {/* Header */}
-      <header className="bg-primary text-primary-foreground py-2 sm:py-3 px-2 sm:px-4 shadow-md">
-        <div className="container mx-auto flex items-center justify-between gap-2">
-          <Link to="/dashboard" className="flex items-center gap-1 sm:gap-3 hover:opacity-80 transition-opacity cursor-pointer min-w-0">
+      <header className="bg-primary text-primary-foreground py-3 px-4 shadow-md">
+        <div className="container mx-auto flex items-center justify-between">
+          <Link to="/dashboard" className="flex items-center gap-3 hover:opacity-80 transition-opacity cursor-pointer">
             <img
               src={escudoImg}
               alt="Escudo"
-              className="w-10 h-10 sm:w-16 sm:h-16 object-contain sm:-my-2 flex-shrink-0"
+              className="w-16 h-16 object-contain -my-2"
             />
-            <h1 className="text-base sm:text-xl font-bold truncate">Notas Normy</h1>
+            <h1 className="text-xl font-bold">Notas Normy</h1>
           </Link>
           <Button
             variant="secondary"
             onClick={handleLogout}
-            className="font-medium text-xs sm:text-sm px-2 sm:px-4 py-1 sm:py-2 flex-shrink-0"
+            className="font-medium"
           >
-            <span className="hidden sm:inline">Cerrar sesión</span>
-            <span className="sm:hidden">Salir</span>
+            Cerrar sesión
           </Button>
         </div>
       </header>

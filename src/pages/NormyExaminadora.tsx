@@ -298,23 +298,22 @@ const NormyExaminadora = () => {
   return (
     <div className="min-h-screen bg-background flex flex-col">
       {/* Header */}
-      <header className="bg-primary text-primary-foreground py-2 sm:py-3 px-2 sm:px-4 shadow-md">
-        <div className="container mx-auto flex items-center justify-between gap-2">
-          <Link to="/dashboard" className="flex items-center gap-1 sm:gap-3 hover:opacity-80 transition-opacity cursor-pointer min-w-0">
+      <header className="bg-primary text-primary-foreground py-3 px-4 shadow-md">
+        <div className="container mx-auto flex items-center justify-between">
+          <Link to="/dashboard" className="flex items-center gap-3 hover:opacity-80 transition-opacity cursor-pointer">
             <img
               src={escudoImg}
               alt="Escudo"
-              className="w-10 h-10 sm:w-16 sm:h-16 object-contain sm:-my-2 flex-shrink-0"
+              className="w-16 h-16 object-contain -my-2"
             />
-            <h1 className="text-base sm:text-xl font-bold truncate">Notas Normy</h1>
+            <h1 className="text-xl font-bold">Notas Normy</h1>
           </Link>
           <Button
             variant="secondary"
             onClick={handleLogout}
-            className="font-medium text-xs sm:text-sm px-2 sm:px-4 py-1 sm:py-2 flex-shrink-0"
+            className="font-medium"
           >
-            <span className="hidden sm:inline">Cerrar sesión</span>
-            <span className="sm:hidden">Salir</span>
+            Cerrar sesión
           </Button>
         </div>
       </header>
@@ -332,30 +331,24 @@ const NormyExaminadora = () => {
         </div>
 
         {/* Title Section with Normy in background */}
-        <div className="bg-card rounded-lg shadow-soft p-4 sm:p-8 max-w-3xl mx-auto text-center mb-8 relative overflow-hidden">
-          {/* Normy in background - hidden on mobile, shown as separate element below */}
+        <div className="bg-card rounded-lg shadow-soft p-8 max-w-3xl mx-auto text-center mb-8 relative overflow-hidden">
+          {/* Normy in background */}
           <img
             src={normyImg}
             alt="Normy Examinadora"
-            className="hidden sm:block absolute right-0 top-1/2 -translate-y-1/2 h-full w-auto object-contain pointer-events-none"
+            className="absolute right-0 top-1/2 -translate-y-1/2 h-full w-auto object-contain pointer-events-none"
           />
           <div className="relative z-10">
-            <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-foreground">
+            <h2 className="text-2xl lg:text-3xl font-bold text-foreground">
               Normy Examinadora
             </h2>
-            <p className="text-sm sm:text-base text-muted-foreground">
+            <p className="text-muted-foreground">
               Crea tus actividades académicas
             </p>
-            <p className="text-base sm:text-lg text-primary font-semibold mt-2 sm:mt-4">
+            <p className="text-lg text-primary font-semibold mt-4">
               {nombres} {apellidos}
             </p>
           </div>
-          {/* Normy image for mobile - shown below text */}
-          <img
-            src={normyImg}
-            alt="Normy Examinadora"
-            className="sm:hidden mx-auto mt-4 h-32 w-auto object-contain"
-          />
         </div>
 
         {/* Form Section */}
