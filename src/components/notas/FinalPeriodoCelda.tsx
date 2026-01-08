@@ -39,9 +39,9 @@ const FinalPeriodoCelda = ({
           <div className="absolute top-0 right-6 w-2 h-2 bg-amber-500 rounded-full" title={comentario} />
         )}
         
-        {/* Menú de opciones (visible en hover, solo cuando hay al menos una nota en el período) */}
+        {/* Menú de opciones (visible on hover on desktop, always visible on mobile) */}
         {tieneAlgunaNota && (
-          <div className="absolute right-0 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity">
+          <div className="absolute right-0 top-1/2 -translate-y-1/2 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
             <DropdownMenu open={showMenu} onOpenChange={setShowMenu}>
               <DropdownMenuTrigger asChild>
                 <button className="p-1 hover:bg-muted rounded transition-colors">
