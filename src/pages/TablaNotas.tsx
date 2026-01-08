@@ -2117,20 +2117,20 @@ const TablaNotas = () => {
   return (
     <div className="min-h-screen bg-background flex flex-col">
       {/* Header */}
-      <header className="bg-primary text-primary-foreground py-3 px-4 shadow-md">
+      <header className="bg-primary text-primary-foreground py-2 md:py-3 px-3 md:px-4 shadow-md">
         <div className="container mx-auto flex items-center justify-between">
-          <Link to="/dashboard" className="flex items-center gap-3 hover:opacity-80 transition-opacity cursor-pointer">
+          <Link to="/dashboard" className="flex items-center gap-2 md:gap-3 hover:opacity-80 transition-opacity cursor-pointer">
             <img
               src={escudoImg}
               alt="Escudo"
-              className="w-16 h-16 object-contain -my-2"
+              className="w-10 h-10 md:w-16 md:h-16 object-contain -my-1 md:-my-2"
             />
-            <h1 className="text-xl font-bold">Notas Normy</h1>
+            <h1 className="text-base md:text-xl font-bold">Notas Normy</h1>
           </Link>
           <Button
             variant="secondary"
             onClick={handleLogout}
-            className="font-medium"
+            className="font-medium text-xs md:text-sm px-2 md:px-4 py-1 md:py-2"
           >
             Cerrar sesión
           </Button>
@@ -2189,15 +2189,22 @@ const TablaNotas = () => {
                 <button
                   key={periodo.numero}
                   onClick={() => setPeriodoActivo(periodo.numero)}
-                  className={`flex-1 px-4 py-3 text-sm font-medium transition-colors relative
+                  className={`flex-1 px-2 md:px-4 py-2 md:py-3 text-xs md:text-sm font-medium transition-colors relative
                     ${isActive 
                       ? 'bg-primary text-primary-foreground' 
                       : 'bg-muted/30 text-muted-foreground hover:bg-muted hover:text-foreground'
                     }`}
                 >
-                  <span>{periodo.nombre}</span>
-                  <span className={`ml-2 text-xs ${isActive ? 'text-primary-foreground/80' : 'text-muted-foreground'}`}>
-                    ({porcentajeUsado}%)
+                  {/* Mobile: solo número y porcentaje */}
+                  <span className="md:hidden">
+                    {periodo.numero}° ({porcentajeUsado}%)
+                  </span>
+                  {/* Desktop: texto completo */}
+                  <span className="hidden md:inline">
+                    {periodo.nombre}
+                    <span className={`ml-2 text-xs ${isActive ? 'text-primary-foreground/80' : 'text-muted-foreground'}`}>
+                      ({porcentajeUsado}%)
+                    </span>
                   </span>
                   {isActive && (
                     <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary-foreground" />
@@ -2212,13 +2219,19 @@ const TablaNotas = () => {
               return (
                 <button
                   onClick={() => setPeriodoActivo(0)}
-                  className={`flex-1 px-4 py-3 text-sm font-medium transition-colors relative
+                  className={`flex-1 px-2 md:px-4 py-2 md:py-3 text-xs md:text-sm font-medium transition-colors relative
                     ${esFinalDefinitiva 
                       ? 'bg-primary text-primary-foreground' 
                       : 'bg-muted/30 text-muted-foreground hover:bg-muted hover:text-foreground'
                     }`}
                 >
-                  <span className="flex items-center justify-center gap-1">
+                  {/* Mobile: abreviado */}
+                  <span className="md:hidden flex items-center justify-center gap-1">
+                    Final ({porcentajePromedio}%)
+                    {estaCompleto && <span>✓</span>}
+                  </span>
+                  {/* Desktop: texto completo */}
+                  <span className="hidden md:flex items-center justify-center gap-1">
                     Final Definitiva 
                     <span className={estaCompleto ? 'text-green-300' : ''}>
                       ({porcentajePromedio}/100%)
@@ -2247,14 +2260,14 @@ const TablaNotas = () => {
               <table className="w-full border-collapse">
                 <thead>
                   <tr className="bg-primary text-primary-foreground">
-                    {/* Columnas fijas */}
-                    <th className="sticky left-0 z-20 bg-primary border border-border/30 w-[100px] min-w-[100px] p-3 text-left font-semibold">
+                    {/* Columnas fijas en desktop, normales en móvil */}
+                    <th className="md:sticky md:left-0 z-20 bg-primary border border-border/30 w-[80px] md:w-[100px] min-w-[80px] md:min-w-[100px] p-2 md:p-3 text-left font-semibold text-xs md:text-sm">
                       Código
                     </th>
-                    <th className="sticky left-[100px] z-20 bg-primary border border-border/30 w-[180px] min-w-[180px] p-3 text-left font-semibold">
+                    <th className="md:sticky md:left-[100px] z-20 bg-primary border border-border/30 w-[120px] md:w-[180px] min-w-[120px] md:min-w-[180px] p-2 md:p-3 text-left font-semibold text-xs md:text-sm">
                       Apellidos
                     </th>
-                    <th className="sticky left-[280px] z-20 bg-primary border border-border/30 w-[150px] min-w-[150px] p-3 text-left font-semibold">
+                    <th className="md:sticky md:left-[280px] z-20 bg-primary border border-border/30 w-[100px] md:w-[150px] min-w-[100px] md:min-w-[150px] p-2 md:p-3 text-left font-semibold text-xs md:text-sm">
                       Nombre
                     </th>
                     
@@ -2356,14 +2369,14 @@ const TablaNotas = () => {
                         key={estudiante.codigo_estudiantil}
                         className={rowBg}
                       >
-                        {/* Fixed columns */}
-                        <td className={`sticky left-0 z-10 border border-border p-3 text-sm ${rowBg}`}>
+                        {/* Fixed columns on desktop, normal on mobile */}
+                        <td className={`md:sticky md:left-0 z-10 border border-border p-2 md:p-3 text-xs md:text-sm ${rowBg}`}>
                           {estudiante.codigo_estudiantil}
                         </td>
-                        <td className={`sticky left-[100px] z-10 border border-border p-3 text-sm font-medium ${rowBg}`}>
+                        <td className={`md:sticky md:left-[100px] z-10 border border-border p-2 md:p-3 text-xs md:text-sm font-medium ${rowBg}`}>
                           {estudiante.apellidos_estudiante}
                         </td>
-                        <td className={`sticky left-[280px] z-10 border border-border p-3 text-sm ${rowBg}`}>
+                        <td className={`md:sticky md:left-[280px] z-10 border border-border p-2 md:p-3 text-xs md:text-sm ${rowBg}`}>
                           {estudiante.nombre_estudiante}
                         </td>
                         
@@ -2411,9 +2424,9 @@ const TablaNotas = () => {
                                     {comentario && (
                                       <div className="absolute top-0 right-6 w-2 h-2 bg-amber-500 rounded-full" title={comentario} />
                                     )}
-                                    {/* Menú solo visible si tiene al menos una nota en cualquier período */}
+                                    {/* Menú solo visible si tiene al menos una nota en cualquier período (always visible on mobile) */}
                                     {tieneNotas && (
-                                      <div className="absolute right-0 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                      <div className="absolute right-0 top-1/2 -translate-y-1/2 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
                                         <DropdownMenu>
                                           <DropdownMenuTrigger asChild>
                                             <button className="p-1 hover:bg-muted rounded transition-colors">
