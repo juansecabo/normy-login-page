@@ -2196,7 +2196,8 @@ const TablaNotas = () => {
                       : 'bg-muted/30 text-muted-foreground hover:bg-muted hover:text-foreground'
                     }`}
                 >
-                  <span className="block md:inline">{periodo.nombre.replace(' Periodo', '')}</span>
+                  <span className="hidden md:inline">{periodo.nombre}</span>
+                  <span className="md:hidden">{periodo.nombre.replace(' Periodo', '')}</span>
                   <span className={`md:ml-2 text-[10px] md:text-xs block md:inline ${isActive ? 'text-primary-foreground/80' : 'text-muted-foreground'}`}>
                     ({porcentajeUsado}%)
                   </span>
@@ -2220,7 +2221,8 @@ const TablaNotas = () => {
                     }`}
                 >
                   <span className="flex flex-col md:flex-row items-center justify-center gap-0 md:gap-1">
-                    <span className="block md:inline">Final</span>
+                    <span className="hidden md:inline">Final Definitiva</span>
+                    <span className="md:hidden">Final</span>
                     <span className={`text-[10px] md:text-xs ${estaCompleto ? 'text-green-300' : ''}`}>
                       ({porcentajePromedio}%)
                     </span>
