@@ -299,12 +299,12 @@ const NormyExaminadora = () => {
     <div className="min-h-screen bg-background flex flex-col">
       {/* Header */}
       <header className="bg-primary text-primary-foreground py-2 md:py-3 px-3 md:px-4 shadow-md">
-        <div className="container mx-auto flex items-center justify-between gap-2">
+        <div className="container mx-auto flex items-center justify-between">
           <Link to="/dashboard" className="flex items-center gap-2 md:gap-3 hover:opacity-80 transition-opacity cursor-pointer">
             <img
               src={escudoImg}
               alt="Escudo"
-              className="w-10 h-10 md:w-16 md:h-16 object-contain -my-1 md:-my-2"
+              className="w-10 h-10 md:w-16 md:h-16 object-contain md:-my-2"
             />
             <h1 className="text-base md:text-xl font-bold">Notas Normy</h1>
           </Link>
@@ -319,20 +319,21 @@ const NormyExaminadora = () => {
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 container mx-auto p-8">
+      <main className="flex-1 container mx-auto p-4 md:p-8">
         {/* Back button - at top */}
         <div className="max-w-3xl mx-auto mb-4">
           <Button
             variant="outline"
             onClick={() => navigate("/dashboard")}
+            className="text-sm"
           >
             ← Volver al Dashboard
           </Button>
         </div>
 
-        {/* Title Section with Normy in background */}
+        {/* Title Section with Normy */}
         <div className="bg-card rounded-lg shadow-soft p-6 md:p-8 max-w-3xl mx-auto text-center mb-8 relative overflow-hidden">
-          {/* Normy in background - hidden on mobile */}
+          {/* Normy in background - hidden on mobile, visible on desktop */}
           <img
             src={normyImg}
             alt="Normy Examinadora"
@@ -345,11 +346,11 @@ const NormyExaminadora = () => {
             <p className="text-sm md:text-base text-muted-foreground">
               Crea tus actividades académicas
             </p>
-            <p className="text-base md:text-lg text-primary font-semibold mt-3 md:mt-4">
+            <p className="text-base md:text-lg text-primary font-semibold mt-4">
               {nombres} {apellidos}
             </p>
           </div>
-          {/* Normy image - visible only on mobile, below text */}
+          {/* Normy image below text on mobile */}
           <img
             src={normyImg}
             alt="Normy Examinadora"

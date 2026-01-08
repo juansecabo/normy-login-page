@@ -2118,12 +2118,12 @@ const TablaNotas = () => {
     <div className="min-h-screen bg-background flex flex-col">
       {/* Header */}
       <header className="bg-primary text-primary-foreground py-2 md:py-3 px-3 md:px-4 shadow-md">
-        <div className="container mx-auto flex items-center justify-between gap-2">
+        <div className="container mx-auto flex items-center justify-between">
           <Link to="/dashboard" className="flex items-center gap-2 md:gap-3 hover:opacity-80 transition-opacity cursor-pointer">
             <img
               src={escudoImg}
               alt="Escudo"
-              className="w-10 h-10 md:w-16 md:h-16 object-contain -my-1 md:-my-2"
+              className="w-10 h-10 md:w-16 md:h-16 object-contain md:-my-2"
             />
             <h1 className="text-base md:text-xl font-bold">Notas Normy</h1>
           </Link>
@@ -2180,8 +2180,8 @@ const TablaNotas = () => {
 
         {/* Pestañas de Períodos */}
         <div className="bg-card rounded-lg shadow-soft overflow-hidden">
-          {/* Tab Headers - horizontal scroll on mobile */}
-          <div className="flex overflow-x-auto border-b border-border">
+          {/* Tab Headers - scrollable on mobile */}
+          <div className="flex flex-wrap md:flex-nowrap border-b border-border overflow-x-auto">
             {periodos.map((periodo) => {
               const porcentajeUsado = getPorcentajeUsado(periodo.numero);
               const isActive = periodoActivo === periodo.numero;
@@ -2189,7 +2189,7 @@ const TablaNotas = () => {
                 <button
                   key={periodo.numero}
                   onClick={() => setPeriodoActivo(periodo.numero)}
-                  className={`flex-shrink-0 px-3 md:px-4 py-2 md:py-3 text-xs md:text-sm font-medium transition-colors relative whitespace-nowrap
+                  className={`flex-1 min-w-[80px] md:min-w-0 px-2 md:px-4 py-2 md:py-3 text-xs md:text-sm font-medium transition-colors relative whitespace-nowrap
                     ${isActive 
                       ? 'bg-primary text-primary-foreground' 
                       : 'bg-muted/30 text-muted-foreground hover:bg-muted hover:text-foreground'
@@ -2213,7 +2213,7 @@ const TablaNotas = () => {
               return (
                 <button
                   onClick={() => setPeriodoActivo(0)}
-                  className={`flex-shrink-0 px-3 md:px-4 py-2 md:py-3 text-xs md:text-sm font-medium transition-colors relative whitespace-nowrap
+                  className={`flex-1 min-w-[80px] md:min-w-0 px-2 md:px-4 py-2 md:py-3 text-xs md:text-sm font-medium transition-colors relative whitespace-nowrap
                     ${esFinalDefinitiva 
                       ? 'bg-primary text-primary-foreground' 
                       : 'bg-muted/30 text-muted-foreground hover:bg-muted hover:text-foreground'
@@ -2223,7 +2223,7 @@ const TablaNotas = () => {
                     <span className="hidden md:inline">Final Definitiva</span>
                     <span className="md:hidden">Final</span>
                     <span className={estaCompleto ? 'text-green-300' : ''}>
-                      ({porcentajePromedio}<span className="hidden md:inline">/100</span>%)
+                      <span className="hidden md:inline">({porcentajePromedio}/100%)</span>
                     </span>
                     {estaCompleto && <span>✓</span>}
                   </span>
@@ -2249,7 +2249,7 @@ const TablaNotas = () => {
               <table className="w-full border-collapse">
                 <thead>
                   <tr className="bg-primary text-primary-foreground">
-                    {/* Columnas - fijas solo en desktop */}
+                    {/* Columnas fijas en desktop, móviles en mobile */}
                     <th className="md:sticky md:left-0 z-20 bg-primary border border-border/30 w-[80px] md:w-[100px] min-w-[80px] md:min-w-[100px] p-2 md:p-3 text-left font-semibold text-xs md:text-sm">
                       Código
                     </th>
@@ -2358,7 +2358,7 @@ const TablaNotas = () => {
                         key={estudiante.codigo_estudiantil}
                         className={rowBg}
                       >
-                        {/* Fixed columns - only sticky on desktop */}
+                        {/* Columnas fijas en desktop, móviles en mobile */}
                         <td className={`md:sticky md:left-0 z-10 border border-border p-2 md:p-3 text-xs md:text-sm ${rowBg}`}>
                           {estudiante.codigo_estudiantil}
                         </td>
