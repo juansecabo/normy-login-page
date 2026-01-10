@@ -1,14 +1,13 @@
 import { useState } from "react";
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
 
 export type TipoNotificacion = 
@@ -98,21 +97,27 @@ const NotificacionModal = ({
   };
 
   return (
-    <AlertDialog open={open} onOpenChange={onOpenChange}>
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>¿{getTituloTipo()}?</AlertDialogTitle>
-          <AlertDialogDescription asChild>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>¿{getTituloTipo()}?</DialogTitle>
+          <DialogDescription asChild>
             <div>
               {getMensaje()}
               {getMensaje() && <br />}
               {renderDescripcion()}
             </div>
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel disabled={enviando}>Cancelar</AlertDialogCancel>
-          <AlertDialogAction 
+          </DialogDescription>
+        </DialogHeader>
+        <DialogFooter>
+          <Button 
+            variant="outline" 
+            onClick={() => onOpenChange(false)}
+            disabled={enviando}
+          >
+            Cancelar
+          </Button>
+          <Button 
             onClick={handleConfirmar}
             disabled={enviando}
             className="bg-primary hover:bg-primary/90"
@@ -125,10 +130,10 @@ const NotificacionModal = ({
             ) : (
               "Enviar notificación"
             )}
-          </AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 };
 

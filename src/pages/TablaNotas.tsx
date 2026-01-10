@@ -2369,14 +2369,14 @@ const TablaNotas = () => {
                         key={estudiante.codigo_estudiantil}
                         className={rowBg}
                       >
-                        {/* Fixed columns on desktop, normal on mobile */}
-                        <td className={`md:sticky md:left-0 z-10 border border-border p-2 md:p-3 text-xs md:text-sm ${rowBg}`}>
+                        {/* Fixed columns on desktop, normal on mobile - with solid background */}
+                        <td className={`md:sticky md:left-0 z-10 border border-border p-2 md:p-3 text-xs md:text-sm ${studentIndex % 2 === 0 ? 'bg-background' : 'bg-muted'}`}>
                           {estudiante.codigo_estudiantil}
                         </td>
-                        <td className={`md:sticky md:left-[100px] z-10 border border-border p-2 md:p-3 text-xs md:text-sm font-medium ${rowBg}`}>
+                        <td className={`md:sticky md:left-[100px] z-10 border border-border p-2 md:p-3 text-xs md:text-sm font-medium ${studentIndex % 2 === 0 ? 'bg-background' : 'bg-muted'}`}>
                           {estudiante.apellidos_estudiante}
                         </td>
-                        <td className={`md:sticky md:left-[280px] z-10 border border-border p-2 md:p-3 text-xs md:text-sm ${rowBg}`}>
+                        <td className={`md:sticky md:left-[280px] z-10 border border-border p-2 md:p-3 text-xs md:text-sm ${studentIndex % 2 === 0 ? 'bg-background' : 'bg-muted'}`}>
                           {estudiante.nombre_estudiante}
                         </td>
                         
@@ -2551,11 +2551,11 @@ const TablaNotas = () => {
                 </tbody>
                 {/* Fila de botones de notificación integrados en la tabla */}
                 <tfoot>
-                  <tr className="bg-muted/30">
-                    {/* Celdas fijas vacías - sticky solo en desktop */}
-                    <td className="md:sticky md:left-0 z-10 bg-muted/30 border border-border p-1"></td>
-                    <td className="md:sticky md:left-[100px] z-10 bg-muted/30 border border-border p-1"></td>
-                    <td className="md:sticky md:left-[280px] z-10 bg-muted/30 border border-border p-1"></td>
+                  <tr className="bg-muted">
+                    {/* Celdas fijas vacías - sticky solo en desktop con fondo sólido */}
+                    <td className="md:sticky md:left-0 z-10 bg-muted border border-border p-1"></td>
+                    <td className="md:sticky md:left-[100px] z-10 bg-muted border border-border p-1"></td>
+                    <td className="md:sticky md:left-[280px] z-10 bg-muted border border-border p-1"></td>
                     
                     {esFinalDefinitiva ? (
                       <>
