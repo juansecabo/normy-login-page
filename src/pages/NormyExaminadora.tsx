@@ -14,9 +14,11 @@ import { supabase } from "@/integrations/supabase/client";
 import escudoImg from "@/assets/escudo.png";
 import normyImg from "@/assets/normy-examinadora.png";
 import { getSession, clearSession } from "@/hooks/useSession";
-import { Loader2 } from "lucide-react";
+import { Upload, FileText, X, Loader2 } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
+import { subirArchivos, ArchivoSubido } from "@/lib/storage";
 
 interface Asignacion {
   "Materia(s)": string[];
@@ -38,6 +40,8 @@ const NormyExaminadora = () => {
   const [salonSeleccionado, setSalonSeleccionado] = useState<string>("");
   const [tema, setTema] = useState("");
   const [instrucciones, setInstrucciones] = useState("");
+  const [archivos, setArchivos] = useState<File[]>([]);
+  const [soloDeArchivos, setSoloDeArchivos] = useState(false);
   const [preguntasMultiple, setPreguntasMultiple] = useState<number>(5);
   const [preguntasAbiertas, setPreguntasAbiertas] = useState<number>(0);
   
@@ -145,6 +149,42 @@ const NormyExaminadora = () => {
     navigate("/");
   };
 
+  const allowedTypes = [
+    'application/pdf',
+    'application/msword',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    'text/plain'
+  ];
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      const newFiles = Array.from(e.target.files).filter(file => 
+        allowedTypes.includes(file.type)
+      );
+      setArchivos(prev => [...prev, ...newFiles]);
+    }
+  };
+
+  const removeFile = (index: number) => {
+    const newArchivos = archivos.filter((_, i) => i !== index);
+    setArchivos(newArchivos);
+    if (newArchivos.length === 0) {
+      setSoloDeArchivos(false);
+    }
+  };
+
+
+  // Calculate total file size
+  const totalFileSize = archivos.reduce((acc, file) => acc + file.size, 0);
+  const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+
+  // Format file size for display
+  const formatFileSize = (bytes: number): string => {
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  };
+
   // Get display label for tipoActividad (capitalized)
   const getTipoActividadLabel = (tipo: string): string => {
     switch (tipo) {
@@ -156,9 +196,25 @@ const NormyExaminadora = () => {
   };
 
   const handleCrear = async () => {
+    // Validate total file size
+    if (totalFileSize > MAX_FILE_SIZE) {
+      toast({
+        title: "Error",
+        description: "Los archivos son demasiado grandes. El límite es 5MB en total.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setEnviando(true);
 
     try {
+      // Upload files to Supabase Storage and get URLs
+      let archivosSubidos: ArchivoSubido[] = [];
+      if (archivos.length > 0) {
+        archivosSubidos = await subirArchivos(archivos);
+      }
+
       // Build payload in exact UI order
       const payload: Record<string, unknown> = {
         timestamp: new Date().toISOString(),
@@ -182,9 +238,11 @@ const NormyExaminadora = () => {
         payload.instrucciones = instrucciones.trim();
       }
 
-      // Always include these last two
-      payload.preguntasMultiple = preguntasMultiple;
-      payload.preguntasAbiertas = preguntasAbiertas;
+      // Optional: archivos + soloDeArchivos (only if there are files)
+      if (archivosSubidos.length > 0) {
+        payload.archivos = archivosSubidos;
+        payload.soloDeArchivos = soloDeArchivos;
+      }
 
       // Always include these last two
       payload.preguntasMultiple = preguntasMultiple;
@@ -291,11 +349,11 @@ const NormyExaminadora = () => {
               {nombres} {apellidos}
             </p>
           </div>
-          {/* Normy image below text on mobile - no bottom margin */}
+          {/* Normy image below text on mobile */}
           <img
             src={normyImg}
             alt="Normy Examinadora"
-            className="md:hidden mx-auto mt-4 -mb-6 h-32 w-auto object-contain"
+            className="md:hidden mx-auto mt-4 h-32 w-auto object-contain"
           />
         </div>
 
@@ -404,9 +462,74 @@ const NormyExaminadora = () => {
                 />
               </div>
 
-              {/* 7. Número de preguntas */}
+              {/* 7. Archivos */}
+              <div className="space-y-2">
+                <Label className="text-base font-semibold">7. Archivos de referencia:</Label>
+                <div className="border-2 border-dashed border-border rounded-lg p-6 text-center">
+                  <input
+                    type="file"
+                    multiple
+                    accept=".pdf,.doc,.docx,.txt,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain"
+                    onChange={handleFileChange}
+                    className="hidden"
+                    id="file-upload"
+                  />
+                  <label
+                    htmlFor="file-upload"
+                    className="cursor-pointer flex flex-col items-center gap-2"
+                  >
+                    <Upload className="w-8 h-8 text-muted-foreground" />
+                    <span className="text-muted-foreground">
+                      Haz clic para subir archivos (PDF, Word, TXT)
+                    </span>
+                  </label>
+                </div>
+                {archivos.length > 0 && (
+                  <div className="space-y-2 mt-4">
+                    <div className={`text-sm font-medium ${totalFileSize > MAX_FILE_SIZE ? 'text-destructive' : 'text-muted-foreground'}`}>
+                      {archivos.length} archivo{archivos.length > 1 ? 's' : ''} ({formatFileSize(totalFileSize)})
+                      {totalFileSize > MAX_FILE_SIZE && ' - Excede el límite de 5MB'}
+                    </div>
+                    {archivos.map((file, index) => (
+                      <div
+                        key={index}
+                        className="flex items-center justify-between bg-muted p-3 rounded-lg"
+                      >
+                        <div className="flex items-center gap-2">
+                          <FileText className="w-5 h-5 text-primary" />
+                          <span className="text-sm truncate max-w-xs">{file.name}</span>
+                        </div>
+                        <button
+                          onClick={() => removeFile(index)}
+                          className="text-muted-foreground hover:text-destructive"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                
+                {/* Checkbox - solo visible cuando hay archivos */}
+                <div className={`flex items-center space-x-2 mt-4 ${archivos.length === 0 ? 'opacity-50 pointer-events-none' : ''}`}>
+                  <Checkbox
+                    id="solo-archivos"
+                    checked={soloDeArchivos}
+                    onCheckedChange={(checked) => setSoloDeArchivos(checked === true)}
+                    disabled={archivos.length === 0}
+                  />
+                  <label
+                    htmlFor="solo-archivos"
+                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                  >
+                    Hacer preguntas solo de los archivos
+                  </label>
+                </div>
+              </div>
+
+              {/* 8. Número de preguntas */}
               <div className="space-y-4">
-                <Label className="text-base font-semibold">7. Número de preguntas:</Label>
+                <Label className="text-base font-semibold">8. Número de preguntas:</Label>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label className="text-sm text-muted-foreground">Selección múltiple:</Label>
@@ -437,7 +560,7 @@ const NormyExaminadora = () => {
               <Button
                 onClick={handleCrear}
                 className="w-full bg-gradient-to-r from-primary to-green-600 hover:from-green-600 hover:to-primary text-white font-semibold py-6 text-lg"
-                disabled={!tipoActividad || !materiaSeleccionada || !gradoSeleccionado || !tema || enviando}
+                disabled={!tipoActividad || !materiaSeleccionada || !gradoSeleccionado || !tema || enviando || totalFileSize > MAX_FILE_SIZE}
               >
                 {enviando ? (
                   <>
