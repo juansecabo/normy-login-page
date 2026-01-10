@@ -40,7 +40,7 @@ const NotaCelda = ({
   const [showMenu, setShowMenu] = useState(false);
 
   return (
-    <td className="border border-border p-1 text-center text-sm min-w-[120px] relative group">
+    <td className="border-r border-b border-border p-1 text-center text-sm min-w-[120px] relative group">
       {estaEditando ? (
         <input
           ref={inputRef}
