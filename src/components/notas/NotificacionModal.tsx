@@ -1,13 +1,14 @@
 import { useState } from "react";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Loader2 } from "lucide-react";
 
 export type TipoNotificacion = 
@@ -97,27 +98,21 @@ const NotificacionModal = ({
   };
 
   return (
-    <Dialog open={open} onOpenChange={enviando ? undefined : onOpenChange}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>¿{getTituloTipo()}?</DialogTitle>
-          <DialogDescription asChild>
+    <AlertDialog open={open} onOpenChange={onOpenChange}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>¿{getTituloTipo()}?</AlertDialogTitle>
+          <AlertDialogDescription asChild>
             <div>
               {getMensaje()}
               {getMensaje() && <br />}
               {renderDescripcion()}
             </div>
-          </DialogDescription>
-        </DialogHeader>
-        <DialogFooter>
-          <Button 
-            variant="outline" 
-            onClick={() => onOpenChange(false)}
-            disabled={enviando}
-          >
-            Cancelar
-          </Button>
-          <Button 
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel disabled={enviando}>Cancelar</AlertDialogCancel>
+          <AlertDialogAction 
             onClick={handleConfirmar}
             disabled={enviando}
             className="bg-primary hover:bg-primary/90"
@@ -130,10 +125,10 @@ const NotificacionModal = ({
             ) : (
               "Enviar notificación"
             )}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   );
 };
 
