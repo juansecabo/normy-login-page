@@ -2552,10 +2552,10 @@ const TablaNotas = () => {
                 {/* Fila de botones de notificación integrados en la tabla */}
                 <tfoot>
                   <tr className="bg-muted/30">
-                    {/* Celdas fijas vacías - sticky solo en desktop */}
-                    <td className="md:sticky md:left-0 z-10 bg-muted/30 border border-border p-1"></td>
-                    <td className="md:sticky md:left-[100px] z-10 bg-muted/30 border border-border p-1"></td>
-                    <td className="md:sticky md:left-[280px] z-10 bg-muted/30 border border-border p-1"></td>
+                    {/* Celdas fijas vacías */}
+                    <td className="sticky left-0 z-10 bg-muted/30 border border-border p-1"></td>
+                    <td className="sticky left-[100px] z-10 bg-muted/30 border border-border p-1"></td>
+                    <td className="sticky left-[280px] z-10 bg-muted/30 border border-border p-1"></td>
                     
                     {esFinalDefinitiva ? (
                       <>
