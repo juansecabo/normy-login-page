@@ -2267,7 +2267,7 @@ const TablaNotas = () => {
                     <th className="md:sticky md:left-[100px] z-20 bg-primary border border-border/30 w-[120px] md:w-[180px] min-w-[120px] md:min-w-[180px] p-2 md:p-3 text-left font-semibold text-xs md:text-sm">
                       Apellidos
                     </th>
-                    <th className="md:sticky md:left-[280px] z-20 bg-primary border border-border/30 w-[100px] md:w-[150px] min-w-[100px] md:min-w-[150px] p-2 md:p-3 text-left font-semibold text-xs md:text-sm">
+                    <th className="md:sticky md:left-[280px] z-20 bg-primary border border-border/30 w-[100px] md:w-[150px] min-w-[100px] md:min-w-[150px] p-2 md:p-3 text-left font-semibold text-xs md:text-sm md:shadow-[2px_0_4px_-2px_rgba(0,0,0,0.15)]">
                       Nombre
                     </th>
                     
@@ -2376,7 +2376,7 @@ const TablaNotas = () => {
                         <td className={`md:sticky md:left-[100px] z-10 border border-border p-2 md:p-3 text-xs md:text-sm font-medium ${studentIndex % 2 === 0 ? 'bg-background' : 'bg-muted'}`}>
                           {estudiante.apellidos_estudiante}
                         </td>
-                        <td className={`md:sticky md:left-[280px] z-10 border border-border p-2 md:p-3 text-xs md:text-sm ${studentIndex % 2 === 0 ? 'bg-background' : 'bg-muted'}`}>
+                        <td className={`md:sticky md:left-[280px] z-10 border border-border p-2 md:p-3 text-xs md:text-sm md:shadow-[2px_0_4px_-2px_rgba(0,0,0,0.15)] ${studentIndex % 2 === 0 ? 'bg-background' : 'bg-muted'}`}>
                           {estudiante.nombre_estudiante}
                         </td>
                         
@@ -2555,7 +2555,7 @@ const TablaNotas = () => {
                     {/* Celdas fijas vacías - sticky solo en desktop con fondo sólido */}
                     <td className="md:sticky md:left-0 z-10 bg-muted border border-border p-1"></td>
                     <td className="md:sticky md:left-[100px] z-10 bg-muted border border-border p-1"></td>
-                    <td className="md:sticky md:left-[280px] z-10 bg-muted border border-border p-1"></td>
+                    <td className="md:sticky md:left-[280px] z-10 bg-muted border border-border p-1 md:shadow-[2px_0_4px_-2px_rgba(0,0,0,0.15)]"></td>
                     
                     {esFinalDefinitiva ? (
                       <>
