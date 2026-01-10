@@ -2257,7 +2257,7 @@ const TablaNotas = () => {
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full border-collapse">
+              <table className="w-full border-separate border-spacing-0">
                 <thead>
                   <tr className="bg-primary text-primary-foreground">
                     {/* Columnas fijas en desktop, normales en móvil */}
