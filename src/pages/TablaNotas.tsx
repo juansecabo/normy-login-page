@@ -2261,13 +2261,13 @@ const TablaNotas = () => {
                 <thead>
                   <tr className="bg-primary text-primary-foreground">
                     {/* Columnas fijas en desktop, normales en móvil */}
-                    <th className="md:sticky md:left-0 z-20 bg-primary border border-border/30 w-[80px] md:w-[100px] min-w-[80px] md:min-w-[100px] p-2 md:p-3 text-left font-semibold text-xs md:text-sm">
+                    <th className="md:sticky md:left-0 z-20 bg-primary border-y border-l border-border/30 md:border-r w-[80px] md:w-[100px] min-w-[80px] md:min-w-[100px] p-2 md:p-3 text-left font-semibold text-xs md:text-sm">
                       Código
                     </th>
-                    <th className="md:sticky md:left-[100px] z-20 bg-primary border border-border/30 w-[120px] md:w-[180px] min-w-[120px] md:min-w-[180px] p-2 md:p-3 text-left font-semibold text-xs md:text-sm">
+                    <th className="md:sticky md:left-[100px] z-20 bg-primary border-y border-border/30 md:border-r w-[120px] md:w-[180px] min-w-[120px] md:min-w-[180px] p-2 md:p-3 text-left font-semibold text-xs md:text-sm">
                       Apellidos
                     </th>
-                    <th className="md:sticky md:left-[280px] z-20 bg-primary border border-border/30 w-[100px] md:w-[150px] min-w-[100px] md:min-w-[150px] p-2 md:p-3 text-left font-semibold text-xs md:text-sm">
+                    <th className="md:sticky md:left-[280px] z-20 bg-primary border-y border-r border-border/30 md:shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] w-[100px] md:w-[150px] min-w-[100px] md:min-w-[150px] p-2 md:p-3 text-left font-semibold text-xs md:text-sm">
                       Nombre
                     </th>
                     
@@ -2370,13 +2370,13 @@ const TablaNotas = () => {
                         className={rowBg}
                       >
                         {/* Fixed columns on desktop, normal on mobile */}
-                        <td className={`md:sticky md:left-0 z-10 border border-border p-2 md:p-3 text-xs md:text-sm ${rowBg}`}>
+                        <td className={`md:sticky md:left-0 z-10 border-y border-l border-border md:border-r p-2 md:p-3 text-xs md:text-sm ${rowBg}`}>
                           {estudiante.codigo_estudiantil}
                         </td>
-                        <td className={`md:sticky md:left-[100px] z-10 border border-border p-2 md:p-3 text-xs md:text-sm font-medium ${rowBg}`}>
+                        <td className={`md:sticky md:left-[100px] z-10 border-y border-border md:border-r p-2 md:p-3 text-xs md:text-sm font-medium ${rowBg}`}>
                           {estudiante.apellidos_estudiante}
                         </td>
-                        <td className={`md:sticky md:left-[280px] z-10 border border-border p-2 md:p-3 text-xs md:text-sm ${rowBg}`}>
+                        <td className={`md:sticky md:left-[280px] z-10 border-y border-r border-border md:shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] p-2 md:p-3 text-xs md:text-sm ${rowBg}`}>
                           {estudiante.nombre_estudiante}
                         </td>
                         
@@ -2552,10 +2552,10 @@ const TablaNotas = () => {
                 {/* Fila de botones de notificación integrados en la tabla */}
                 <tfoot>
                   <tr className="bg-muted/30">
-                    {/* Celdas fijas vacías */}
-                    <td className="sticky left-0 z-10 bg-muted/30 border border-border p-1"></td>
-                    <td className="sticky left-[100px] z-10 bg-muted/30 border border-border p-1"></td>
-                    <td className="sticky left-[280px] z-10 bg-muted/30 border border-border p-1"></td>
+                    {/* Celdas fijas vacías en desktop, normales en móvil */}
+                    <td className="md:sticky md:left-0 z-10 bg-muted/30 border-y border-l border-border md:border-r p-1"></td>
+                    <td className="md:sticky md:left-[100px] z-10 bg-muted/30 border-y border-border md:border-r p-1"></td>
+                    <td className="md:sticky md:left-[280px] z-10 bg-muted/30 border-y border-r border-border md:shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] p-1"></td>
                     
                     {esFinalDefinitiva ? (
                       <>
