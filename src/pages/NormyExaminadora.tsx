@@ -47,7 +47,6 @@ const NormyExaminadora = () => {
   const [grados, setGrados] = useState<string[]>([]);
   const [salones, setSalones] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
-  const [idProfesor, setIdProfesor] = useState<string>("");
 
   useEffect(() => {
     const session = getSession();
@@ -72,9 +71,6 @@ const NormyExaminadora = () => {
           setLoading(false);
           return;
         }
-
-        // Guardar el id del profesor
-        setIdProfesor(profesor.id);
 
         const { data: asignacionesData, error: asignacionError } = await supabase
           .from('Asignación Profesores')
@@ -163,9 +159,8 @@ const NormyExaminadora = () => {
     setEnviando(true);
 
     try {
-      // Build payload with idProfesor first
+      // Build payload in exact UI order
       const payload: Record<string, unknown> = {
-        idProfesor,
         timestamp: new Date().toISOString(),
         nombre: nombres,
         apellidos: apellidos,
@@ -206,6 +201,19 @@ const NormyExaminadora = () => {
       if (!response.ok) {
         throw new Error(`Error del servidor: ${response.status}`);
       }
+
+      // Get the DOCX file from response
+      const blob = await response.blob();
+      
+      // Create download link
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${getTipoActividadLabel(tipoActividad)}_${materiaSeleccionada}_${tema}.docx`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
 
       // Use correct grammatical gender: Evaluación (f) vs Taller/Quiz (m)
       const esFemenino = tipoActividad === 'evaluacion';
