@@ -465,7 +465,9 @@ const NormyExaminadora = () => {
                             setPreguntasMultiple("0");
                           }
                         }}
-                        className="bg-background flex-1 text-center"
+                        className={`bg-background flex-1 text-center ${parseInt(preguntasMultiple || "0") >= 30 ? "[&::-webkit-inner-spin-button]:opacity-40" : ""} ${parseInt(preguntasMultiple || "0") <= 0 ? "at-min-limit" : ""}`}
+                        data-at-max={parseInt(preguntasMultiple || "0") >= 30}
+                        data-at-min={parseInt(preguntasMultiple || "0") <= 0}
                       />
                       <button
                         type="button"
@@ -518,7 +520,9 @@ const NormyExaminadora = () => {
                             setPreguntasAbiertas("0");
                           }
                         }}
-                        className="bg-background flex-1 text-center"
+                        className={`bg-background flex-1 text-center ${parseInt(preguntasAbiertas || "0") >= 30 ? "[&::-webkit-inner-spin-button]:opacity-40" : ""} ${parseInt(preguntasAbiertas || "0") <= 0 ? "at-min-limit" : ""}`}
+                        data-at-max={parseInt(preguntasAbiertas || "0") >= 30}
+                        data-at-min={parseInt(preguntasAbiertas || "0") <= 0}
                       />
                       <button
                         type="button"
