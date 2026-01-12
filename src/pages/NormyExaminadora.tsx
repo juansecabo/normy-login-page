@@ -437,6 +437,7 @@ const NormyExaminadora = () => {
                       <Input
                         type="number"
                         min={0}
+                        max={30}
                         value={preguntasMultiple}
                         onChange={(e) => setPreguntasMultiple(e.target.value)}
                         onFocus={(e) => {
@@ -453,7 +454,7 @@ const NormyExaminadora = () => {
                       />
                       <button
                         type="button"
-                        onClick={() => setPreguntasMultiple(String(parseInt(preguntasMultiple || "0") + 1))}
+                        onClick={() => setPreguntasMultiple(String(Math.min(30, parseInt(preguntasMultiple || "0") + 1)))}
                         className="sm:hidden flex items-center justify-center w-10 h-10 rounded-md bg-muted hover:bg-muted/80 text-foreground font-bold text-xl"
                       >
                         +
@@ -473,6 +474,7 @@ const NormyExaminadora = () => {
                       <Input
                         type="number"
                         min={0}
+                        max={30}
                         value={preguntasAbiertas}
                         onChange={(e) => setPreguntasAbiertas(e.target.value)}
                         onFocus={(e) => {
@@ -489,7 +491,7 @@ const NormyExaminadora = () => {
                       />
                       <button
                         type="button"
-                        onClick={() => setPreguntasAbiertas(String(parseInt(preguntasAbiertas || "0") + 1))}
+                        onClick={() => setPreguntasAbiertas(String(Math.min(30, parseInt(preguntasAbiertas || "0") + 1)))}
                         className="sm:hidden flex items-center justify-center w-10 h-10 rounded-md bg-muted hover:bg-muted/80 text-foreground font-bold text-xl"
                       >
                         +
