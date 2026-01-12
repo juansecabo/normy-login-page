@@ -163,33 +163,22 @@ const NormyExaminadora = () => {
     setEnviando(true);
 
     try {
-      // Build payload with idProfesor first
-      const payload: Record<string, unknown> = {
-        idProfesor,
-        timestamp: new Date().toISOString(),
-        nombre: nombres,
-        apellidos: apellidos,
-        tipoActividad,
-        materiaSeleccionada,
-        gradoSeleccionado,
+      // Build payload in the required format
+      const payload = {
+        datos: {
+          fecha: new Date().toISOString(),
+          nombre: nombres,
+          apellidos: apellidos,
+          tipoActividad: getTipoActividadLabel(tipoActividad),
+          materia: materiaSeleccionada,
+          grado: gradoSeleccionado,
+          salon: salonSeleccionado || "",
+          tema: tema,
+        },
+        preguntasMultiple: preguntasMultiple,
+        preguntasAbiertas: preguntasAbiertas,
+        hojaRespuestas: [], // Empty array as per specification
       };
-
-      // Optional: salonSeleccionado (after gradoSeleccionado)
-      if (salonSeleccionado) {
-        payload.salonSeleccionado = salonSeleccionado;
-      }
-
-      // Required: tema
-      payload.tema = tema;
-
-      // Optional: instrucciones
-      if (instrucciones && instrucciones.trim()) {
-        payload.instrucciones = instrucciones.trim();
-      }
-
-      // Always include these last two
-      payload.preguntasMultiple = preguntasMultiple;
-      payload.preguntasAbiertas = preguntasAbiertas;
 
       const response = await fetch(
         "https://n8n.srv966880.hstgr.cloud/webhook-test/41f121b5-276e-453a-98b2-f300227e2e99",
@@ -207,22 +196,37 @@ const NormyExaminadora = () => {
         throw new Error(`Error del servidor: ${response.status}`);
       }
 
-      // Handle blob response and trigger automatic download
+      // Get the blob from response
       const blob = await response.blob();
+      
+      // Get filename from Content-Disposition header or use default
+      const contentDisposition = response.headers.get("Content-Disposition");
+      let filename = `${getTipoActividadLabel(tipoActividad)}_${tema.replace(/\s+/g, '_')}.docx`;
+      
+      if (contentDisposition) {
+        const filenameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
+        if (filenameMatch && filenameMatch[1]) {
+          filename = filenameMatch[1].replace(/['"]/g, '');
+        }
+      }
+
+      // Create temporary download link
       const url = window.URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `${getTipoActividadLabel(tipoActividad)}_${tema.replace(/\s+/g, '_')}.docx`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      
+      // Cleanup
+      document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
 
       // Use correct grammatical gender: Evaluación (f) vs Taller/Quiz (m)
       const esFemenino = tipoActividad === 'evaluacion';
       toast({
         title: "¡Éxito!",
-        description: `${getTipoActividadLabel(tipoActividad)} ${esFemenino ? 'generada' : 'generado'} exitosamente`,
+        description: `${getTipoActividadLabel(tipoActividad)} ${esFemenino ? 'generada y descargada' : 'generado y descargado'} exitosamente`,
       });
     } catch (error) {
       console.error("Error enviando al webhook:", error);
