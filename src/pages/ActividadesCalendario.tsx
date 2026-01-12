@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import escudoImg from "@/assets/escudo.png";
@@ -348,20 +348,20 @@ const ActividadesCalendario = () => {
   return (
     <div className="min-h-screen bg-background flex flex-col">
       {/* Header */}
-      <header className="bg-primary text-primary-foreground py-2 md:py-3 px-3 md:px-4 shadow-md">
+      <header className="bg-primary text-primary-foreground p-4 shadow-md">
         <div className="container mx-auto flex items-center justify-between">
-          <Link to="/dashboard" className="flex items-center gap-2 md:gap-3 hover:opacity-80 transition-opacity cursor-pointer">
+          <div className="flex items-center gap-3">
             <img
               src={escudoImg}
               alt="Escudo"
-              className="w-10 h-10 md:w-16 md:h-16 object-contain -my-1 md:-my-2"
+              className="w-10 h-10 object-contain"
             />
-            <h1 className="text-base md:text-xl font-bold">Notas Normy</h1>
-          </Link>
+            <h1 className="text-xl font-bold">Notas Normy</h1>
+          </div>
           <Button
             variant="secondary"
             onClick={handleLogout}
-            className="font-medium text-xs md:text-sm px-2 md:px-4 py-1 md:py-2"
+            className="font-medium"
           >
             Cerrar sesión
           </Button>
@@ -371,29 +371,29 @@ const ActividadesCalendario = () => {
       {/* Main Content */}
       <main className="flex-1 container mx-auto p-4 md:p-8">
         {/* Header de página */}
-        <div className="bg-card rounded-lg shadow-soft p-4 md:p-6 mb-6">
-          <div className="flex flex-col gap-4">
+        <div className="bg-card rounded-lg shadow-soft p-6 mb-6">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
-              <h2 className="text-xl md:text-2xl font-bold text-foreground flex items-center gap-2">
-                <Calendar className="h-5 w-5 md:h-6 md:w-6 text-primary" />
+              <h2 className="text-2xl font-bold text-foreground flex items-center gap-2">
+                <Calendar className="h-6 w-6 text-primary" />
                 Actividades Asignadas
               </h2>
-              <p className="text-sm md:text-base text-muted-foreground mt-1">
+              <p className="text-muted-foreground mt-1">
                 {materiaSeleccionada} - {gradoSeleccionado} {salonSeleccionado}
               </p>
             </div>
-            <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
+            <div className="flex gap-3">
               <Button
                 variant="outline"
                 onClick={handleVolverNotas}
-                className="gap-2 text-sm"
+                className="gap-2"
               >
                 <ArrowLeft className="h-4 w-4" />
                 Volver a Notas
               </Button>
               <Button
                 onClick={handleAbrirModalCrear}
-                className="gap-2 text-sm"
+                className="gap-2"
               >
                 <Plus className="h-4 w-4" />
                 Agregar Actividad

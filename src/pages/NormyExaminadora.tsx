@@ -38,8 +38,8 @@ const NormyExaminadora = () => {
   const [salonSeleccionado, setSalonSeleccionado] = useState<string>("");
   const [tema, setTema] = useState("");
   const [instrucciones, setInstrucciones] = useState("");
-  const [preguntasMultiple, setPreguntasMultiple] = useState<string>("5");
-  const [preguntasAbiertas, setPreguntasAbiertas] = useState<string>("0");
+  const [preguntasMultiple, setPreguntasMultiple] = useState<number>(5);
+  const [preguntasAbiertas, setPreguntasAbiertas] = useState<number>(0);
   
   // Data from DB
   const [asignaciones, setAsignaciones] = useState<Asignacion[]>([]);
@@ -188,8 +188,8 @@ const NormyExaminadora = () => {
       }
 
       // Always include these last two
-      payload.preguntasMultiple = parseInt(preguntasMultiple) || 0;
-      payload.preguntasAbiertas = parseInt(preguntasAbiertas) || 0;
+      payload.preguntasMultiple = preguntasMultiple;
+      payload.preguntasAbiertas = preguntasAbiertas;
 
       const response = await fetch(
         "https://n8n.srv966880.hstgr.cloud/webhook/41f121b5-276e-453a-98b2-f300227e2e99",
@@ -431,17 +431,8 @@ const NormyExaminadora = () => {
                       min={0}
                       max={50}
                       value={preguntasMultiple}
-                      onChange={(e) => setPreguntasMultiple(e.target.value)}
-                      onFocus={(e) => {
-                        if (e.target.value === "0") {
-                          setPreguntasMultiple("");
-                        }
-                      }}
-                      onBlur={(e) => {
-                        if (e.target.value === "") {
-                          setPreguntasMultiple("0");
-                        }
-                      }}
+                      onChange={(e) => setPreguntasMultiple(parseInt(e.target.value) || 0)}
+                      onFocus={(e) => e.target.select()}
                       className="bg-background"
                     />
                   </div>
@@ -452,17 +443,8 @@ const NormyExaminadora = () => {
                       min={0}
                       max={50}
                       value={preguntasAbiertas}
-                      onChange={(e) => setPreguntasAbiertas(e.target.value)}
-                      onFocus={(e) => {
-                        if (e.target.value === "0") {
-                          setPreguntasAbiertas("");
-                        }
-                      }}
-                      onBlur={(e) => {
-                        if (e.target.value === "") {
-                          setPreguntasAbiertas("0");
-                        }
-                      }}
+                      onChange={(e) => setPreguntasAbiertas(parseInt(e.target.value) || 0)}
+                      onFocus={(e) => e.target.select()}
                       className="bg-background"
                     />
                   </div>
