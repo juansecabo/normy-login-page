@@ -426,45 +426,77 @@ const NormyExaminadora = () => {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label className="text-sm text-muted-foreground">Selección múltiple:</Label>
-                    <Input
-                      type="number"
-                      min={0}
-                      max={50}
-                      value={preguntasMultiple}
-                      onChange={(e) => setPreguntasMultiple(e.target.value)}
-                      onFocus={(e) => {
-                        if (e.target.value === "0") {
-                          setPreguntasMultiple("");
-                        }
-                      }}
-                      onBlur={(e) => {
-                        if (e.target.value === "") {
-                          setPreguntasMultiple("0");
-                        }
-                      }}
-                      className="bg-background"
-                    />
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setPreguntasMultiple(String(Math.max(0, parseInt(preguntasMultiple || "0") - 1)))}
+                        className="sm:hidden flex items-center justify-center w-10 h-10 rounded-md bg-muted hover:bg-muted/80 text-foreground font-bold text-xl"
+                      >
+                        −
+                      </button>
+                      <Input
+                        type="number"
+                        min={0}
+                        max={50}
+                        value={preguntasMultiple}
+                        onChange={(e) => setPreguntasMultiple(e.target.value)}
+                        onFocus={(e) => {
+                          if (e.target.value === "0") {
+                            setPreguntasMultiple("");
+                          }
+                        }}
+                        onBlur={(e) => {
+                          if (e.target.value === "") {
+                            setPreguntasMultiple("0");
+                          }
+                        }}
+                        className="bg-background flex-1 text-center"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setPreguntasMultiple(String(Math.min(50, parseInt(preguntasMultiple || "0") + 1)))}
+                        className="sm:hidden flex items-center justify-center w-10 h-10 rounded-md bg-muted hover:bg-muted/80 text-foreground font-bold text-xl"
+                      >
+                        +
+                      </button>
+                    </div>
                   </div>
                   <div className="space-y-2">
                     <Label className="text-sm text-muted-foreground">Preguntas abiertas:</Label>
-                    <Input
-                      type="number"
-                      min={0}
-                      max={50}
-                      value={preguntasAbiertas}
-                      onChange={(e) => setPreguntasAbiertas(e.target.value)}
-                      onFocus={(e) => {
-                        if (e.target.value === "0") {
-                          setPreguntasAbiertas("");
-                        }
-                      }}
-                      onBlur={(e) => {
-                        if (e.target.value === "") {
-                          setPreguntasAbiertas("0");
-                        }
-                      }}
-                      className="bg-background"
-                    />
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setPreguntasAbiertas(String(Math.max(0, parseInt(preguntasAbiertas || "0") - 1)))}
+                        className="sm:hidden flex items-center justify-center w-10 h-10 rounded-md bg-muted hover:bg-muted/80 text-foreground font-bold text-xl"
+                      >
+                        −
+                      </button>
+                      <Input
+                        type="number"
+                        min={0}
+                        max={50}
+                        value={preguntasAbiertas}
+                        onChange={(e) => setPreguntasAbiertas(e.target.value)}
+                        onFocus={(e) => {
+                          if (e.target.value === "0") {
+                            setPreguntasAbiertas("");
+                          }
+                        }}
+                        onBlur={(e) => {
+                          if (e.target.value === "") {
+                            setPreguntasAbiertas("0");
+                          }
+                        }}
+                        className="bg-background flex-1 text-center"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setPreguntasAbiertas(String(Math.min(50, parseInt(preguntasAbiertas || "0") + 1)))}
+                        className="sm:hidden flex items-center justify-center w-10 h-10 rounded-md bg-muted hover:bg-muted/80 text-foreground font-bold text-xl"
+                      >
+                        +
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
