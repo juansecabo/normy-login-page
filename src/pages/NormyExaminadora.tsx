@@ -442,7 +442,7 @@ const NormyExaminadora = () => {
                           setPreguntasMultiple("0");
                         }
                       }}
-                      className="bg-background"
+                      className="bg-background mobile-spinner-visible"
                     />
                   </div>
                   <div className="space-y-2">
@@ -463,7 +463,7 @@ const NormyExaminadora = () => {
                           setPreguntasAbiertas("0");
                         }
                       }}
-                      className="bg-background"
+                      className="bg-background mobile-spinner-visible"
                     />
                   </div>
                 </div>
