@@ -101,3 +101,14 @@
     font-family: 'Poppins', sans-serif;
   }
 }
+
+/* Number input spinner controls - disabled at limits */
+input[type="number"][data-at-max="true"]::-webkit-inner-spin-button {
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+input[type="number"][data-at-min="true"]::-webkit-inner-spin-button {
+  opacity: 0.4;
+  pointer-events: none;
+}
