@@ -439,7 +439,21 @@ const NormyExaminadora = () => {
                         min={0}
                         max={30}
                         value={preguntasMultiple}
-                        onChange={(e) => setPreguntasMultiple(e.target.value)}
+                        onChange={(e) => {
+                          const val = parseInt(e.target.value) || 0;
+                          if (val > 30) {
+                            toast({
+                              title: "Límite alcanzado",
+                              description: "El máximo de preguntas de selección múltiple es 30",
+                              variant: "destructive",
+                            });
+                            setPreguntasMultiple("30");
+                          } else if (val < 0) {
+                            setPreguntasMultiple("0");
+                          } else {
+                            setPreguntasMultiple(e.target.value);
+                          }
+                        }}
                         onFocus={(e) => {
                           if (e.target.value === "0") {
                             setPreguntasMultiple("");
@@ -476,7 +490,21 @@ const NormyExaminadora = () => {
                         min={0}
                         max={30}
                         value={preguntasAbiertas}
-                        onChange={(e) => setPreguntasAbiertas(e.target.value)}
+                        onChange={(e) => {
+                          const val = parseInt(e.target.value) || 0;
+                          if (val > 30) {
+                            toast({
+                              title: "Límite alcanzado",
+                              description: "El máximo de preguntas abiertas es 30",
+                              variant: "destructive",
+                            });
+                            setPreguntasAbiertas("30");
+                          } else if (val < 0) {
+                            setPreguntasAbiertas("0");
+                          } else {
+                            setPreguntasAbiertas(e.target.value);
+                          }
+                        }}
                         onFocus={(e) => {
                           if (e.target.value === "0") {
                             setPreguntasAbiertas("");
