@@ -431,7 +431,7 @@ const NormyExaminadora = () => {
                         type="button"
                         disabled={parseInt(preguntasMultiple || "0") <= 0}
                         onClick={() => setPreguntasMultiple(String(Math.max(0, parseInt(preguntasMultiple || "0") - 1)))}
-                        className="flex items-center justify-center w-10 h-10 rounded-md bg-muted hover:bg-muted/80 text-foreground font-bold text-xl disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-muted"
+                        className="sm:hidden flex items-center justify-center w-10 h-10 rounded-md bg-muted hover:bg-muted/80 text-foreground font-bold text-xl disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-muted"
                       >
                         −
                       </button>
@@ -465,13 +465,13 @@ const NormyExaminadora = () => {
                             setPreguntasMultiple("0");
                           }
                         }}
-                        className="bg-background flex-1 text-center [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                        className="bg-background flex-1 text-center"
                       />
                       <button
                         type="button"
                         disabled={parseInt(preguntasMultiple || "0") >= 30}
                         onClick={() => setPreguntasMultiple(String(Math.min(30, parseInt(preguntasMultiple || "0") + 1)))}
-                        className="flex items-center justify-center w-10 h-10 rounded-md bg-muted hover:bg-muted/80 text-foreground font-bold text-xl disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-muted"
+                        className="sm:hidden flex items-center justify-center w-10 h-10 rounded-md bg-muted hover:bg-muted/80 text-foreground font-bold text-xl disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-muted"
                       >
                         +
                       </button>
@@ -484,7 +484,7 @@ const NormyExaminadora = () => {
                         type="button"
                         disabled={parseInt(preguntasAbiertas || "0") <= 0}
                         onClick={() => setPreguntasAbiertas(String(Math.max(0, parseInt(preguntasAbiertas || "0") - 1)))}
-                        className="flex items-center justify-center w-10 h-10 rounded-md bg-muted hover:bg-muted/80 text-foreground font-bold text-xl disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-muted"
+                        className="sm:hidden flex items-center justify-center w-10 h-10 rounded-md bg-muted hover:bg-muted/80 text-foreground font-bold text-xl disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-muted"
                       >
                         −
                       </button>
@@ -518,13 +518,13 @@ const NormyExaminadora = () => {
                             setPreguntasAbiertas("0");
                           }
                         }}
-                        className="bg-background flex-1 text-center [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                        className="bg-background flex-1 text-center"
                       />
                       <button
                         type="button"
                         disabled={parseInt(preguntasAbiertas || "0") >= 30}
                         onClick={() => setPreguntasAbiertas(String(Math.min(30, parseInt(preguntasAbiertas || "0") + 1)))}
-                        className="flex items-center justify-center w-10 h-10 rounded-md bg-muted hover:bg-muted/80 text-foreground font-bold text-xl disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-muted"
+                        className="sm:hidden flex items-center justify-center w-10 h-10 rounded-md bg-muted hover:bg-muted/80 text-foreground font-bold text-xl disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-muted"
                       >
                         +
                       </button>
