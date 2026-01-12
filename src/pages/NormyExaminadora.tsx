@@ -432,6 +432,7 @@ const NormyExaminadora = () => {
                       max={50}
                       value={preguntasMultiple}
                       onChange={(e) => setPreguntasMultiple(parseInt(e.target.value) || 0)}
+                      onFocus={(e) => e.target.select()}
                       className="bg-background"
                     />
                   </div>
@@ -443,6 +444,7 @@ const NormyExaminadora = () => {
                       max={50}
                       value={preguntasAbiertas}
                       onChange={(e) => setPreguntasAbiertas(parseInt(e.target.value) || 0)}
+                      onFocus={(e) => e.target.select()}
                       className="bg-background"
                     />
                   </div>
