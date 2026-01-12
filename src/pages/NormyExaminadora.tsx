@@ -207,6 +207,34 @@ const NormyExaminadora = () => {
         throw new Error(`Error del servidor: ${response.status}`);
       }
 
+      // Check if response is a binary file (docx)
+      const contentType = response.headers.get("Content-Type") || "";
+      
+      if (contentType.includes("application/vnd.openxmlformats") || 
+          contentType.includes("application/octet-stream") ||
+          contentType.includes("application/msword")) {
+        // It's a file - download it
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        
+        // Build filename: TipoActividad_Materia_Grado_Salon.docx
+        const tipoLabel = getTipoActividadLabel(tipoActividad).toUpperCase();
+        const materiaLabel = materiaSeleccionada.toUpperCase().replace(/ /g, "_");
+        const gradoLabel = gradoSeleccionado;
+        const salonLabel = salonSeleccionado || "";
+        const fileName = salonLabel 
+          ? `${tipoLabel}_${materiaLabel}_${gradoLabel}_${salonLabel}.docx`
+          : `${tipoLabel}_${materiaLabel}_${gradoLabel}.docx`;
+        
+        link.download = fileName;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+      }
+
       // Use correct grammatical gender: Evaluación (f) vs Taller/Quiz (m)
       const esFemenino = tipoActividad === 'evaluacion';
       toast({
