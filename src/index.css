@@ -101,3 +101,13 @@
     font-family: 'Poppins', sans-serif;
   }
 }
+
+/* Make number input spinners always visible on mobile */
+@media (max-width: 767px) {
+  input[type="number"].mobile-spinner-visible::-webkit-inner-spin-button,
+  input[type="number"].mobile-spinner-visible::-webkit-outer-spin-button {
+    opacity: 1;
+    position: static;
+    margin: 0;
+  }
+}
