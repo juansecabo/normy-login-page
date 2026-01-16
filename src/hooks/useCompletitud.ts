@@ -86,10 +86,11 @@ export const useCompletitud = () => {
     const fetchData = async () => {
       setLoading(true);
       try {
-        // 1. Obtener asignaciones de profesores con sus nombres
+        // 1. Obtener asignaciones de profesores con sus nombres Y CARGO
+        // IMPORTANTE: Solo incluir profesores, NO rectores ni coordinadores
         const { data: internos, error: errorInternos } = await supabase
           .from("Internos")
-          .select("id, codigo, nombres, apellidos");
+          .select("id, codigo, nombres, apellidos, cargo");
         
         const { data: asignacionesData, error: errorAsig } = await supabase
           .from("Asignación Profesores")
@@ -97,12 +98,18 @@ export const useCompletitud = () => {
 
         console.log("=== DEBUG ASIGNACIONES ===");
         console.log("Internos encontrados:", internos?.length || 0);
+        
+        // Filtrar solo profesores (excluir Rector y Coordinador)
+        const soloProfeores = internos?.filter((p: any) => p.cargo === 'Profesor(a)') || [];
+        console.log("Solo profesores (cargo='Profesor(a)'):", soloProfeores.length);
+        
+        // Log de cargos encontrados para debug
+        const cargosUnicos = [...new Set(internos?.map((p: any) => p.cargo) || [])];
+        console.log("Cargos únicos en Internos:", cargosUnicos);
+        
         console.log("Asignaciones raw encontradas:", asignacionesData?.length || 0);
         if (errorInternos) console.error("Error internos:", errorInternos);
         if (errorAsig) console.error("Error asignaciones:", errorAsig);
-        if (asignacionesData && asignacionesData.length > 0) {
-          console.log("Ejemplo de asignación raw:", JSON.stringify(asignacionesData[0], null, 2));
-        }
 
         console.log("=== INICIANDO EXPANSIÓN ===");
         const asignacionesProcesadas: AsignacionProfesor[] = [];
@@ -111,12 +118,18 @@ export const useCompletitud = () => {
           for (let i = 0; i < asignacionesData.length; i++) {
             const asig = asignacionesData[i];
             
-            // Buscar profesor en Internos
-            const profesor = internos?.find((p: any) => p.id === asig.id);
+            // Buscar profesor en Internos - SOLO si es Profesor(a)
+            const profesor = soloProfeores.find((p: any) => p.id === asig.id);
             
-            console.log(`\n--- Procesando asignación ${i+1}/${asignacionesData.length} ---`);
-            console.log('ID asignación:', asig.id);
-            console.log('Profesor encontrado en Internos:', profesor ? `${profesor.nombres} ${profesor.apellidos}` : 'NO ENCONTRADO');
+            // FILTRO CRÍTICO: Si no es profesor, OMITIR esta asignación
+            if (!profesor) {
+              // Verificar si existe pero con otro cargo (para log)
+              const personaNoProfesor = internos?.find((p: any) => p.id === asig.id);
+              if (personaNoProfesor) {
+                console.log(`⏭️ Omitiendo asignación de ${personaNoProfesor.nombres} ${personaNoProfesor.apellidos} - cargo: ${personaNoProfesor.cargo} (no es Profesor(a))`);
+              }
+              continue; // SALTAR - no es profesor
+            }
             console.log('Materias raw:', asig["Materia(s)"], '| Tipo:', typeof asig["Materia(s)"]);
             console.log('Grados raw:', asig["Grado(s)"], '| Tipo:', typeof asig["Grado(s)"]);
             console.log('Salones raw:', asig["Salon(es)"], '| Tipo:', typeof asig["Salon(es)"]);
