@@ -94,7 +94,7 @@ const SeleccionarGradoRector = () => {
               Inicio
             </button>
             <span className="text-muted-foreground">→</span>
-            <span className="text-foreground font-medium">Seleccionar Grado</span>
+            <span className="text-foreground font-medium">Notas</span>
           </div>
         </div>
 
