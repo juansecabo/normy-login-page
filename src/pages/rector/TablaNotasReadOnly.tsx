@@ -47,6 +47,7 @@ const TablaNotasReadOnly = () => {
   const [notas, setNotas] = useState<NotasEstudiantes>({});
   const [comentarios, setComentarios] = useState<ComentariosEstudiantes>({});
   const [periodoActivo, setPeriodoActivo] = useState<number>(1);
+  const [nombreProfesor, setNombreProfesor] = useState<string>("");
   
   // Modal de comentarios
   const [comentarioModalOpen, setComentarioModalOpen] = useState(false);
@@ -54,6 +55,7 @@ const TablaNotasReadOnly = () => {
     nombreEstudiante: string;
     nombreActividad: string;
     comentario: string | null;
+    nombreProfesor: string;
   } | null>(null);
 
   useEffect(() => {
@@ -84,6 +86,36 @@ const TablaNotasReadOnly = () => {
       setSalonSeleccionado(storedSalon);
 
       try {
+        // Buscar el profesor que da esta materia en este grado/salón
+        const { data: asignaciones } = await supabase
+          .from('Asignación Profesores')
+          .select('id, "Materia(s)", "Grado(s)", "Salon(es)"');
+
+        if (asignaciones) {
+          // Encontrar la asignación que coincide
+          const asignacionCorrecta = asignaciones.find((asig) => {
+            const materias = asig['Materia(s)'] || [];
+            const grados = asig['Grado(s)'] || [];
+            const salones = asig['Salon(es)'] || [];
+            return materias.includes(storedMateria) && 
+                   grados.includes(storedGrado) && 
+                   salones.includes(storedSalon);
+          });
+
+          if (asignacionCorrecta) {
+            // Buscar el nombre del profesor en la tabla Internos usando el ID
+            const { data: profesorData } = await supabase
+              .from('Internos')
+              .select('nombres, apellidos')
+              .eq('id', asignacionCorrecta.id)
+              .maybeSingle();
+
+            if (profesorData) {
+              setNombreProfesor(`${profesorData.nombres} ${profesorData.apellidos}`);
+            }
+          }
+        }
+
         // Fetch estudiantes
         const { data: estudiantesData, error: estudiantesError } = await supabase
           .from('Estudiantes')
@@ -312,6 +344,13 @@ const TablaNotasReadOnly = () => {
           </div>
         </div>
 
+        {/* Info del profesor */}
+        {nombreProfesor && (
+          <div className="bg-primary/5 border border-primary/20 rounded-lg p-3 mb-4 flex items-center gap-2">
+            <span className="text-sm text-muted-foreground">Profesor(a):</span>
+            <span className="text-sm font-medium text-foreground">{nombreProfesor}</span>
+          </div>
+        )}
 
         {/* Pestañas de Períodos */}
         <div className="bg-card rounded-lg shadow-soft overflow-hidden">
@@ -500,6 +539,7 @@ const TablaNotasReadOnly = () => {
                                             nombreEstudiante: `${estudiante.apellidos_estudiante} ${estudiante.nombre_estudiante}`,
                                             nombreActividad: actividad.nombre,
                                             comentario: comentario,
+                                            nombreProfesor: nombreProfesor,
                                           });
                                           setComentarioModalOpen(true);
                                         }}
@@ -536,6 +576,7 @@ const TablaNotasReadOnly = () => {
           nombreEstudiante={comentarioModalData.nombreEstudiante}
           nombreActividad={comentarioModalData.nombreActividad}
           comentario={comentarioModalData.comentario}
+          nombreProfesor={comentarioModalData.nombreProfesor}
         />
       )}
     </div>
