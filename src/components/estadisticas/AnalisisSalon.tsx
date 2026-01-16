@@ -54,8 +54,23 @@ export const AnalisisSalon = ({ grado, salon, periodo }: AnalisisSalonProps) => 
   const promedioGrado = estudiantesGrado.length > 0 ? Math.round((estudiantesGrado.reduce((a, e) => a + e.promedio, 0) / estudiantesGrado.length) * 100) / 100 : 0;
   const diferenciaConGrado = promedioSalon - promedioGrado;
   const diferenciaConInst = promedioSalon - promedioInstitucional;
-  const mejoresMaterias = [...materias].slice(0, 3);
-  const peoresMaterias = [...materias].sort((a, b) => a.promedio - b.promedio).slice(0, 3);
+  // Calcular mejores y peores materias SIN superposición (máximo 3 cada una)
+  const materiasSorted = [...materias];
+  const cantidadMaterias = materiasSorted.length;
+  let cantidadMejores = Math.min(3, Math.floor(cantidadMaterias / 2));
+  let cantidadPeores = Math.min(3, cantidadMaterias - cantidadMejores);
+  
+  // Si hay muy pocas materias, ajustar
+  if (cantidadMaterias <= 1) {
+    cantidadMejores = cantidadMaterias;
+    cantidadPeores = 0;
+  } else if (cantidadMaterias <= 3) {
+    cantidadMejores = 1;
+    cantidadPeores = 1;
+  }
+
+  const mejoresMaterias = materiasSorted.slice(0, cantidadMejores);
+  const peoresMaterias = materiasSorted.slice(-cantidadPeores).reverse();
 
   // Formatear el período para mostrar
   const periodoTexto = periodo === "anual" ? "Acumulado Anual" : `Período ${periodo}`;
@@ -108,11 +123,18 @@ export const AnalisisSalon = ({ grado, salon, periodo }: AnalisisSalonProps) => 
         <TablaEvolucion titulo={`Evolución de ${grado} - ${salon} por Período`} datos={evolucionPeriodos} />
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      {/* Mostrar materias solo si hay más de 1, y ocultar "A Reforzar" si no hay suficientes */}
+      {cantidadMaterias > 1 ? (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <TablaRanking titulo={`Top 5 Estudiantes - ${salon}`} datos={topEstudiantes} tipo="estudiante" limite={5} />
+          <ListaComparativa titulo="Mejores Materias" items={mejoresMaterias.map(m => ({ nombre: m.materia, valor: m.promedio }))} tipo="mejor" icono={<Award className="w-5 h-5 text-green-500" />} />
+          {cantidadPeores > 0 && (
+            <ListaComparativa titulo="Materias a Reforzar" items={peoresMaterias.map(m => ({ nombre: m.materia, valor: m.promedio }))} tipo="peor" icono={<AlertTriangle className="w-5 h-5 text-amber-500" />} />
+          )}
+        </div>
+      ) : (
         <TablaRanking titulo={`Top 5 Estudiantes - ${salon}`} datos={topEstudiantes} tipo="estudiante" limite={5} />
-        <ListaComparativa titulo="Mejores Materias" items={mejoresMaterias.map(m => ({ nombre: m.materia, valor: m.promedio }))} tipo="mejor" icono={<Award className="w-5 h-5 text-green-500" />} />
-        <ListaComparativa titulo="Materias a Reforzar" items={peoresMaterias.map(m => ({ nombre: m.materia, valor: m.promedio }))} tipo="peor" icono={<AlertTriangle className="w-5 h-5 text-amber-500" />} />
-      </div>
+      )}
 
       <ListaComparativa titulo={`Rendimiento por Materia - ${grado} ${salon}`} items={materias.map(m => ({ nombre: m.materia, valor: m.promedio }))} mostrarPosicion />
 
