@@ -203,6 +203,32 @@ export const useCompletitud = () => {
 
     const periodos = periodo === "anual" ? [1, 2, 3, 4] : [periodo];
 
+    // IMPORTANTE: Si aún está cargando, devolver un resultado de carga
+    if (loading) {
+      console.log("useCompletitud: Aún cargando datos...");
+      return {
+        completo: false,
+        detalles: [{
+          tipo: "sin_actividades",
+          descripcion: "Cargando datos de verificación...",
+          materia: "Cargando..."
+        }],
+        resumen: {
+          materiasIncompletas: 0,
+          profesoresPendientes: [],
+          gradosAfectados: [],
+          salonesAfectados: []
+        },
+        resumenCompleto: {
+          totalEstudiantes: 0,
+          totalAsignacionesVerificadas: 0,
+          totalSalones: 0,
+          totalProfesores: 0,
+          materiasPorSalon: new Map()
+        }
+      };
+    }
+
     // PASO 1: Expandir todas las asignaciones de "Asignación Profesores"
     let todasLasCombinaciones = expandirAsignaciones();
 
@@ -225,13 +251,21 @@ export const useCompletitud = () => {
 
     // DEBUG: Log para verificar qué está pasando
     console.log("=== VERIFICACIÓN DE COMPLETITUD ===");
-    console.log("Total asignaciones expandidas:", todasLasCombinaciones.length);
+    console.log("Nivel:", nivel, "Periodo:", periodo, "Grado:", grado, "Salon:", salon);
+    console.log("Total asignaciones en estado:", asignaciones.length);
+    console.log("Total combinaciones expandidas:", todasLasCombinaciones.length);
     console.log("Total estudiantes en sistema:", estudiantes.length);
-    console.log("Muestra de combinaciones:", todasLasCombinaciones.slice(0, 3));
-    console.log("Muestra de estudiantes:", estudiantes.slice(0, 3).map(e => ({
-      grado: e.grado_estudiante,
-      salon: e.salon_estudiante
-    })));
+    console.log("Total actividades:", actividades.length);
+    console.log("Total notas:", notas.length);
+    if (todasLasCombinaciones.length > 0) {
+      console.log("Muestra de combinaciones:", todasLasCombinaciones.slice(0, 3));
+    }
+    if (estudiantes.length > 0) {
+      console.log("Muestra de estudiantes:", estudiantes.slice(0, 3).map(e => ({
+        grado: e.grado_estudiante,
+        salon: e.salon_estudiante
+      })));
+    }
 
     // PASO 2: Para CADA combinación materia-grado-salón, verificar completitud
     for (const combo of todasLasCombinaciones) {
