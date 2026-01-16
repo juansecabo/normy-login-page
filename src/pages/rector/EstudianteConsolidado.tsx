@@ -345,6 +345,13 @@ const EstudianteConsolidado = () => {
           </div>
         </div>
 
+        {/* Indicador de solo lectura */}
+        <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-4 text-center">
+          <span className="text-amber-800 text-sm font-medium">
+            👁️ Modo solo lectura - Situación académica consolidada
+          </span>
+        </div>
+
         {/* Tabla por cada materia */}
         <div className="space-y-6">
           {materias.map((materia) => {
