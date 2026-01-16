@@ -57,6 +57,7 @@ export const AnalisisGrado = ({ grado, periodo }: AnalisisGradoProps) => {
 
   const handleVerRiesgo = () => {
     const params = new URLSearchParams();
+    params.set("nivel", "grado");
     params.set("periodo", String(periodo));
     params.set("grado", grado);
     navigate(`/rector/estudiantes-riesgo?${params.toString()}`);

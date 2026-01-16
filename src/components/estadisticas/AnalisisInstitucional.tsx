@@ -79,6 +79,7 @@ export const AnalisisInstitucional = ({ periodo }: AnalisisInstitucionalProps) =
 
   const handleVerRiesgo = () => {
     const params = new URLSearchParams();
+    params.set("nivel", "institucion");
     params.set("periodo", String(periodo));
     navigate(`/rector/estudiantes-riesgo?${params.toString()}`);
   };

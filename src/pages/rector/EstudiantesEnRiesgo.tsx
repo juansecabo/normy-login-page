@@ -22,8 +22,19 @@ const EstudiantesEnRiesgo = () => {
   const periodoParam = searchParams.get("periodo");
   const gradoParam = searchParams.get("grado");
   const salonParam = searchParams.get("salon");
+  const nivelParam = searchParams.get("nivel");
 
   const periodo = periodoParam === "anual" ? "anual" : parseInt(periodoParam || "1");
+
+  // Construir URL para volver a estadísticas con los mismos filtros
+  const buildVolverUrl = () => {
+    const params = new URLSearchParams();
+    if (nivelParam) params.set("nivel", nivelParam);
+    if (periodoParam) params.set("periodo", periodoParam);
+    if (gradoParam) params.set("grado", gradoParam);
+    if (salonParam) params.set("salon", salonParam);
+    return `/rector/estadisticas?${params.toString()}`;
+  };
 
   useEffect(() => {
     const session = getSession();
@@ -84,7 +95,7 @@ const EstudiantesEnRiesgo = () => {
           <div className="flex flex-wrap items-center gap-2 text-sm">
             <button onClick={() => navigate("/dashboard-rector")} className="text-primary hover:underline">Inicio</button>
             <span className="text-muted-foreground">→</span>
-            <button onClick={() => navigate("/rector/estadisticas")} className="text-primary hover:underline">Estadísticas</button>
+            <button onClick={() => navigate(buildVolverUrl())} className="text-primary hover:underline">Estadísticas</button>
             <span className="text-muted-foreground">→</span>
             <span className="text-foreground font-medium">Estudiantes en Riesgo</span>
           </div>
@@ -104,7 +115,7 @@ const EstudiantesEnRiesgo = () => {
             </div>
             <Button
               variant="outline"
-              onClick={() => navigate("/rector/estadisticas")}
+              onClick={() => navigate(buildVolverUrl())}
               className="gap-2"
             >
               <ArrowLeft className="w-4 h-4" />

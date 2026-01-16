@@ -77,6 +77,7 @@ export const AnalisisSalon = ({ grado, salon, periodo }: AnalisisSalonProps) => 
 
   const handleVerRiesgo = () => {
     const params = new URLSearchParams();
+    params.set("nivel", "salon");
     params.set("periodo", String(periodo));
     params.set("grado", grado);
     params.set("salon", salon);
