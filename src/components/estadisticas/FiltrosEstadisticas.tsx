@@ -1,5 +1,10 @@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
+interface EstudianteOption {
+  codigo: string;
+  nombre: string;
+}
+
 interface FiltrosEstadisticasProps {
   nivelAnalisis: string;
   setNivelAnalisis: (value: string) => void;
@@ -11,9 +16,12 @@ interface FiltrosEstadisticasProps {
   setSalonSeleccionado?: (value: string) => void;
   materiaSeleccionada?: string;
   setMateriaSeleccionada?: (value: string) => void;
+  estudianteSeleccionado?: string;
+  setEstudianteSeleccionado?: (value: string) => void;
   grados: string[];
   salones: { grado: string; salon: string }[];
   materias: string[];
+  estudiantes?: EstudianteOption[];
 }
 
 export const FiltrosEstadisticas = ({
@@ -27,9 +35,12 @@ export const FiltrosEstadisticas = ({
   setSalonSeleccionado,
   materiaSeleccionada,
   setMateriaSeleccionada,
+  estudianteSeleccionado,
+  setEstudianteSeleccionado,
   grados,
   salones,
-  materias
+  materias,
+  estudiantes = []
 }: FiltrosEstadisticasProps) => {
   
   const salonesDelGrado = gradoSeleccionado 
@@ -40,7 +51,7 @@ export const FiltrosEstadisticas = ({
     <div className="bg-card rounded-lg shadow-soft p-4 mb-6">
       <h3 className="font-semibold text-foreground mb-4">Filtros de análisis</h3>
       
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4">
         {/* Nivel de análisis */}
         <div>
           <label className="text-sm text-muted-foreground mb-1.5 block">Nivel de Análisis</label>
@@ -51,6 +62,7 @@ export const FiltrosEstadisticas = ({
               setGradoSeleccionado?.("");
               setSalonSeleccionado?.("");
               setMateriaSeleccionada?.("");
+              setEstudianteSeleccionado?.("");
             }
           }}>
             <SelectTrigger>
@@ -83,18 +95,22 @@ export const FiltrosEstadisticas = ({
           </Select>
         </div>
 
-        {/* Grado - visible para niveles grado, salon, estudiante */}
-        {(nivelAnalisis === "grado" || nivelAnalisis === "salon" || nivelAnalisis === "estudiante") && setGradoSeleccionado && (
+        {/* Grado - visible para niveles grado, salon, estudiante, materia */}
+        {(nivelAnalisis === "grado" || nivelAnalisis === "salon" || nivelAnalisis === "estudiante" || nivelAnalisis === "materia") && setGradoSeleccionado && (
           <div>
-            <label className="text-sm text-muted-foreground mb-1.5 block">Grado</label>
+            <label className="text-sm text-muted-foreground mb-1.5 block">
+              Grado {nivelAnalisis === "materia" ? "(opcional)" : ""}
+            </label>
             <Select value={gradoSeleccionado || ""} onValueChange={(val) => {
               setGradoSeleccionado(val);
               setSalonSeleccionado?.("");
+              setEstudianteSeleccionado?.("");
             }}>
               <SelectTrigger>
                 <SelectValue placeholder="Seleccionar grado" />
               </SelectTrigger>
               <SelectContent>
+                {nivelAnalisis === "materia" && <SelectItem value="all">Todos los grados</SelectItem>}
                 {grados.map(grado => (
                   <SelectItem key={grado} value={grado}>{grado}</SelectItem>
                 ))}
@@ -103,17 +119,40 @@ export const FiltrosEstadisticas = ({
           </div>
         )}
 
-        {/* Salón - visible para niveles salon, estudiante */}
-        {(nivelAnalisis === "salon" || nivelAnalisis === "estudiante") && setSalonSeleccionado && gradoSeleccionado && (
+        {/* Salón - visible para niveles salon, estudiante, materia */}
+        {(nivelAnalisis === "salon" || nivelAnalisis === "estudiante" || nivelAnalisis === "materia") && setSalonSeleccionado && gradoSeleccionado && gradoSeleccionado !== "all" && (
           <div>
-            <label className="text-sm text-muted-foreground mb-1.5 block">Salón</label>
-            <Select value={salonSeleccionado || ""} onValueChange={setSalonSeleccionado}>
+            <label className="text-sm text-muted-foreground mb-1.5 block">
+              Salón {nivelAnalisis === "materia" ? "(opcional)" : ""}
+            </label>
+            <Select value={salonSeleccionado || ""} onValueChange={(val) => {
+              setSalonSeleccionado(val);
+              setEstudianteSeleccionado?.("");
+            }}>
               <SelectTrigger>
                 <SelectValue placeholder="Seleccionar salón" />
               </SelectTrigger>
               <SelectContent>
+                {nivelAnalisis === "materia" && <SelectItem value="all">Todos los salones</SelectItem>}
                 {salonesDelGrado.map(s => (
                   <SelectItem key={s.salon} value={s.salon}>{s.salon}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
+
+        {/* Estudiante - visible para nivel estudiante */}
+        {nivelAnalisis === "estudiante" && setEstudianteSeleccionado && gradoSeleccionado && salonSeleccionado && (
+          <div>
+            <label className="text-sm text-muted-foreground mb-1.5 block">Estudiante</label>
+            <Select value={estudianteSeleccionado || ""} onValueChange={setEstudianteSeleccionado}>
+              <SelectTrigger>
+                <SelectValue placeholder="Seleccionar estudiante" />
+              </SelectTrigger>
+              <SelectContent>
+                {estudiantes.map(est => (
+                  <SelectItem key={est.codigo} value={est.codigo}>{est.nombre}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
