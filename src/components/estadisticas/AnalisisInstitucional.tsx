@@ -1,6 +1,5 @@
 import { useNavigate } from "react-router-dom";
 import { useEstadisticas, ordenGrados } from "@/hooks/useEstadisticas";
-import { useCompletitud } from "@/hooks/useCompletitud";
 import { TarjetaResumen } from "./TarjetaResumen";
 import { TablaRanking } from "./TablaRanking";
 import { TablaDistribucion } from "./TablaDistribucion";
@@ -24,10 +23,9 @@ export const AnalisisInstitucional = ({ periodo }: AnalisisInstitucionalProps) =
     getTopEstudiantes,
     getEvolucionPeriodos,
     tieneDatosSuficientesParaRiesgo,
-    getEstudiantesEnRiesgo
+    getEstudiantesEnRiesgo,
+    verificarCompletitud
   } = useEstadisticas();
-
-  const { verificarCompletitud } = useCompletitud();
 
   const promedioInstitucional = getPromedioInstitucional(periodo);
   const estudiantesTotales = getPromediosEstudiantes(periodo);
@@ -36,8 +34,8 @@ export const AnalisisInstitucional = ({ periodo }: AnalisisInstitucionalProps) =
   const topSalones = getPromediosSalones(periodo).sort((a, b) => b.promedio - a.promedio).slice(0, 5);
   const todosGrados = getPromediosGrados(periodo).sort((a, b) => b.promedio - a.promedio);
   
-  // Verificar completitud con el nuevo hook
-  const { completo, detalles, resumen } = verificarCompletitud("institucion", periodo);
+  // Verificar completitud
+  const { completo, detalles } = verificarCompletitud(periodo);
   
   // Filtrar evolución hasta el período seleccionado
   const periodoHasta = periodo === "anual" ? 4 : periodo;
@@ -74,9 +72,6 @@ export const AnalisisInstitucional = ({ periodo }: AnalisisInstitucionalProps) =
   // Contar salones únicos con datos
   const salonesConDatos = getPromediosSalones(periodo);
 
-  // Formatear el período para mostrar
-  const periodoTexto = periodo === "anual" ? "Acumulado Anual" : `Período ${periodo}`;
-
   const handleVerRiesgo = () => {
     const params = new URLSearchParams();
     params.set("periodo", String(periodo));
@@ -101,13 +96,7 @@ export const AnalisisInstitucional = ({ periodo }: AnalisisInstitucionalProps) =
           <span className="font-medium">ℹ️</span>
           <span>Estadísticas basadas únicamente en estudiantes con notas registradas.</span>
         </div>
-        <IndicadorCompletitud 
-          completo={completo} 
-          detalles={detalles} 
-          resumen={resumen}
-          nivel="Institución" 
-          periodo={periodoTexto}
-        />
+        <IndicadorCompletitud completo={completo} detalles={detalles} nivel="Institución" />
       </div>
 
       {/* Tarjetas de resumen */}

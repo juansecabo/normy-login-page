@@ -1,6 +1,5 @@
 import { useNavigate } from "react-router-dom";
 import { useEstadisticas } from "@/hooks/useEstadisticas";
-import { useCompletitud } from "@/hooks/useCompletitud";
 import { TarjetaResumen } from "./TarjetaResumen";
 import { TablaRanking } from "./TablaRanking";
 import { TablaDistribucion } from "./TablaDistribucion";
@@ -9,25 +8,13 @@ import { ListaComparativa } from "./ListaComparativa";
 import { IndicadorCompletitud } from "./IndicadorCompletitud";
 import { Home, Users, TrendingUp, AlertTriangle, Award } from "lucide-react";
 
-interface AnalisisSalonProps { 
-  grado: string; 
-  salon: string; 
-  periodo: number | "anual"; 
-}
+interface AnalisisSalonProps { grado: string; salon: string; periodo: number | "anual"; }
 
 export const AnalisisSalon = ({ grado, salon, periodo }: AnalisisSalonProps) => {
   const navigate = useNavigate();
-  const { 
-    getPromediosEstudiantes, getPromediosSalones, getPromediosMaterias, 
-    getDistribucionDesempeno, getTopEstudiantes, getEvolucionPeriodos, 
-    getPromedioInstitucional, tieneDatosSuficientesParaRiesgo, getEstudiantesEnRiesgo 
-  } = useEstadisticas();
+  const { getPromediosEstudiantes, getPromediosSalones, getPromediosMaterias, getDistribucionDesempeno, getTopEstudiantes, getEvolucionPeriodos, getPromedioInstitucional, tieneDatosSuficientesParaRiesgo, getEstudiantesEnRiesgo, verificarCompletitud } = useEstadisticas();
 
-  const { verificarCompletitud } = useCompletitud();
-
-  if (!grado || !salon) {
-    return <div className="bg-card rounded-lg shadow-soft p-8 text-center text-muted-foreground">Selecciona un grado y un salón para ver el análisis</div>;
-  }
+  if (!grado || !salon) return <div className="bg-card rounded-lg shadow-soft p-8 text-center text-muted-foreground">Selecciona un grado y un salón para ver el análisis</div>;
 
   const estudiantesSalon = getPromediosEstudiantes(periodo, grado, salon);
   const promedioSalon = estudiantesSalon.length > 0 ? Math.round((estudiantesSalon.reduce((a, e) => a + e.promedio, 0) / estudiantesSalon.length) * 100) / 100 : 0;
@@ -38,8 +25,8 @@ export const AnalisisSalon = ({ grado, salon, periodo }: AnalisisSalonProps) => 
   const topEstudiantes = getTopEstudiantes(5, periodo, grado, salon);
   const materias = getPromediosMaterias(periodo, grado, salon);
   
-  // Verificar completitud con el nuevo hook
-  const { completo, detalles, resumen } = verificarCompletitud("salon", periodo, grado, salon);
+  // Verificar completitud
+  const { completo, detalles } = verificarCompletitud(periodo, grado, salon);
   
   // Filtrar evolución hasta el período seleccionado
   const periodoHasta = periodo === "anual" ? 4 : periodo;
@@ -57,9 +44,6 @@ export const AnalisisSalon = ({ grado, salon, periodo }: AnalisisSalonProps) => 
   const mejoresMaterias = [...materias].slice(0, 3);
   const peoresMaterias = [...materias].sort((a, b) => a.promedio - b.promedio).slice(0, 3);
 
-  // Formatear el período para mostrar
-  const periodoTexto = periodo === "anual" ? "Acumulado Anual" : `Período ${periodo}`;
-
   const handleVerRiesgo = () => {
     const params = new URLSearchParams();
     params.set("periodo", String(periodo));
@@ -69,13 +53,7 @@ export const AnalisisSalon = ({ grado, salon, periodo }: AnalisisSalonProps) => 
   };
 
   if (estudiantesSalon.length === 0) {
-    return (
-      <div className="bg-card rounded-lg shadow-soft p-8 text-center">
-        <AlertTriangle className="w-12 h-12 text-amber-500 mx-auto mb-4" />
-        <h3 className="text-lg font-semibold text-foreground mb-2">Aún no hay actividades con notas registradas para {grado} - {salon}</h3>
-        <p className="text-muted-foreground">Las estadísticas estarán disponibles cuando se registren notas.</p>
-      </div>
-    );
+    return <div className="bg-card rounded-lg shadow-soft p-8 text-center"><AlertTriangle className="w-12 h-12 text-amber-500 mx-auto mb-4" /><h3 className="text-lg font-semibold text-foreground mb-2">Aún no hay actividades con notas registradas para {grado} - {salon}</h3><p className="text-muted-foreground">Las estadísticas estarán disponibles cuando se registren notas.</p></div>;
   }
 
   return (
@@ -86,13 +64,7 @@ export const AnalisisSalon = ({ grado, salon, periodo }: AnalisisSalonProps) => 
           <span className="font-medium">ℹ️</span>
           <span>Estadísticas basadas únicamente en estudiantes con notas registradas.</span>
         </div>
-        <IndicadorCompletitud 
-          completo={completo} 
-          detalles={detalles} 
-          resumen={resumen}
-          nivel={`${grado} - ${salon}`} 
-          periodo={periodoTexto}
-        />
+        <IndicadorCompletitud completo={completo} detalles={detalles} nivel={`${grado} - ${salon}`} />
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -125,12 +97,7 @@ export const AnalisisSalon = ({ grado, salon, periodo }: AnalisisSalonProps) => 
             Estudiantes en Riesgo Académico ({estudiantesEnRiesgo.length}) - Click para ver detalles
           </h4>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
-            {estudiantesEnRiesgo.slice(0, 6).map((est, idx) => (
-              <div key={idx} className="flex justify-between items-center p-2 bg-white rounded border border-red-200">
-                <span className="text-sm text-foreground truncate">{est.nombre_completo}</span>
-                <span className="text-sm font-bold text-red-600 ml-2">{est.promedio.toFixed(2)}</span>
-              </div>
-            ))}
+            {estudiantesEnRiesgo.slice(0, 6).map((est, idx) => <div key={idx} className="flex justify-between items-center p-2 bg-white rounded border border-red-200"><span className="text-sm text-foreground truncate">{est.nombre_completo}</span><span className="text-sm font-bold text-red-600 ml-2">{est.promedio.toFixed(2)}</span></div>)}
             {estudiantesEnRiesgo.length > 6 && (
               <div className="flex items-center justify-center p-2 bg-white rounded border border-red-200 text-sm text-red-600">
                 +{estudiantesEnRiesgo.length - 6} más

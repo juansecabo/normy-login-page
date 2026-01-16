@@ -59,24 +59,7 @@ export const FiltrosEstadisticas = ({
       <h3 className="font-semibold text-foreground mb-4">Filtros de análisis</h3>
       
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4">
-        {/* Período - PRIMERO */}
-        <div>
-          <label className="text-sm text-muted-foreground mb-1.5 block">Período</label>
-          <Select value={periodoSeleccionado} onValueChange={setPeriodoSeleccionado}>
-            <SelectTrigger>
-              <SelectValue placeholder="Seleccionar período" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="1">Período 1</SelectItem>
-              <SelectItem value="2">Período 2</SelectItem>
-              <SelectItem value="3">Período 3</SelectItem>
-              <SelectItem value="4">Período 4</SelectItem>
-              <SelectItem value="anual">Acumulado Anual</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        {/* Nivel de análisis - SEGUNDO */}
+        {/* Nivel de análisis */}
         <div>
           <label className="text-sm text-muted-foreground mb-1.5 block">Nivel de Análisis</label>
           <Select value={nivelAnalisis} onValueChange={(val) => {
@@ -182,6 +165,23 @@ export const FiltrosEstadisticas = ({
             </Select>
           </div>
         )}
+
+        {/* Período - SIEMPRE AL FINAL */}
+        <div>
+          <label className="text-sm text-muted-foreground mb-1.5 block">Período</label>
+          <Select value={periodoSeleccionado} onValueChange={setPeriodoSeleccionado}>
+            <SelectTrigger>
+              <SelectValue placeholder="Seleccionar período" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="1">Período 1</SelectItem>
+              <SelectItem value="2">Período 2</SelectItem>
+              <SelectItem value="3">Período 3</SelectItem>
+              <SelectItem value="4">Período 4</SelectItem>
+              <SelectItem value="anual">Acumulado Anual</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
     </div>
   );
