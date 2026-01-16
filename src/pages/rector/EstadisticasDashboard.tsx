@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import escudoImg from "@/assets/escudo.png";
@@ -8,17 +8,20 @@ import { FiltrosEstadisticas } from "@/components/estadisticas/FiltrosEstadistic
 import { AnalisisInstitucional } from "@/components/estadisticas/AnalisisInstitucional";
 import { AnalisisGrado } from "@/components/estadisticas/AnalisisGrado";
 import { AnalisisSalon } from "@/components/estadisticas/AnalisisSalon";
+import { AnalisisEstudiante } from "@/components/estadisticas/AnalisisEstudiante";
+import { AnalisisMateria } from "@/components/estadisticas/AnalisisMateria";
 import { Loader2 } from "lucide-react";
 
 const EstadisticasDashboard = () => {
   const navigate = useNavigate();
-  const { loading, grados, salones, materias } = useEstadisticas();
+  const { loading, grados, salones, materias, getPromediosEstudiantes } = useEstadisticas();
   
   const [nivelAnalisis, setNivelAnalisis] = useState("institucion");
   const [periodoSeleccionado, setPeriodoSeleccionado] = useState("anual");
   const [gradoSeleccionado, setGradoSeleccionado] = useState("");
   const [salonSeleccionado, setSalonSeleccionado] = useState("");
   const [materiaSeleccionada, setMateriaSeleccionada] = useState("");
+  const [estudianteSeleccionado, setEstudianteSeleccionado] = useState("");
 
   useEffect(() => {
     const session = getSession();
@@ -31,6 +34,16 @@ const EstadisticasDashboard = () => {
       return;
     }
   }, [navigate]);
+
+  // Obtener lista de estudiantes del salón seleccionado
+  const estudiantesDelSalon = useMemo(() => {
+    if (!gradoSeleccionado || !salonSeleccionado) return [];
+    const estudiantes = getPromediosEstudiantes("anual", gradoSeleccionado, salonSeleccionado);
+    return estudiantes.map(e => ({
+      codigo: e.codigo_estudiantil,
+      nombre: e.nombre_completo
+    })).sort((a, b) => a.nombre.localeCompare(b.nombre));
+  }, [gradoSeleccionado, salonSeleccionado, getPromediosEstudiantes]);
 
   const handleLogout = () => {
     clearSession();
@@ -83,9 +96,12 @@ const EstadisticasDashboard = () => {
               setSalonSeleccionado={setSalonSeleccionado}
               materiaSeleccionada={materiaSeleccionada}
               setMateriaSeleccionada={setMateriaSeleccionada}
+              estudianteSeleccionado={estudianteSeleccionado}
+              setEstudianteSeleccionado={setEstudianteSeleccionado}
               grados={grados}
               salones={salones}
               materias={materias}
+              estudiantes={estudiantesDelSalon}
             />
 
             {nivelAnalisis === "institucion" && (
@@ -97,10 +113,19 @@ const EstadisticasDashboard = () => {
             {nivelAnalisis === "salon" && (
               <AnalisisSalon grado={gradoSeleccionado} salon={salonSeleccionado} periodo={periodoNumerico} />
             )}
-            {(nivelAnalisis === "estudiante" || nivelAnalisis === "materia") && (
-              <div className="bg-card rounded-lg shadow-soft p-8 text-center text-muted-foreground">
-                Esta vista estará disponible en la Fase 2
-              </div>
+            {nivelAnalisis === "estudiante" && (
+              <AnalisisEstudiante 
+                codigoEstudiante={estudianteSeleccionado} 
+                periodo={periodoNumerico} 
+              />
+            )}
+            {nivelAnalisis === "materia" && (
+              <AnalisisMateria 
+                materia={materiaSeleccionada} 
+                periodo={periodoNumerico}
+                grado={gradoSeleccionado}
+                salon={salonSeleccionado}
+              />
             )}
           </>
         )}
