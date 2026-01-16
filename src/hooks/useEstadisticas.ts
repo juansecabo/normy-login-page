@@ -69,6 +69,13 @@ export const ordenGrados = [
 const UMBRAL_PORCENTAJE_MINIMO = 40;
 const UMBRAL_ACTIVIDADES_MINIMO = 3;
 
+// Tipo para asignaciones expandidas
+interface AsignacionExpandida {
+  materia: string;
+  grado: string;
+  salon: string;
+}
+
 export const useEstadisticas = () => {
   const [loading, setLoading] = useState(true);
   const [notas, setNotas] = useState<NotaCompleta[]>([]);
@@ -76,17 +83,27 @@ export const useEstadisticas = () => {
   const [materias, setMaterias] = useState<string[]>([]);
   const [grados, setGrados] = useState<string[]>([]);
   const [salones, setSalones] = useState<{ grado: string; salon: string }[]>([]);
+  const [asignacionesExpandidas, setAsignacionesExpandidas] = useState<AsignacionExpandida[]>([]);
 
-  // Función para obtener materias filtradas por grado y salón
+  // Función para normalizar texto (quitar tildes, espacios, minúsculas)
+  const normalize = (str: string | null | undefined): string => {
+    return String(str || '').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  };
+
+  // Función para obtener materias filtradas por grado y salón (desde asignaciones)
   const getMateriasFiltradas = (grado?: string, salon?: string): string[] => {
-    let notasFiltradas = notas;
+    let asignacionesFiltradas = asignacionesExpandidas;
+    
     if (grado && grado !== "all") {
-      notasFiltradas = notasFiltradas.filter(n => n.grado === grado);
+      const gradoNorm = normalize(grado);
+      asignacionesFiltradas = asignacionesFiltradas.filter(a => normalize(a.grado) === gradoNorm);
     }
     if (salon && salon !== "all") {
-      notasFiltradas = notasFiltradas.filter(n => n.salon === salon);
+      const salonNorm = normalize(salon);
+      asignacionesFiltradas = asignacionesFiltradas.filter(a => normalize(a.salon) === salonNorm);
     }
-    const materiasUnicas = [...new Set(notasFiltradas.map(n => n.materia))].sort();
+    
+    const materiasUnicas = [...new Set(asignacionesFiltradas.map(a => a.materia))].sort();
     return materiasUnicas;
   };
 
@@ -112,8 +129,53 @@ export const useEstadisticas = () => {
         if (estudiantesError) throw estudiantesError;
         setEstudiantes(estudiantesData || []);
 
-        // Extraer materias únicas
-        const materiasUnicas = [...new Set((notasData || []).map(n => n.materia))].sort();
+        // Obtener asignaciones de profesores para extraer materias por grado/salón
+        const { data: asignacionesData, error: asignacionesError } = await supabase
+          .from("Asignación Profesores")
+          .select('"Materia(s)", "Grado(s)", "Salon(es)"');
+
+        if (asignacionesError) {
+          console.error("Error fetching asignaciones:", asignacionesError);
+        }
+
+        // Expandir asignaciones
+        const expandidas: AsignacionExpandida[] = [];
+        (asignacionesData || []).forEach((asig: any) => {
+          const materiasArr = Array.isArray(asig["Materia(s)"]) ? asig["Materia(s)"] : [];
+          const gradosArr = Array.isArray(asig["Grado(s)"]) ? asig["Grado(s)"] : [];
+          const salonesArr = Array.isArray(asig["Salon(es)"]) ? asig["Salon(es)"] : [];
+
+          if (materiasArr.length === 0 || gradosArr.length === 0 || salonesArr.length === 0) return;
+
+          // Expandir: si misma longitud usar ZIP, si no, producto cartesiano
+          if (materiasArr.length === gradosArr.length && gradosArr.length === salonesArr.length) {
+            // ZIP
+            for (let i = 0; i < materiasArr.length; i++) {
+              expandidas.push({
+                materia: materiasArr[i],
+                grado: gradosArr[i],
+                salon: salonesArr[i]
+              });
+            }
+          } else {
+            // Producto cartesiano
+            for (const mat of materiasArr) {
+              for (const grad of gradosArr) {
+                for (const sal of salonesArr) {
+                  expandidas.push({
+                    materia: mat,
+                    grado: grad,
+                    salon: sal
+                  });
+                }
+              }
+            }
+          }
+        });
+        setAsignacionesExpandidas(expandidas);
+
+        // Extraer materias únicas de asignaciones
+        const materiasUnicas = [...new Set(expandidas.map(a => a.materia))].sort();
         setMaterias(materiasUnicas);
 
         // Extraer grados únicos y ordenarlos
