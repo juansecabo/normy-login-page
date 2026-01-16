@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, Link, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import escudoImg from "@/assets/escudo.png";
 import { getSession, clearSession, isRectorOrCoordinador } from "@/hooks/useSession";
@@ -14,14 +14,16 @@ import { Loader2 } from "lucide-react";
 
 const EstadisticasDashboard = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { loading, grados, salones, materias, getMateriasFiltradas, getPromediosEstudiantes } = useEstadisticas();
   
-  const [nivelAnalisis, setNivelAnalisis] = useState("institucion");
-  const [periodoSeleccionado, setPeriodoSeleccionado] = useState("1");
-  const [gradoSeleccionado, setGradoSeleccionado] = useState("");
-  const [salonSeleccionado, setSalonSeleccionado] = useState("");
-  const [materiaSeleccionada, setMateriaSeleccionada] = useState("");
-  const [estudianteSeleccionado, setEstudianteSeleccionado] = useState("");
+  // Leer filtros desde URL params (para restaurar estado al volver)
+  const [nivelAnalisis, setNivelAnalisis] = useState(() => searchParams.get("nivel") || "institucion");
+  const [periodoSeleccionado, setPeriodoSeleccionado] = useState(() => searchParams.get("periodo") || "1");
+  const [gradoSeleccionado, setGradoSeleccionado] = useState(() => searchParams.get("grado") || "");
+  const [salonSeleccionado, setSalonSeleccionado] = useState(() => searchParams.get("salon") || "");
+  const [materiaSeleccionada, setMateriaSeleccionada] = useState(() => searchParams.get("materia") || "");
+  const [estudianteSeleccionado, setEstudianteSeleccionado] = useState(() => searchParams.get("estudiante") || "");
 
   useEffect(() => {
     const session = getSession();
