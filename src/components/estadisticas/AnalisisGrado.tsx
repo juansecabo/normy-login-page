@@ -29,10 +29,18 @@ export const AnalisisGrado = ({ grado, periodo }: AnalisisGradoProps) => {
   const topEstudiantes = getTopEstudiantes(10, periodo, grado);
   const salones = getPromediosSalones(periodo, grado).sort((a, b) => b.promedio - a.promedio);
   const materias = getPromediosMaterias(periodo, grado);
-  const evolucionPeriodos = getEvolucionPeriodos("grado", grado);
+  // Filtrar evolución hasta el período seleccionado
+  const periodoHasta = periodo === "anual" ? 4 : periodo;
+  const evolucionPeriodos = getEvolucionPeriodos("grado", grado).filter(e => {
+    const numPeriodo = parseInt(e.periodo.replace("Período ", ""));
+    return numPeriodo <= periodoHasta;
+  });
   const mostrarRiesgo = tieneDatosSuficientesParaRiesgo(periodo, grado);
   const estudiantesEnRiesgo = mostrarRiesgo ? getEstudiantesEnRiesgo(periodo, grado) : [];
   const diferenciaConInst = promedioGrado - promedioInstitucional;
+
+  // Obtener total de salones únicos con datos
+  const salonesUnicos = [...new Set(estudiantesGrado.map(e => e.salon))];
 
   if (estudiantesGrado.length === 0) {
     return (
@@ -46,10 +54,16 @@ export const AnalisisGrado = ({ grado, periodo }: AnalisisGradoProps) => {
 
   return (
     <div className="space-y-6">
+      {/* Banner informativo */}
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 flex items-center gap-2 text-sm text-blue-700">
+        <span className="font-medium">ℹ️</span>
+        <span>Estadísticas basadas únicamente en estudiantes con notas registradas.</span>
+      </div>
+
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <TarjetaResumen titulo={`Promedio ${grado}`} valor={promedioGrado.toFixed(2)} subtitulo={`${diferenciaConInst >= 0 ? "+" : ""}${diferenciaConInst.toFixed(2)} vs institución`} icono={GraduationCap} color={promedioGrado >= 4 ? "success" : promedioGrado >= 3 ? "warning" : "danger"} />
-        <TarjetaResumen titulo="Estudiantes" valor={estudiantesGrado.length} subtitulo={`En ${salones.length} salones`} icono={Users} color="primary" />
-        <TarjetaResumen titulo="Mejor Estudiante" valor={topEstudiantes[0]?.promedio.toFixed(2) || "—"} subtitulo={topEstudiantes[0]?.nombre_completo.split(" ").slice(0, 2).join(" ") || ""} icono={Award} color="success" />
+        <TarjetaResumen titulo="Estudiantes con notas" valor={estudiantesGrado.length} subtitulo={`En ${salonesUnicos.length} salones`} icono={Users} color="primary" />
+        <TarjetaResumen titulo="Mejor Estudiante" valor={topEstudiantes[0]?.promedio.toFixed(2) || "—"} subtitulo={topEstudiantes[0]?.nombre_completo || ""} icono={Award} color="success" />
         {mostrarRiesgo ? <TarjetaResumen titulo="En Riesgo" valor={estudiantesEnRiesgo.length} subtitulo="Promedio menor a 3.0" icono={AlertTriangle} color={estudiantesEnRiesgo.length > 0 ? "danger" : "success"} /> : <TarjetaResumen titulo="En Riesgo" valor="—" subtitulo="Se necesitan más datos" icono={AlertTriangle} color="primary" />}
       </div>
 
@@ -59,14 +73,11 @@ export const AnalisisGrado = ({ grado, periodo }: AnalisisGradoProps) => {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <ListaComparativa titulo={`Ranking de Salones - ${grado}`} items={salones.map(s => ({ nombre: s.salon, valor: s.promedio, extra: `${s.cantidadEstudiantes} estudiantes` }))} mostrarPosicion />
+        <ListaComparativa titulo={`Rendimiento por Salón - ${grado}`} items={salones.map(s => ({ nombre: s.salon, valor: s.promedio, extra: `${s.cantidadEstudiantes} estudiantes` }))} mostrarPosicion />
         <ListaComparativa titulo={`Rendimiento por Materia - ${grado}`} items={materias.map(m => ({ nombre: m.materia, valor: m.promedio }))} mostrarPosicion />
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <TablaRanking titulo={`Top 10 Estudiantes - ${grado}`} datos={topEstudiantes} tipo="estudiante" limite={10} />
-        <TablaRanking titulo={`Ranking Salones - ${grado}`} datos={salones} tipo="salon" limite={salones.length} />
-      </div>
+      <TablaRanking titulo={`Top 10 Estudiantes - ${grado}`} datos={topEstudiantes} tipo="estudiante" limite={10} />
     </div>
   );
 };

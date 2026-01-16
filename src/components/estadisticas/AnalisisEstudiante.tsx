@@ -29,7 +29,13 @@ export const AnalisisEstudiante = ({ codigoEstudiante, periodo }: AnalisisEstudi
   const peorMateria = materiasEstudiante[materiasEstudiante.length - 1];
   const fortalezas = materiasEstudiante.filter(m => m.promedio >= 4.0).slice(0, 3);
   const debilidades = materiasEstudiante.filter(m => m.promedio < 3.5).sort((a, b) => a.promedio - b.promedio).slice(0, 3);
-  const evolucionEstudiante = Object.entries(estudiante.promediosPorPeriodo || {}).map(([p, promedio]) => ({ periodo: `Período ${p}`, promedio })).sort((a, b) => parseInt(a.periodo.replace("Período ", "")) - parseInt(b.periodo.replace("Período ", "")));
+  
+  // Filtrar evolución hasta el período seleccionado
+  const periodoHasta = periodo === "anual" ? 4 : periodo;
+  const evolucionEstudiante = Object.entries(estudiante.promediosPorPeriodo || {})
+    .map(([p, promedio]) => ({ periodo: `Período ${p}`, promedio }))
+    .filter(e => parseInt(e.periodo.replace("Período ", "")) <= periodoHasta)
+    .sort((a, b) => parseInt(a.periodo.replace("Período ", "")) - parseInt(b.periodo.replace("Período ", "")));
 
   return (
     <div className="space-y-6">

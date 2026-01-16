@@ -21,7 +21,14 @@ export const AnalisisSalon = ({ grado, salon, periodo }: AnalisisSalonProps) => 
   const distribucion = getDistribucionDesempeno(periodo, grado, salon);
   const topEstudiantes = getTopEstudiantes(5, periodo, grado, salon);
   const materias = getPromediosMaterias(periodo, grado, salon);
-  const evolucionPeriodos = getEvolucionPeriodos("salon", grado, salon);
+  
+  // Filtrar evolución hasta el período seleccionado
+  const periodoHasta = periodo === "anual" ? 4 : periodo;
+  const evolucionPeriodos = getEvolucionPeriodos("salon", grado, salon).filter(e => {
+    const numPeriodo = parseInt(e.periodo.replace("Período ", ""));
+    return numPeriodo <= periodoHasta;
+  });
+  
   const mostrarRiesgo = tieneDatosSuficientesParaRiesgo(periodo, grado, salon);
   const estudiantesEnRiesgo = mostrarRiesgo ? getEstudiantesEnRiesgo(periodo, grado, salon) : [];
   const estudiantesGrado = getPromediosEstudiantes(periodo, grado);
@@ -37,9 +44,15 @@ export const AnalisisSalon = ({ grado, salon, periodo }: AnalisisSalonProps) => 
 
   return (
     <div className="space-y-6">
+      {/* Banner informativo */}
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 flex items-center gap-2 text-sm text-blue-700">
+        <span className="font-medium">ℹ️</span>
+        <span>Estadísticas basadas únicamente en estudiantes con notas registradas.</span>
+      </div>
+
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <TarjetaResumen titulo={`Promedio ${grado} - ${salon}`} valor={promedioSalon.toFixed(2)} subtitulo={`#${posicionEnGrado} de ${salonesGrado.length} en ${grado}`} icono={Home} color={promedioSalon >= 4 ? "success" : promedioSalon >= 3 ? "warning" : "danger"} />
-        <TarjetaResumen titulo="Estudiantes" valor={estudiantesSalon.length} subtitulo="En este salón" icono={Users} color="primary" />
+        <TarjetaResumen titulo="Estudiantes con notas" valor={estudiantesSalon.length} subtitulo="En este salón" icono={Users} color="primary" />
         <TarjetaResumen titulo="vs Grado" valor={`${diferenciaConGrado >= 0 ? "+" : ""}${diferenciaConGrado.toFixed(2)}`} subtitulo={`Prom. grado: ${promedioGrado.toFixed(2)}`} icono={TrendingUp} color={diferenciaConGrado >= 0 ? "success" : "danger"} />
         <TarjetaResumen titulo="vs Institución" valor={`${diferenciaConInst >= 0 ? "+" : ""}${diferenciaConInst.toFixed(2)}`} subtitulo={`Prom. inst: ${promedioInstitucional.toFixed(2)}`} icono={TrendingUp} color={diferenciaConInst >= 0 ? "success" : "danger"} />
       </div>
