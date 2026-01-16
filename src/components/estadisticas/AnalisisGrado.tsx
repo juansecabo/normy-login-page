@@ -1,5 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { useEstadisticas } from "@/hooks/useEstadisticas";
+import { useCompletitud } from "@/hooks/useCompletitud";
 import { TarjetaResumen } from "./TarjetaResumen";
 import { TablaRanking } from "./TablaRanking";
 import { TablaDistribucion } from "./TablaDistribucion";
@@ -18,9 +19,10 @@ export const AnalisisGrado = ({ grado, periodo }: AnalisisGradoProps) => {
   const {
     getPromediosEstudiantes, getPromediosSalones, getPromediosMaterias,
     getDistribucionDesempeno, getTopEstudiantes, getEvolucionPeriodos,
-    getPromedioInstitucional, tieneDatosSuficientesParaRiesgo, getEstudiantesEnRiesgo,
-    verificarCompletitud
+    getPromedioInstitucional, tieneDatosSuficientesParaRiesgo, getEstudiantesEnRiesgo
   } = useEstadisticas();
+
+  const { verificarCompletitud } = useCompletitud();
 
   if (!grado) {
     return <div className="bg-card rounded-lg shadow-soft p-8 text-center text-muted-foreground">Selecciona un grado para ver el análisis</div>;
@@ -34,8 +36,8 @@ export const AnalisisGrado = ({ grado, periodo }: AnalisisGradoProps) => {
   const salones = getPromediosSalones(periodo, grado).sort((a, b) => b.promedio - a.promedio);
   const materias = getPromediosMaterias(periodo, grado);
   
-  // Verificar completitud
-  const { completo, detalles } = verificarCompletitud(periodo, grado);
+  // Verificar completitud con el nuevo hook
+  const { completo, detalles, resumen } = verificarCompletitud("grado", periodo, grado);
   
   // Filtrar evolución hasta el período seleccionado
   const periodoHasta = periodo === "anual" ? 4 : periodo;
@@ -49,6 +51,9 @@ export const AnalisisGrado = ({ grado, periodo }: AnalisisGradoProps) => {
 
   // Obtener total de salones únicos con datos
   const salonesUnicos = [...new Set(estudiantesGrado.map(e => e.salon))];
+
+  // Formatear el período para mostrar
+  const periodoTexto = periodo === "anual" ? "Acumulado Anual" : `Período ${periodo}`;
 
   const handleVerRiesgo = () => {
     const params = new URLSearchParams();
@@ -75,7 +80,13 @@ export const AnalisisGrado = ({ grado, periodo }: AnalisisGradoProps) => {
           <span className="font-medium">ℹ️</span>
           <span>Estadísticas basadas únicamente en estudiantes con notas registradas.</span>
         </div>
-        <IndicadorCompletitud completo={completo} detalles={detalles} nivel={grado} />
+        <IndicadorCompletitud 
+          completo={completo} 
+          detalles={detalles} 
+          resumen={resumen}
+          nivel={grado} 
+          periodo={periodoTexto}
+        />
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
