@@ -86,27 +86,71 @@ export const useCompletitud = () => {
       setLoading(true);
       try {
         // 1. Obtener asignaciones de profesores con sus nombres
-        const { data: internos } = await supabase.from("Internos").select("id, codigo, nombre");
-        const { data: asignacionesData } = await supabase
+        const { data: internos, error: errorInternos } = await supabase
+          .from("Internos")
+          .select("id, codigo, nombre");
+        
+        const { data: asignacionesData, error: errorAsig } = await supabase
           .from("Asignación Profesores")
-          .select('id, "Materia(s)", "Grado(s)", "Salon(es)"');
+          .select('*');
+
+        console.log("=== DEBUG ASIGNACIONES ===");
+        console.log("Internos encontrados:", internos?.length || 0);
+        console.log("Asignaciones raw encontradas:", asignacionesData?.length || 0);
+        if (errorInternos) console.error("Error internos:", errorInternos);
+        if (errorAsig) console.error("Error asignaciones:", errorAsig);
+        if (asignacionesData && asignacionesData.length > 0) {
+          console.log("Ejemplo de asignación raw:", JSON.stringify(asignacionesData[0], null, 2));
+        }
 
         const asignacionesProcesadas: AsignacionProfesor[] = [];
         if (asignacionesData && internos) {
           for (const asig of asignacionesData) {
             const profesor = internos.find((p: any) => p.id === asig.id);
-            if (profesor) {
+            
+            // Extraer arrays - pueden venir como arrays o como strings JSON
+            let materias = asig["Materia(s)"] || [];
+            let grados = asig["Grado(s)"] || [];
+            let salones = asig["Salon(es)"] || [];
+            
+            // Si son strings, parsear como JSON
+            if (typeof materias === 'string') materias = JSON.parse(materias);
+            if (typeof grados === 'string') grados = JSON.parse(grados);
+            if (typeof salones === 'string') salones = JSON.parse(salones);
+            
+            // Asegurar que son arrays
+            if (!Array.isArray(materias)) materias = [];
+            if (!Array.isArray(grados)) grados = [];
+            if (!Array.isArray(salones)) salones = [];
+
+            if (profesor && materias.length > 0 && grados.length > 0 && salones.length > 0) {
               asignacionesProcesadas.push({
                 id: asig.id,
                 codigo: profesor.codigo,
                 nombre: profesor.nombre,
-                materias: (asig as any)["Materia(s)"] || [],
-                grados: (asig as any)["Grado(s)"] || [],
-                salones: (asig as any)["Salon(es)"] || []
+                materias,
+                grados,
+                salones
+              });
+            } else if (!profesor) {
+              // Incluir aunque no tenga profesor asociado, usar id como fallback
+              asignacionesProcesadas.push({
+                id: asig.id,
+                codigo: asig.id || "desconocido",
+                nombre: "Profesor sin nombre",
+                materias,
+                grados,
+                salones
               });
             }
           }
         }
+        
+        console.log("Asignaciones procesadas:", asignacionesProcesadas.length);
+        if (asignacionesProcesadas.length > 0) {
+          console.log("Ejemplo de asignación procesada:", JSON.stringify(asignacionesProcesadas[0], null, 2));
+        }
+        
         setAsignaciones(asignacionesProcesadas);
 
         // 2. Obtener actividades únicas de "Nombre de Actividades"
@@ -139,6 +183,15 @@ export const useCompletitud = () => {
           .from("Estudiantes")
           .select("*")
           .order("apellidos_estudiante");
+        
+        console.log("=== DEBUG ESTUDIANTES ===");
+        console.log("Estudiantes encontrados:", estudiantesData?.length || 0);
+        if (estudiantesData && estudiantesData.length > 0) {
+          const gradosUnicos = [...new Set(estudiantesData.map((e: any) => e.grado_estudiante))];
+          const salonesUnicos = [...new Set(estudiantesData.map((e: any) => e.salon_estudiante))];
+          console.log("Grados únicos en estudiantes:", gradosUnicos);
+          console.log("Salones únicos en estudiantes:", salonesUnicos);
+        }
         
         setEstudiantes(estudiantesData || []);
 
@@ -227,18 +280,37 @@ export const useCompletitud = () => {
     console.log("=== VERIFICACIÓN DE COMPLETITUD ===");
     console.log("Total asignaciones expandidas:", todasLasCombinaciones.length);
     console.log("Total estudiantes en sistema:", estudiantes.length);
-    console.log("Muestra de combinaciones:", todasLasCombinaciones.slice(0, 3));
-    console.log("Muestra de estudiantes:", estudiantes.slice(0, 3).map(e => ({
-      grado: e.grado_estudiante,
-      salon: e.salon_estudiante
-    })));
+    
+    // Mostrar valores EXACTOS para comparación
+    const gradosEnAsig = [...new Set(todasLasCombinaciones.map(c => `"${c.grado}"`))];
+    const salonesEnAsig = [...new Set(todasLasCombinaciones.map(c => `"${c.salon}"`))];
+    const gradosEnEst = [...new Set(estudiantes.map(e => `"${e.grado_estudiante}"`))];
+    const salonesEnEst = [...new Set(estudiantes.map(e => `"${e.salon_estudiante}"`))];
+    
+    console.log("Grados en asignaciones (exactos):", gradosEnAsig.join(", "));
+    console.log("Grados en estudiantes (exactos):", gradosEnEst.join(", "));
+    console.log("Salones en asignaciones (exactos):", salonesEnAsig.join(", "));
+    console.log("Salones en estudiantes (exactos):", salonesEnEst.join(", "));
+    
+    // Verificar si hay ALGUNA coincidencia posible
+    const hayCoincidenciaGrado = todasLasCombinaciones.some(c => 
+      estudiantes.some(e => String(e.grado_estudiante).trim() === String(c.grado).trim())
+    );
+    const hayCoincidenciaSalon = todasLasCombinaciones.some(c => 
+      estudiantes.some(e => String(e.salon_estudiante).trim() === String(c.salon).trim())
+    );
+    console.log("¿Hay coincidencia de grados?:", hayCoincidenciaGrado);
+    console.log("¿Hay coincidencia de salones?:", hayCoincidenciaSalon);
 
     // PASO 2: Para CADA combinación materia-grado-salón, verificar completitud
     for (const combo of todasLasCombinaciones) {
       // Obtener estudiantes de este grado-salón
-      let estudiantesDelSalon = estudiantes.filter(
-        e => e.grado_estudiante === combo.grado && e.salon_estudiante === combo.salon
-      );
+      // Normalizar para comparación (trim y toLowerCase para ser más flexibles)
+      let estudiantesDelSalon = estudiantes.filter(e => {
+        const gradoMatch = String(e.grado_estudiante).trim() === String(combo.grado).trim();
+        const salonMatch = String(e.salon_estudiante).trim() === String(combo.salon).trim();
+        return gradoMatch && salonMatch;
+      });
 
       // Si se filtró por estudiante específico
       if (codigoEstudiante) {
@@ -248,20 +320,22 @@ export const useCompletitud = () => {
       // IMPORTANTE: Si no hay estudiantes para esta combinación, es un problema
       // La asignación existe pero no hay estudiantes - esto indica incompletitud
       if (estudiantesDelSalon.length === 0) {
-        // Agregar como detalle de incompletitud - no hay estudiantes para esta asignación
-        detalles.push({
-          tipo: "sin_actividades",
-          descripcion: `${combo.materia} (${combo.grado} - ${combo.salon}): No hay estudiantes registrados en este salón`,
-          materia: combo.materia,
-          profesor: combo.profesorNombre,
-          grado: combo.grado,
-          salon: combo.salon
-        });
+        // Solo reportar si realmente debería haber estudiantes (hay estudiantes en el sistema)
+        if (estudiantes.length > 0) {
+          detalles.push({
+            tipo: "sin_actividades",
+            descripcion: `${combo.materia} (${combo.grado} - ${combo.salon}): No hay estudiantes registrados en este salón`,
+            materia: combo.materia,
+            profesor: combo.profesorNombre,
+            grado: combo.grado,
+            salon: combo.salon
+          });
 
-        profesoresPendientes.add(combo.profesorNombre);
-        gradosAfectados.add(combo.grado);
-        salonesAfectados.add(combo.salon);
-        materiasIncompletas.add(combo.materia);
+          profesoresPendientes.add(combo.profesorNombre);
+          gradosAfectados.add(combo.grado);
+          salonesAfectados.add(combo.salon);
+          materiasIncompletas.add(combo.materia);
+        }
         continue;
       }
 
