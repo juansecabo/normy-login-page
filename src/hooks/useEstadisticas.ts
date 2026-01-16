@@ -489,7 +489,12 @@ export const useEstadisticas = () => {
     salon?: string
   ): PromedioEstudiante[] => {
     return getPromediosEstudiantes(periodo, grado, salon)
-      .sort((a, b) => b.promedio - a.promedio)
+      .sort((a, b) => {
+        // Primero por promedio descendente
+        if (b.promedio !== a.promedio) return b.promedio - a.promedio;
+        // En caso de empate, ordenar alfabéticamente por nombre completo
+        return a.nombre_completo.localeCompare(b.nombre_completo);
+      })
       .slice(0, cantidad);
   };
 
