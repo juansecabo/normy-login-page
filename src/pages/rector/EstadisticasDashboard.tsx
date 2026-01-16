@@ -8,8 +8,6 @@ import { FiltrosEstadisticas } from "@/components/estadisticas/FiltrosEstadistic
 import { AnalisisInstitucional } from "@/components/estadisticas/AnalisisInstitucional";
 import { AnalisisGrado } from "@/components/estadisticas/AnalisisGrado";
 import { AnalisisSalon } from "@/components/estadisticas/AnalisisSalon";
-import { AnalisisEstudiante } from "@/components/estadisticas/AnalisisEstudiante";
-import { AnalisisMateria } from "@/components/estadisticas/AnalisisMateria";
 import { Loader2 } from "lucide-react";
 
 const EstadisticasDashboard = () => {
@@ -99,11 +97,10 @@ const EstadisticasDashboard = () => {
             {nivelAnalisis === "salon" && (
               <AnalisisSalon grado={gradoSeleccionado} salon={salonSeleccionado} periodo={periodoNumerico} />
             )}
-            {nivelAnalisis === "estudiante" && (
-              <AnalisisEstudiante grado={gradoSeleccionado} salon={salonSeleccionado} periodo={periodoNumerico} />
-            )}
-            {nivelAnalisis === "materia" && (
-              <AnalisisMateria materia={materiaSeleccionada} periodo={periodoNumerico} />
+            {(nivelAnalisis === "estudiante" || nivelAnalisis === "materia") && (
+              <div className="bg-card rounded-lg shadow-soft p-8 text-center text-muted-foreground">
+                Esta vista estará disponible en la Fase 2
+              </div>
             )}
           </>
         )}
