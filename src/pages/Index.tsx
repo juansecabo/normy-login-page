@@ -40,13 +40,29 @@ const Index = () => {
 
     try {
       // Buscar usuario por código (sin filtrar por cargo)
+      console.log('🔍 Buscando código:', codigo.trim());
+      
       const { data, error } = await supabase
         .from('Internos')
         .select('*')
         .eq('codigo', parseInt(codigo.trim()))
         .maybeSingle();
 
-      if (error || !data) {
+      console.log('📊 Resultado de búsqueda:', { data, error });
+
+      if (error) {
+        console.error('❌ Error en consulta:', error);
+        toast({
+          title: "Error",
+          description: "Error al verificar el código",
+          variant: "destructive",
+        });
+        setLoading(false);
+        return;
+      }
+
+      if (!data) {
+        console.log('❌ No se encontró usuario con código:', codigo.trim());
         toast({
           title: "Error",
           description: "Código no válido",
@@ -55,6 +71,8 @@ const Index = () => {
         setLoading(false);
         return;
       }
+      
+      console.log('✅ Usuario encontrado:', data.nombres, data.apellidos, '- Cargo:', data.cargo);
 
       // Verificar si tiene permisos (Profesor, Rector o Coordinador)
       const cargosPermitidos = ['Profesor(a)', 'Rector', 'Coordinador(a)'];
