@@ -122,24 +122,24 @@ const ListaEstudiantes = () => {
               onClick={() => navigate("/rector/seleccionar-grado")}
               className="text-primary hover:underline"
             >
-              {gradoSeleccionado}
+              Notas
             </button>
             <span className="text-muted-foreground">→</span>
             <button 
               onClick={() => navigate("/rector/seleccionar-salon")}
               className="text-primary hover:underline"
             >
-              {salonSeleccionado}
+              {gradoSeleccionado}
             </button>
             <span className="text-muted-foreground">→</span>
             <button 
               onClick={() => navigate("/rector/modo-visualizacion")}
               className="text-primary hover:underline"
             >
-              Por Estudiante
+              {salonSeleccionado}
             </button>
             <span className="text-muted-foreground">→</span>
-            <span className="text-foreground font-medium">Seleccionar Estudiante</span>
+            <span className="text-foreground font-medium">Por Estudiante</span>
           </div>
         </div>
 
