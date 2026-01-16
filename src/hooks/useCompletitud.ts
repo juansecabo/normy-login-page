@@ -39,7 +39,8 @@ export interface ResultadoCompletitud {
 interface AsignacionProfesor {
   id: string;
   codigo: string;
-  nombre: string;
+  nombres: string;
+  apellidos: string;
   materias: string[];
   grados: string[];
   salones: string[];
@@ -88,7 +89,7 @@ export const useCompletitud = () => {
         // 1. Obtener asignaciones de profesores con sus nombres
         const { data: internos, error: errorInternos } = await supabase
           .from("Internos")
-          .select("id, codigo, nombre");
+          .select("id, codigo, nombres, apellidos");
         
         const { data: asignacionesData, error: errorAsig } = await supabase
           .from("Asignación Profesores")
@@ -103,10 +104,22 @@ export const useCompletitud = () => {
           console.log("Ejemplo de asignación raw:", JSON.stringify(asignacionesData[0], null, 2));
         }
 
+        console.log("=== INICIANDO EXPANSIÓN ===");
         const asignacionesProcesadas: AsignacionProfesor[] = [];
-        if (asignacionesData && internos) {
-          for (const asig of asignacionesData) {
-            const profesor = internos.find((p: any) => p.id === asig.id);
+        
+        if (asignacionesData) {
+          for (let i = 0; i < asignacionesData.length; i++) {
+            const asig = asignacionesData[i];
+            
+            // Buscar profesor en Internos
+            const profesor = internos?.find((p: any) => p.id === asig.id);
+            
+            console.log(`\n--- Procesando asignación ${i+1}/${asignacionesData.length} ---`);
+            console.log('ID asignación:', asig.id);
+            console.log('Profesor encontrado en Internos:', profesor ? `${profesor.nombres} ${profesor.apellidos}` : 'NO ENCONTRADO');
+            console.log('Materias raw:', asig["Materia(s)"], '| Tipo:', typeof asig["Materia(s)"]);
+            console.log('Grados raw:', asig["Grado(s)"], '| Tipo:', typeof asig["Grado(s)"]);
+            console.log('Salones raw:', asig["Salon(es)"], '| Tipo:', typeof asig["Salon(es)"]);
             
             // Extraer arrays - pueden venir como arrays o como strings JSON
             let materias = asig["Materia(s)"] || [];
@@ -114,39 +127,58 @@ export const useCompletitud = () => {
             let salones = asig["Salon(es)"] || [];
             
             // Si son strings, parsear como JSON
-            if (typeof materias === 'string') materias = JSON.parse(materias);
-            if (typeof grados === 'string') grados = JSON.parse(grados);
-            if (typeof salones === 'string') salones = JSON.parse(salones);
+            try {
+              if (typeof materias === 'string') materias = JSON.parse(materias);
+              if (typeof grados === 'string') grados = JSON.parse(grados);
+              if (typeof salones === 'string') salones = JSON.parse(salones);
+            } catch (e) {
+              console.error('❌ Error parseando JSON:', e);
+            }
             
             // Asegurar que son arrays
-            if (!Array.isArray(materias)) materias = [];
-            if (!Array.isArray(grados)) grados = [];
-            if (!Array.isArray(salones)) salones = [];
+            if (!Array.isArray(materias)) {
+              console.error('❌ ERROR: Materia(s) no es un array válido después de parsear');
+              materias = [];
+            }
+            if (!Array.isArray(grados)) {
+              console.error('❌ ERROR: Grado(s) no es un array válido después de parsear');
+              grados = [];
+            }
+            if (!Array.isArray(salones)) {
+              console.error('❌ ERROR: Salon(es) no es un array válido después de parsear');
+              salones = [];
+            }
+            
+            console.log('Materias procesadas:', materias, '| Length:', materias.length);
+            console.log('Grados procesados:', grados, '| Length:', grados.length);
+            console.log('Salones procesados:', salones, '| Length:', salones.length);
 
-            if (profesor && materias.length > 0 && grados.length > 0 && salones.length > 0) {
+            // Calcular combinaciones potenciales
+            const combinacionesPotenciales = materias.length * grados.length * salones.length;
+            console.log(`✅ Combinaciones potenciales: ${materias.length} × ${grados.length} × ${salones.length} = ${combinacionesPotenciales}`);
+
+            if (materias.length > 0 && grados.length > 0 && salones.length > 0) {
+              const nombreProfesor = profesor ? profesor.nombres : 'Desconocido';
+              const apellidoProfesor = profesor ? profesor.apellidos : '';
+              
               asignacionesProcesadas.push({
                 id: asig.id,
-                codigo: profesor.codigo,
-                nombre: profesor.nombre,
+                codigo: profesor?.codigo || asig.id || "desconocido",
+                nombres: nombreProfesor,
+                apellidos: apellidoProfesor,
                 materias,
                 grados,
                 salones
               });
-            } else if (!profesor) {
-              // Incluir aunque no tenga profesor asociado, usar id como fallback
-              asignacionesProcesadas.push({
-                id: asig.id,
-                codigo: asig.id || "desconocido",
-                nombre: "Profesor sin nombre",
-                materias,
-                grados,
-                salones
-              });
+              console.log(`✅ Asignación agregada para: ${nombreProfesor} ${apellidoProfesor}`);
+            } else {
+              console.log('⚠️ Asignación omitida - arrays vacíos');
             }
           }
         }
         
-        console.log("Asignaciones procesadas:", asignacionesProcesadas.length);
+        console.log("\n=== FIN EXPANSIÓN ===");
+        console.log("Total asignaciones procesadas:", asignacionesProcesadas.length);
         if (asignacionesProcesadas.length > 0) {
           console.log("Ejemplo de asignación procesada:", JSON.stringify(asignacionesProcesadas[0], null, 2));
         }
@@ -217,7 +249,13 @@ export const useCompletitud = () => {
       profesorNombre: string;
     }> = [];
 
+    console.log("=== EXPANDIENDO COMBINACIONES ===");
+    console.log("Asignaciones a expandir:", asignaciones.length);
+
     for (const asig of asignaciones) {
+      const nombreCompleto = `${asig.apellidos} ${asig.nombres}`.trim();
+      let countAsig = 0;
+      
       for (const materia of asig.materias) {
         for (const grado of asig.grados) {
           for (const salon of asig.salones) {
@@ -226,13 +264,16 @@ export const useCompletitud = () => {
               grado,
               salon,
               profesor: asig.codigo,
-              profesorNombre: asig.nombre
+              profesorNombre: nombreCompleto
             });
+            countAsig++;
           }
         }
       }
+      console.log(`${nombreCompleto}: ${countAsig} combinaciones`);
     }
 
+    console.log("Total combinaciones expandidas:", combinaciones.length);
     return combinaciones;
   };
 
