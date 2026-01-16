@@ -143,7 +143,14 @@ const ListaMaterias = () => {
               {gradoSeleccionado}
             </button>
             <span className="text-muted-foreground">→</span>
-            <span className="text-foreground font-medium">{salonSeleccionado}</span>
+            <button 
+              onClick={() => navigate("/rector/modo-visualizacion")}
+              className="text-primary hover:underline"
+            >
+              {salonSeleccionado}
+            </button>
+            <span className="text-muted-foreground">→</span>
+            <span className="text-foreground font-medium">Por Materia</span>
           </div>
         </div>
 
