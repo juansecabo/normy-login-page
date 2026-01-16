@@ -223,6 +223,16 @@ export const useCompletitud = () => {
     const materiasPorSalon = new Map<string, number>();
     let asignacionesVerificadas = 0;
 
+    // DEBUG: Log para verificar qué está pasando
+    console.log("=== VERIFICACIÓN DE COMPLETITUD ===");
+    console.log("Total asignaciones expandidas:", todasLasCombinaciones.length);
+    console.log("Total estudiantes en sistema:", estudiantes.length);
+    console.log("Muestra de combinaciones:", todasLasCombinaciones.slice(0, 3));
+    console.log("Muestra de estudiantes:", estudiantes.slice(0, 3).map(e => ({
+      grado: e.grado_estudiante,
+      salon: e.salon_estudiante
+    })));
+
     // PASO 2: Para CADA combinación materia-grado-salón, verificar completitud
     for (const combo of todasLasCombinaciones) {
       // Obtener estudiantes de este grado-salón
@@ -235,8 +245,25 @@ export const useCompletitud = () => {
         estudiantesDelSalon = estudiantesDelSalon.filter(e => e.codigo_estudiantil === codigoEstudiante);
       }
 
-      // Si no hay estudiantes en este salón, continuar
-      if (estudiantesDelSalon.length === 0) continue;
+      // IMPORTANTE: Si no hay estudiantes para esta combinación, es un problema
+      // La asignación existe pero no hay estudiantes - esto indica incompletitud
+      if (estudiantesDelSalon.length === 0) {
+        // Agregar como detalle de incompletitud - no hay estudiantes para esta asignación
+        detalles.push({
+          tipo: "sin_actividades",
+          descripcion: `${combo.materia} (${combo.grado} - ${combo.salon}): No hay estudiantes registrados en este salón`,
+          materia: combo.materia,
+          profesor: combo.profesorNombre,
+          grado: combo.grado,
+          salon: combo.salon
+        });
+
+        profesoresPendientes.add(combo.profesorNombre);
+        gradosAfectados.add(combo.grado);
+        salonesAfectados.add(combo.salon);
+        materiasIncompletas.add(combo.materia);
+        continue;
+      }
 
       asignacionesVerificadas++;
       salonesVerificados.add(`${combo.grado}-${combo.salon}`);
@@ -339,6 +366,9 @@ export const useCompletitud = () => {
       if (detalles.length >= 200) break;
     }
 
+    console.log("Asignaciones verificadas:", asignacionesVerificadas);
+    console.log("Detalles de incompletitud encontrados:", detalles.length);
+
     // Calcular total de estudiantes únicos verificados
     let estudiantesUnicos = new Set<string>();
     if (grado && salon) {
@@ -363,8 +393,22 @@ export const useCompletitud = () => {
       materiasPorSalon: materiasPorSalon
     };
 
+    // REGLA CRÍTICA: Solo puede estar "Completo" si:
+    // 1. No hay detalles de incompletitud
+    // 2. Se verificaron al menos algunas asignaciones (no puede ser 0)
+    // 3. Hay combinaciones que verificar
+    const estaCompleto = detalles.length === 0 && 
+                         asignacionesVerificadas > 0 && 
+                         todasLasCombinaciones.length > 0;
+
+    console.log("¿Está completo?", estaCompleto, {
+      detallesCount: detalles.length,
+      asignacionesVerificadas,
+      combinacionesTotal: todasLasCombinaciones.length
+    });
+
     return {
-      completo: detalles.length === 0,
+      completo: estaCompleto,
       detalles: detalles.slice(0, 200),
       resumen: {
         materiasIncompletas: materiasIncompletas.size,
