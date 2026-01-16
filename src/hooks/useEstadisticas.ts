@@ -66,8 +66,8 @@ export const ordenGrados = [
 ];
 
 // Umbral mínimo de porcentaje para mostrar "Estudiantes en Riesgo"
+// Solo se requiere que la suma de porcentajes sea >= 40% (sin mínimo de actividades)
 const UMBRAL_PORCENTAJE_MINIMO = 40;
-const UMBRAL_ACTIVIDADES_MINIMO = 3;
 
 // Tipo para asignaciones expandidas
 interface AsignacionExpandida {
@@ -507,8 +507,7 @@ export const useEstadisticas = () => {
     return getPromediosEstudiantes(periodo, grado, salon)
       .filter(e => 
         e.promedio < 3.0 && 
-        e.sumaPorcentajes >= UMBRAL_PORCENTAJE_MINIMO &&
-        e.cantidadActividades >= UMBRAL_ACTIVIDADES_MINIMO
+        e.sumaPorcentajes >= UMBRAL_PORCENTAJE_MINIMO
       );
   };
 
@@ -519,11 +518,8 @@ export const useEstadisticas = () => {
     salon?: string
   ): boolean => {
     const promedios = getPromediosEstudiantes(periodo, grado, salon);
-    // Verificar si al menos un estudiante tiene datos suficientes
-    return promedios.some(e => 
-      e.sumaPorcentajes >= UMBRAL_PORCENTAJE_MINIMO &&
-      e.cantidadActividades >= UMBRAL_ACTIVIDADES_MINIMO
-    );
+    // Verificar si al menos un estudiante tiene porcentajes >= 40%
+    return promedios.some(e => e.sumaPorcentajes >= UMBRAL_PORCENTAJE_MINIMO);
   };
 
   // Evolución por período
