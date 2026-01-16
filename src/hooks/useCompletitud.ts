@@ -293,6 +293,10 @@ export const useCompletitud = () => {
   /**
    * Verifica la completitud según el nivel y período seleccionados
    * Usa "Asignación Profesores" como FUENTE DE VERDAD
+   * 
+   * REGLA CRÍTICA: La verificación es ESPECÍFICA al período y nivel seleccionado
+   * - Si se selecciona Período 1, SOLO se verifica P1
+   * - Si se selecciona "Acumulado Anual", se verifican TODOS los períodos (1,2,3,4)
    */
   const verificarCompletitud = (
     nivel: "institucion" | "grado" | "salon" | "materia" | "estudiante",
@@ -308,21 +312,36 @@ export const useCompletitud = () => {
     const salonesAfectados = new Set<string>();
     const materiasIncompletas = new Set<string>();
 
-    const periodos = periodo === "anual" ? [1, 2, 3, 4] : [periodo];
+    // CRÍTICO: Definir qué períodos verificar según la selección
+    const periodosAVerificar = periodo === "anual" ? [1, 2, 3, 4] : [periodo];
+    
+    console.log("=== VERIFICACIÓN ESPECÍFICA POR PERÍODO ===");
+    console.log("Período seleccionado:", periodo);
+    console.log("Períodos a verificar:", periodosAVerificar);
+    console.log("Nivel:", nivel, "| Grado:", grado, "| Salón:", salon, "| Materia:", materia);
 
     // PASO 1: Expandir todas las asignaciones de "Asignación Profesores"
     let todasLasCombinaciones = expandirAsignaciones();
 
-    // Filtrar combinaciones según el nivel seleccionado
-    if (grado) {
-      todasLasCombinaciones = todasLasCombinaciones.filter(c => c.grado === grado);
+    // PASO 2: Filtrar combinaciones según el nivel de análisis seleccionado
+    if (nivel === "grado" && grado) {
+      todasLasCombinaciones = todasLasCombinaciones.filter(c => 
+        String(c.grado).trim() === String(grado).trim()
+      );
     }
-    if (salon) {
-      todasLasCombinaciones = todasLasCombinaciones.filter(c => c.salon === salon);
+    if (nivel === "salon" && grado && salon) {
+      todasLasCombinaciones = todasLasCombinaciones.filter(c => 
+        String(c.grado).trim() === String(grado).trim() &&
+        String(c.salon).trim() === String(salon).trim()
+      );
     }
-    if (materia) {
-      todasLasCombinaciones = todasLasCombinaciones.filter(c => c.materia === materia);
+    if (nivel === "materia" && materia) {
+      todasLasCombinaciones = todasLasCombinaciones.filter(c => 
+        String(c.materia).trim() === String(materia).trim()
+      );
     }
+
+    console.log("Combinaciones después de filtrar por nivel:", todasLasCombinaciones.length);
 
     // Para conteo de resumen completo
     const salonesVerificados = new Set<string>();
@@ -330,36 +349,12 @@ export const useCompletitud = () => {
     const materiasPorSalon = new Map<string, number>();
     let asignacionesVerificadas = 0;
 
-    // DEBUG: Log para verificar qué está pasando
-    console.log("=== VERIFICACIÓN DE COMPLETITUD ===");
-    console.log("Total asignaciones expandidas:", todasLasCombinaciones.length);
-    console.log("Total estudiantes en sistema:", estudiantes.length);
-    
-    // Mostrar valores EXACTOS para comparación
-    const gradosEnAsig = [...new Set(todasLasCombinaciones.map(c => `"${c.grado}"`))];
-    const salonesEnAsig = [...new Set(todasLasCombinaciones.map(c => `"${c.salon}"`))];
-    const gradosEnEst = [...new Set(estudiantes.map(e => `"${e.grado_estudiante}"`))];
-    const salonesEnEst = [...new Set(estudiantes.map(e => `"${e.salon_estudiante}"`))];
-    
-    console.log("Grados en asignaciones (exactos):", gradosEnAsig.join(", "));
-    console.log("Grados en estudiantes (exactos):", gradosEnEst.join(", "));
-    console.log("Salones en asignaciones (exactos):", salonesEnAsig.join(", "));
-    console.log("Salones en estudiantes (exactos):", salonesEnEst.join(", "));
-    
-    // Verificar si hay ALGUNA coincidencia posible
-    const hayCoincidenciaGrado = todasLasCombinaciones.some(c => 
-      estudiantes.some(e => String(e.grado_estudiante).trim() === String(c.grado).trim())
-    );
-    const hayCoincidenciaSalon = todasLasCombinaciones.some(c => 
-      estudiantes.some(e => String(e.salon_estudiante).trim() === String(c.salon).trim())
-    );
-    console.log("¿Hay coincidencia de grados?:", hayCoincidenciaGrado);
-    console.log("¿Hay coincidencia de salones?:", hayCoincidenciaSalon);
+    // Map para rastrear qué profesores tienen pendientes en ESTE período/nivel específico
+    const profesoresConPendientesEnPeriodo = new Map<string, boolean>();
 
-    // PASO 2: Para CADA combinación materia-grado-salón, verificar completitud
+    // PASO 3: Para CADA combinación materia-grado-salón, verificar completitud SOLO en los períodos seleccionados
     for (const combo of todasLasCombinaciones) {
-      // Obtener estudiantes de este grado-salón
-      // Normalizar para comparación (trim y toLowerCase para ser más flexibles)
+      // Obtener estudiantes de este grado-salón (normalizado)
       let estudiantesDelSalon = estudiantes.filter(e => {
         const gradoMatch = String(e.grado_estudiante).trim() === String(combo.grado).trim();
         const salonMatch = String(e.salon_estudiante).trim() === String(combo.salon).trim();
@@ -371,26 +366,10 @@ export const useCompletitud = () => {
         estudiantesDelSalon = estudiantesDelSalon.filter(e => e.codigo_estudiantil === codigoEstudiante);
       }
 
-      // IMPORTANTE: Si no hay estudiantes para esta combinación, es un problema
-      // La asignación existe pero no hay estudiantes - esto indica incompletitud
+      // Si no hay estudiantes para esta combinación, no es problema del profesor
+      // Solo reportamos si es un problema real de configuración
       if (estudiantesDelSalon.length === 0) {
-        // Solo reportar si realmente debería haber estudiantes (hay estudiantes en el sistema)
-        if (estudiantes.length > 0) {
-          detalles.push({
-            tipo: "sin_actividades",
-            descripcion: `${combo.materia} (${combo.grado} - ${combo.salon}): No hay estudiantes registrados en este salón`,
-            materia: combo.materia,
-            profesor: combo.profesorNombre,
-            grado: combo.grado,
-            salon: combo.salon
-          });
-
-          profesoresPendientes.add(combo.profesorNombre);
-          gradosAfectados.add(combo.grado);
-          salonesAfectados.add(combo.salon);
-          materiasIncompletas.add(combo.materia);
-        }
-        continue;
+        continue; // Simplemente omitir - no afecta la completitud
       }
 
       asignacionesVerificadas++;
@@ -400,112 +379,113 @@ export const useCompletitud = () => {
       const salonKey = combo.materia;
       materiasPorSalon.set(salonKey, (materiasPorSalon.get(salonKey) || 0) + 1);
 
-      // Para cada período a verificar
-      for (const per of periodos) {
-        // Obtener actividades con porcentaje de esta combinación
+      // CRÍTICO: Solo verificar los períodos seleccionados
+      for (const per of periodosAVerificar) {
+        let tieneProblemaEnEstePeriodo = false;
+
+        // Obtener actividades con porcentaje de esta combinación para ESTE período
         const actividadesPeriodo = actividades.filter(a =>
           a.materia === combo.materia &&
-          a.grado === combo.grado &&
-          a.salon === combo.salon &&
+          String(a.grado).trim() === String(combo.grado).trim() &&
+          String(a.salon).trim() === String(combo.salon).trim() &&
           a.periodo === per &&
           a.porcentaje !== null && a.porcentaje > 0
         );
 
-        // VERIFICACIÓN 1: ¿Existen actividades para esta combinación?
+        // VERIFICACIÓN 1: ¿Existen actividades para esta combinación en ESTE período?
         if (actividadesPeriodo.length === 0) {
+          tieneProblemaEnEstePeriodo = true;
           detalles.push({
             tipo: "sin_actividades",
-            descripcion: `${combo.materia} (${combo.grado} - ${combo.salon}) P${per}: No hay actividades registradas`,
+            descripcion: `${combo.materia} (${combo.grado}-${combo.salon}) P${per}: No hay actividades`,
             materia: combo.materia,
             profesor: combo.profesorNombre,
             grado: combo.grado,
             salon: combo.salon,
             periodo: per
           });
-
-          profesoresPendientes.add(combo.profesorNombre);
-          gradosAfectados.add(combo.grado);
-          salonesAfectados.add(combo.salon);
-          materiasIncompletas.add(combo.materia);
-          continue;
-        }
-
-        // VERIFICACIÓN 2: ¿Los porcentajes suman 100%?
-        const sumaPorcentajes = actividadesPeriodo.reduce((sum, a) => sum + (a.porcentaje || 0), 0);
-        
-        if (sumaPorcentajes < 100) {
-          const porcentajeFaltante = 100 - Math.round(sumaPorcentajes);
+        } else {
+          // VERIFICACIÓN 2: ¿Los porcentajes suman 100%?
+          const sumaPorcentajes = actividadesPeriodo.reduce((sum, a) => sum + (a.porcentaje || 0), 0);
           
-          detalles.push({
-            tipo: "porcentaje_incompleto",
-            descripcion: `${combo.materia} (${combo.grado} - ${combo.salon}) P${per}: Las actividades solo suman ${Math.round(sumaPorcentajes)}%, faltan ${porcentajeFaltante}%`,
-            materia: combo.materia,
-            profesor: combo.profesorNombre,
-            grado: combo.grado,
-            salon: combo.salon,
-            periodo: per,
-            porcentajeFaltante
-          });
+          if (sumaPorcentajes < 100) {
+            tieneProblemaEnEstePeriodo = true;
+            detalles.push({
+              tipo: "porcentaje_incompleto",
+              descripcion: `${combo.materia} (${combo.grado}-${combo.salon}) P${per}: ${Math.round(sumaPorcentajes)}%`,
+              materia: combo.materia,
+              profesor: combo.profesorNombre,
+              grado: combo.grado,
+              salon: combo.salon,
+              periodo: per,
+              porcentajeFaltante: 100 - Math.round(sumaPorcentajes)
+            });
+          }
 
-          profesoresPendientes.add(combo.profesorNombre);
-          gradosAfectados.add(combo.grado);
-          salonesAfectados.add(combo.salon);
-          materiasIncompletas.add(combo.materia);
-        }
+          // VERIFICACIÓN 3: ¿TODOS los estudiantes tienen nota en TODAS las actividades?
+          if (sumaPorcentajes === 100) {
+            for (const est of estudiantesDelSalon) {
+              for (const act of actividadesPeriodo) {
+                const tieneNota = notas.some(n =>
+                  n.codigo_estudiantil === est.codigo_estudiantil &&
+                  n.materia === combo.materia &&
+                  String(n.grado).trim() === String(combo.grado).trim() &&
+                  String(n.salon).trim() === String(combo.salon).trim() &&
+                  n.periodo === per &&
+                  n.nombre_actividad === act.nombre_actividad
+                );
 
-        // VERIFICACIÓN 3: ¿TODOS los estudiantes tienen nota en TODAS las actividades?
-        for (const est of estudiantesDelSalon) {
-          const nombreCompleto = `${est.apellidos_estudiante} ${est.nombre_estudiante}`;
-          
-          for (const act of actividadesPeriodo) {
-            const tieneNota = notas.some(n =>
-              n.codigo_estudiantil === est.codigo_estudiantil &&
-              n.materia === combo.materia &&
-              n.grado === combo.grado &&
-              n.salon === combo.salon &&
-              n.periodo === per &&
-              n.nombre_actividad === act.nombre_actividad
-            );
-
-            if (!tieneNota) {
-              detalles.push({
-                tipo: "nota_faltante",
-                descripcion: `${combo.materia} (${combo.grado} - ${combo.salon}) P${per}: ${nombreCompleto} sin nota en "${act.nombre_actividad}" (${act.porcentaje}%)`,
-                materia: combo.materia,
-                profesor: combo.profesorNombre,
-                grado: combo.grado,
-                salon: combo.salon,
-                estudiante: nombreCompleto,
-                periodo: per,
-                actividad: act.nombre_actividad
-              });
-
-              profesoresPendientes.add(combo.profesorNombre);
-              gradosAfectados.add(combo.grado);
-              salonesAfectados.add(combo.salon);
-              materiasIncompletas.add(combo.materia);
+                if (!tieneNota) {
+                  tieneProblemaEnEstePeriodo = true;
+                  detalles.push({
+                    tipo: "nota_faltante",
+                    descripcion: `Nota faltante`,
+                    materia: combo.materia,
+                    profesor: combo.profesorNombre,
+                    grado: combo.grado,
+                    salon: combo.salon,
+                    estudiante: `${est.apellidos_estudiante} ${est.nombre_estudiante}`,
+                    periodo: per,
+                    actividad: act.nombre_actividad
+                  });
+                }
+              }
             }
           }
         }
 
-        // Limitar para rendimiento (pero seguir contando)
-        if (detalles.length >= 200) break;
+        // Si este profesor tiene problema en ESTE período, marcarlo
+        if (tieneProblemaEnEstePeriodo) {
+          profesoresConPendientesEnPeriodo.set(combo.profesorNombre, true);
+          profesoresPendientes.add(combo.profesorNombre);
+          gradosAfectados.add(combo.grado);
+          salonesAfectados.add(combo.salon);
+          materiasIncompletas.add(combo.materia);
+        }
+
+        // Limitar para rendimiento
+        if (detalles.length >= 500) break;
       }
-      if (detalles.length >= 200) break;
+      if (detalles.length >= 500) break;
     }
 
+    console.log("=== RESULTADO VERIFICACIÓN ===");
     console.log("Asignaciones verificadas:", asignacionesVerificadas);
-    console.log("Detalles de incompletitud encontrados:", detalles.length);
+    console.log("Profesores con pendientes en período seleccionado:", profesoresPendientes.size);
+    console.log("Lista de profesores pendientes:", Array.from(profesoresPendientes));
 
     // Calcular total de estudiantes únicos verificados
     let estudiantesUnicos = new Set<string>();
     if (grado && salon) {
       estudiantes
-        .filter(e => e.grado_estudiante === grado && e.salon_estudiante === salon)
+        .filter(e => 
+          String(e.grado_estudiante).trim() === String(grado).trim() && 
+          String(e.salon_estudiante).trim() === String(salon).trim()
+        )
         .forEach(e => estudiantesUnicos.add(e.codigo_estudiantil));
     } else if (grado) {
       estudiantes
-        .filter(e => e.grado_estudiante === grado)
+        .filter(e => String(e.grado_estudiante).trim() === String(grado).trim())
         .forEach(e => estudiantesUnicos.add(e.codigo_estudiantil));
     } else if (codigoEstudiante) {
       estudiantesUnicos.add(codigoEstudiante);
@@ -522,53 +502,33 @@ export const useCompletitud = () => {
     };
 
     // REGLA CRÍTICA: Solo puede estar "Completo" si:
-    // 1. No hay detalles de incompletitud
-    // 2. Se verificaron al menos algunas asignaciones (no puede ser 0)
+    // 1. No hay profesores con pendientes para ESTE período/nivel específico
+    // 2. Se verificaron al menos algunas asignaciones
     // 3. Hay combinaciones que verificar
-    const estaCompleto = detalles.length === 0 && 
+    const estaCompleto = profesoresPendientes.size === 0 && 
                          asignacionesVerificadas > 0 && 
                          todasLasCombinaciones.length > 0;
 
-    // Si no está completo pero no hay detalles, agregar un mensaje explicativo
-    if (!estaCompleto && detalles.length === 0) {
-      if (todasLasCombinaciones.length === 0) {
-        detalles.push({
-          tipo: "sin_actividades",
-          descripcion: "No hay asignaciones de profesores configuradas para este nivel",
-          materia: "Sin asignaciones"
-        });
-      } else if (asignacionesVerificadas === 0) {
-        // Agregar detalles de por qué no se verificaron asignaciones
-        // Probablemente los grados/salones no coinciden con los estudiantes
-        const gradosEnAsignaciones = [...new Set(todasLasCombinaciones.map(c => c.grado))];
-        const salonesEnAsignaciones = [...new Set(todasLasCombinaciones.map(c => c.salon))];
-        const gradosDeEstudiantes = [...new Set(estudiantes.map(e => e.grado_estudiante))];
-        const salonesDeEstudiantes = [...new Set(estudiantes.map(e => e.salon_estudiante))];
-        
-        detalles.push({
-          tipo: "sin_actividades",
-          descripcion: `No hay coincidencia entre asignaciones y estudiantes. Asignaciones tienen grados: ${gradosEnAsignaciones.slice(0, 5).join(", ")}. Estudiantes están en grados: ${gradosDeEstudiantes.slice(0, 5).join(", ")}`,
-          materia: "Problema de configuración"
-        });
-
-        // Agregar más contexto
-        detalles.push({
-          tipo: "sin_actividades", 
-          descripcion: `Salones en asignaciones: ${salonesEnAsignaciones.slice(0, 5).join(", ")}. Salones de estudiantes: ${salonesDeEstudiantes.slice(0, 5).join(", ")}`,
-          materia: "Detalle de salones"
-        });
-      }
+    // Si no hay combinaciones o no se verificó nada, agregar mensaje explicativo
+    if (todasLasCombinaciones.length === 0) {
+      detalles.push({
+        tipo: "sin_actividades",
+        descripcion: "No hay asignaciones de profesores configuradas para este nivel",
+        materia: "Sin asignaciones"
+      });
+    } else if (asignacionesVerificadas === 0 && estudiantes.length > 0) {
+      detalles.push({
+        tipo: "sin_actividades",
+        descripcion: "Las asignaciones no coinciden con los estudiantes registrados",
+        materia: "Problema de configuración"
+      });
     }
 
-    console.log("¿Está completo?", estaCompleto, {
-      detallesCount: detalles.length,
-      asignacionesVerificadas,
-      combinacionesTotal: todasLasCombinaciones.length
-    });
+    console.log("¿Está completo para período", periodo, "?:", estaCompleto);
 
     return {
       completo: estaCompleto,
-      detalles: detalles.slice(0, 200),
+      detalles: detalles.slice(0, 500),
       resumen: {
         materiasIncompletas: materiasIncompletas.size,
         profesoresPendientes: Array.from(profesoresPendientes),
