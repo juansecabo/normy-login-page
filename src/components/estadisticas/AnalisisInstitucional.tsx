@@ -1,10 +1,10 @@
 import { useEstadisticas, ordenGrados } from "@/hooks/useEstadisticas";
 import { TarjetaResumen } from "./TarjetaResumen";
-import { GraficoBarras } from "./GraficoBarras";
-import { GraficoLineas } from "./GraficoLineas";
-import { GraficoCircular } from "./GraficoCircular";
 import { TablaRanking } from "./TablaRanking";
-import { School, Users, TrendingUp, Award } from "lucide-react";
+import { TablaDistribucion } from "./TablaDistribucion";
+import { TablaEvolucion } from "./TablaEvolucion";
+import { ListaComparativa } from "./ListaComparativa";
+import { School, Users, Award, AlertTriangle } from "lucide-react";
 
 interface AnalisisInstitucionalProps {
   periodo: number | "anual";
@@ -19,7 +19,9 @@ export const AnalisisInstitucional = ({ periodo }: AnalisisInstitucionalProps) =
     getPromediosMaterias,
     getDistribucionDesempeno,
     getTopEstudiantes,
-    getEvolucionPeriodos
+    getEvolucionPeriodos,
+    tieneDatosSuficientesParaRiesgo,
+    getEstudiantesEnRiesgo
   } = useEstadisticas();
 
   const promedioInstitucional = getPromedioInstitucional(periodo);
@@ -30,18 +32,25 @@ export const AnalisisInstitucional = ({ periodo }: AnalisisInstitucionalProps) =
   const topGrados = getPromediosGrados(periodo).sort((a, b) => b.promedio - a.promedio).slice(0, 5);
   const mejoresMaterias = getPromediosMaterias(periodo).slice(0, 5);
   const peoresMaterias = [...getPromediosMaterias(periodo)].sort((a, b) => a.promedio - b.promedio).slice(0, 5);
-
-  // Datos para gráficos
-  const datosGrados = getPromediosGrados(periodo)
-    .sort((a, b) => ordenGrados.indexOf(a.grado) - ordenGrados.indexOf(b.grado))
-    .map(g => ({
-      nombre: g.grado,
-      valor: g.promedio
-    }));
-
   const evolucionPeriodos = getEvolucionPeriodos("institucion");
 
-  const estudiantesEnRiesgo = estudiantesTotales.filter(e => e.promedio < 3.0).length;
+  const mostrarRiesgo = tieneDatosSuficientesParaRiesgo(periodo);
+  const estudiantesEnRiesgo = mostrarRiesgo ? getEstudiantesEnRiesgo(periodo) : [];
+
+  // Datos para listas
+  const datosGrados = getPromediosGrados(periodo)
+    .sort((a, b) => ordenGrados.indexOf(a.grado) - ordenGrados.indexOf(b.grado))
+    .map(g => ({ nombre: g.grado, valor: g.promedio, extra: `${g.cantidadEstudiantes} estudiantes` }));
+
+  if (estudiantesTotales.length === 0) {
+    return (
+      <div className="bg-card rounded-lg shadow-soft p-8 text-center">
+        <AlertTriangle className="w-12 h-12 text-amber-500 mx-auto mb-4" />
+        <h3 className="text-lg font-semibold text-foreground mb-2">Aún no hay actividades con notas registradas</h3>
+        <p className="text-muted-foreground">Las estadísticas estarán disponibles cuando se registren notas en el sistema.</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -50,7 +59,7 @@ export const AnalisisInstitucional = ({ periodo }: AnalisisInstitucionalProps) =
         <TarjetaResumen
           titulo="Promedio Institucional"
           valor={promedioInstitucional.toFixed(2)}
-          subtitulo={periodo === "anual" ? "Acumulado anual" : `Período ${periodo}`}
+          subtitulo={`Basado en ${estudiantesTotales.length} estudiantes`}
           icono={School}
           color={promedioInstitucional >= 4 ? "success" : promedioInstitucional >= 3 ? "warning" : "danger"}
         />
@@ -68,73 +77,59 @@ export const AnalisisInstitucional = ({ periodo }: AnalisisInstitucionalProps) =
           icono={Award}
           color="success"
         />
-        <TarjetaResumen
-          titulo="En Riesgo Académico"
-          valor={estudiantesEnRiesgo}
-          subtitulo="Promedio menor a 3.0"
-          icono={TrendingUp}
-          color={estudiantesEnRiesgo > 0 ? "danger" : "success"}
-        />
+        {mostrarRiesgo ? (
+          <TarjetaResumen
+            titulo="En Riesgo Académico"
+            valor={estudiantesEnRiesgo.length}
+            subtitulo="Promedio menor a 3.0"
+            icono={AlertTriangle}
+            color={estudiantesEnRiesgo.length > 0 ? "danger" : "success"}
+          />
+        ) : (
+          <TarjetaResumen
+            titulo="En Riesgo Académico"
+            valor="—"
+            subtitulo="Se necesitan más datos"
+            icono={AlertTriangle}
+            color="primary"
+          />
+        )}
       </div>
 
-      {/* Primera fila de gráficos */}
+      {/* Distribución y Evolución */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <GraficoBarras
-          titulo="Promedio por Grado"
-          datos={datosGrados}
-          mostrarColoresPorRendimiento
-        />
-        <GraficoCircular
-          titulo="Distribución por Niveles de Desempeño"
-          distribucion={distribucion}
-        />
+        <TablaDistribucion titulo="Distribución por Niveles de Desempeño" distribucion={distribucion} />
+        <TablaEvolucion titulo="Evolución del Rendimiento por Período" datos={evolucionPeriodos} />
       </div>
-
-      {/* Evolución por período */}
-      <GraficoLineas
-        titulo="Evolución del Rendimiento Institucional por Período"
-        datos={evolucionPeriodos}
-        xAxisKey="periodo"
-        lineas={[{ dataKey: "promedio", nombre: "Promedio", color: "#16a34a" }]}
-      />
 
       {/* Rankings */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <TablaRanking
-          titulo="Top 10 Mejores Estudiantes"
-          datos={topEstudiantes}
-          tipo="estudiante"
-          limite={10}
+        <TablaRanking titulo="Top 10 Mejores Estudiantes" datos={topEstudiantes} tipo="estudiante" limite={10} />
+        <TablaRanking titulo="Top 5 Mejores Salones" datos={topSalones} tipo="salon" limite={5} />
+        <TablaRanking titulo="Top 5 Mejores Grados" datos={topGrados} tipo="grado" limite={5} />
+      </div>
+
+      {/* Materias y Grados */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <ListaComparativa
+          titulo="Promedio por Grado"
+          items={datosGrados}
+          mostrarPosicion
         />
-        <TablaRanking
-          titulo="Top 5 Mejores Salones"
-          datos={topSalones}
-          tipo="salon"
-          limite={5}
-        />
-        <TablaRanking
-          titulo="Top 5 Mejores Grados"
-          datos={topGrados}
-          tipo="grado"
-          limite={5}
+        <ListaComparativa
+          titulo="Materias con Mejor Rendimiento"
+          items={mejoresMaterias.map(m => ({ nombre: m.materia, valor: m.promedio }))}
+          tipo="mejor"
+          mostrarPosicion
         />
       </div>
 
-      {/* Materias */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <GraficoBarras
-          titulo="Materias con Mejor Rendimiento"
-          datos={mejoresMaterias.map(m => ({ nombre: m.materia, valor: m.promedio }))}
-          horizontal
-          mostrarColoresPorRendimiento
-        />
-        <GraficoBarras
-          titulo="Materias con Menor Rendimiento"
-          datos={peoresMaterias.map(m => ({ nombre: m.materia, valor: m.promedio }))}
-          horizontal
-          mostrarColoresPorRendimiento
-        />
-      </div>
+      <ListaComparativa
+        titulo="Materias con Menor Rendimiento (Áreas de Mejora)"
+        items={peoresMaterias.map(m => ({ nombre: m.materia, valor: m.promedio }))}
+        tipo="peor"
+        mostrarPosicion
+      />
     </div>
   );
 };

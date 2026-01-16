@@ -26,6 +26,8 @@ export interface PromedioEstudiante {
   grado: string;
   salon: string;
   promedio: number;
+  sumaPorcentajes: number; // Para determinar si hay suficientes datos
+  cantidadActividades: number;
   promediosPorPeriodo: { [periodo: number]: number };
   promediosPorMateria: { [materia: string]: number };
 }
@@ -62,6 +64,10 @@ export const ordenGrados = [
   "Primero", "Segundo", "Tercero", "Cuarto", "Quinto",
   "Sexto", "Séptimo", "Octavo", "Noveno", "Décimo", "Undécimo"
 ];
+
+// Umbral mínimo de porcentaje para mostrar "Estudiantes en Riesgo"
+const UMBRAL_PORCENTAJE_MINIMO = 40;
+const UMBRAL_ACTIVIDADES_MINIMO = 3;
 
 export const useEstadisticas = () => {
   const [loading, setLoading] = useState(true);
@@ -123,28 +129,57 @@ export const useEstadisticas = () => {
     fetchData();
   }, []);
 
-  // Calcular promedio de notas de un estudiante en un período específico
+  /**
+   * Calcula el PROMEDIO RELATIVO PONDERADO
+   * Solo considera actividades con porcentaje > 0
+   * Fórmula: Σ(nota × porcentaje) / Σ(porcentajes)
+   */
+  const calcularPromedioRelativo = (
+    notasFiltradas: NotaCompleta[]
+  ): { promedio: number | null; sumaPorcentajes: number; cantidadActividades: number } => {
+    const actividadesConPeso = notasFiltradas.filter(n => n.porcentaje && n.porcentaje > 0);
+    
+    if (actividadesConPeso.length === 0) {
+      return { promedio: null, sumaPorcentajes: 0, cantidadActividades: 0 };
+    }
+
+    const sumaProductos = actividadesConPeso.reduce((sum, act) => 
+      sum + (act.nota * (act.porcentaje || 0)), 0
+    );
+
+    const sumaPesos = actividadesConPeso.reduce((sum, act) => 
+      sum + (act.porcentaje || 0), 0
+    );
+
+    const promedio = sumaPesos > 0 
+      ? Math.round((sumaProductos / sumaPesos) * 100) / 100 
+      : null;
+
+    return { 
+      promedio, 
+      sumaPorcentajes: sumaPesos, 
+      cantidadActividades: actividadesConPeso.length 
+    };
+  };
+
+  // Calcular promedio de un estudiante por período usando promedio relativo
   const calcularPromedioPeriodo = (
     codigoEstudiantil: string,
     periodo: number,
     materia?: string,
     grado?: string,
     salon?: string
-  ): number | null => {
+  ): { promedio: number | null; sumaPorcentajes: number; cantidadActividades: number } => {
     let notasFiltradas = notas.filter(n => 
       n.codigo_estudiantil === codigoEstudiantil &&
-      n.periodo === periodo &&
-      n.porcentaje !== null &&
-      n.porcentaje > 0
+      n.periodo === periodo
     );
 
     if (materia) notasFiltradas = notasFiltradas.filter(n => n.materia === materia);
     if (grado) notasFiltradas = notasFiltradas.filter(n => n.grado === grado);
     if (salon) notasFiltradas = notasFiltradas.filter(n => n.salon === salon);
 
-    if (notasFiltradas.length === 0) return null;
-
-    // Agrupar por materia y calcular el final de cada una
+    // Agrupar por materia y calcular promedio relativo de cada una
     const materiaGroups: { [key: string]: NotaCompleta[] } = {};
     notasFiltradas.forEach(n => {
       const key = n.materia;
@@ -152,37 +187,58 @@ export const useEstadisticas = () => {
       materiaGroups[key].push(n);
     });
 
-    const finalesPorMateria: number[] = [];
+    const promediosMaterias: number[] = [];
+    let sumaPorcentajesTotal = 0;
+    let cantidadActividadesTotal = 0;
+
     Object.values(materiaGroups).forEach(notasMateria => {
-      let suma = 0;
-      let tieneNota = false;
-      notasMateria.forEach(n => {
-        if (n.porcentaje) {
-          suma += n.nota * (n.porcentaje / 100);
-          tieneNota = true;
-        }
-      });
-      if (tieneNota) finalesPorMateria.push(suma);
+      const resultado = calcularPromedioRelativo(notasMateria);
+      if (resultado.promedio !== null) {
+        promediosMaterias.push(resultado.promedio);
+        sumaPorcentajesTotal += resultado.sumaPorcentajes;
+        cantidadActividadesTotal += resultado.cantidadActividades;
+      }
     });
 
-    if (finalesPorMateria.length === 0) return null;
+    if (promediosMaterias.length === 0) {
+      return { promedio: null, sumaPorcentajes: 0, cantidadActividades: 0 };
+    }
 
-    const promedio = finalesPorMateria.reduce((a, b) => a + b, 0) / finalesPorMateria.length;
-    return Math.round(promedio * 100) / 100;
+    const promedio = Math.round((promediosMaterias.reduce((a, b) => a + b, 0) / promediosMaterias.length) * 100) / 100;
+    return { promedio, sumaPorcentajes: sumaPorcentajesTotal, cantidadActividades: cantidadActividadesTotal };
   };
 
   // Calcular promedio general de un estudiante (acumulado anual)
-  const calcularPromedioEstudiante = (codigoEstudiantil: string): number | null => {
+  const calcularPromedioEstudiante = (codigoEstudiantil: string): { 
+    promedio: number | null; 
+    sumaPorcentajes: number; 
+    cantidadActividades: number 
+  } => {
     const promedios: number[] = [];
+    let sumaPorcentajesTotal = 0;
+    let cantidadActividadesTotal = 0;
+
     for (let periodo = 1; periodo <= 4; periodo++) {
-      const prom = calcularPromedioPeriodo(codigoEstudiantil, periodo);
-      if (prom !== null) promedios.push(prom);
+      const resultado = calcularPromedioPeriodo(codigoEstudiantil, periodo);
+      if (resultado.promedio !== null) {
+        promedios.push(resultado.promedio);
+        sumaPorcentajesTotal += resultado.sumaPorcentajes;
+        cantidadActividadesTotal += resultado.cantidadActividades;
+      }
     }
-    if (promedios.length === 0) return null;
-    return Math.round((promedios.reduce((a, b) => a + b, 0) / promedios.length) * 100) / 100;
+
+    if (promedios.length === 0) {
+      return { promedio: null, sumaPorcentajes: 0, cantidadActividades: 0 };
+    }
+
+    return {
+      promedio: Math.round((promedios.reduce((a, b) => a + b, 0) / promedios.length) * 100) / 100,
+      sumaPorcentajes: sumaPorcentajesTotal,
+      cantidadActividades: cantidadActividadesTotal
+    };
   };
 
-  // Obtener promedios de todos los estudiantes
+  // Obtener promedios de todos los estudiantes (solo incluye los que tienen notas)
   const getPromediosEstudiantes = (
     periodo?: number | "anual",
     grado?: string,
@@ -195,11 +251,11 @@ export const useEstadisticas = () => {
     return estudiantesFiltrados.map(est => {
       const promediosPorPeriodo: { [periodo: number]: number } = {};
       for (let p = 1; p <= 4; p++) {
-        const prom = calcularPromedioPeriodo(est.codigo_estudiantil, p);
-        if (prom !== null) promediosPorPeriodo[p] = prom;
+        const resultado = calcularPromedioPeriodo(est.codigo_estudiantil, p);
+        if (resultado.promedio !== null) promediosPorPeriodo[p] = resultado.promedio;
       }
 
-      // Promedios por materia
+      // Promedios por materia con promedio relativo
       const promediosPorMateria: { [materia: string]: number } = {};
       const notasEstudiante = notas.filter(n => 
         n.codigo_estudiantil === est.codigo_estudiantil &&
@@ -208,24 +264,18 @@ export const useEstadisticas = () => {
       const materiasEstudiante = [...new Set(notasEstudiante.map(n => n.materia))];
       
       materiasEstudiante.forEach(mat => {
-        const promediosMat: number[] = [];
-        for (let p = 1; p <= 4; p++) {
-          const notasPeriodo = notasEstudiante.filter(n => n.materia === mat && n.periodo === p);
-          if (notasPeriodo.length > 0) {
-            const suma = notasPeriodo.reduce((acc, n) => acc + n.nota * ((n.porcentaje || 0) / 100), 0);
-            promediosMat.push(suma);
-          }
-        }
-        if (promediosMat.length > 0) {
-          promediosPorMateria[mat] = Math.round((promediosMat.reduce((a, b) => a + b, 0) / promediosMat.length) * 100) / 100;
+        const notasMateria = notasEstudiante.filter(n => n.materia === mat);
+        const resultado = calcularPromedioRelativo(notasMateria);
+        if (resultado.promedio !== null) {
+          promediosPorMateria[mat] = resultado.promedio;
         }
       });
 
-      let promedio: number;
+      let resultado: { promedio: number | null; sumaPorcentajes: number; cantidadActividades: number };
       if (periodo === "anual" || !periodo) {
-        promedio = calcularPromedioEstudiante(est.codigo_estudiantil) || 0;
+        resultado = calcularPromedioEstudiante(est.codigo_estudiantil);
       } else {
-        promedio = calcularPromedioPeriodo(est.codigo_estudiantil, periodo) || 0;
+        resultado = calcularPromedioPeriodo(est.codigo_estudiantil, periodo);
       }
 
       return {
@@ -233,14 +283,16 @@ export const useEstadisticas = () => {
         nombre_completo: `${est.apellidos_estudiante} ${est.nombre_estudiante}`,
         grado: est.grado_estudiante,
         salon: est.salon_estudiante,
-        promedio,
+        promedio: resultado.promedio || 0,
+        sumaPorcentajes: resultado.sumaPorcentajes,
+        cantidadActividades: resultado.cantidadActividades,
         promediosPorPeriodo,
         promediosPorMateria
       };
-    }).filter(e => e.promedio > 0);
+    }).filter(e => e.promedio > 0); // Solo incluir estudiantes con notas
   };
 
-  // Promedios por salón
+  // Promedios por salón (solo incluye salones con estudiantes que tienen notas)
   const getPromediosSalones = (
     periodo?: number | "anual",
     grado?: string
@@ -261,10 +313,10 @@ export const useEstadisticas = () => {
         promedio,
         cantidadEstudiantes: promediosEst.length
       };
-    }).filter(s => s.promedio > 0);
+    }).filter(s => s.promedio > 0); // Solo incluir salones con datos
   };
 
-  // Promedios por grado
+  // Promedios por grado (solo incluye grados con estudiantes que tienen notas)
   const getPromediosGrados = (periodo?: number | "anual"): PromedioGrado[] => {
     return grados.map(grado => {
       const promediosEst = getPromediosEstudiantes(periodo, grado);
@@ -277,10 +329,10 @@ export const useEstadisticas = () => {
         promedio,
         cantidadEstudiantes: promediosEst.length
       };
-    }).filter(g => g.promedio > 0);
+    }).filter(g => g.promedio > 0); // Solo incluir grados con datos
   };
 
-  // Promedios por materia
+  // Promedios por materia usando promedio relativo
   const getPromediosMaterias = (
     periodo?: number | "anual",
     grado?: string,
@@ -305,13 +357,12 @@ export const useEstadisticas = () => {
 
       if (notasFiltradas.length === 0) return { materia, promedio: 0, cantidadNotas: 0 };
 
-      // Calcular promedio ponderado
-      const suma = notasFiltradas.reduce((acc, n) => acc + n.nota, 0);
-      const promedio = Math.round((suma / notasFiltradas.length) * 100) / 100;
+      // Calcular promedio relativo
+      const resultado = calcularPromedioRelativo(notasFiltradas);
 
       return {
         materia,
-        promedio,
+        promedio: resultado.promedio || 0,
         cantidadNotas: notasFiltradas.length
       };
     }).filter(m => m.promedio > 0).sort((a, b) => b.promedio - a.promedio);
@@ -352,7 +403,35 @@ export const useEstadisticas = () => {
       .slice(0, cantidad);
   };
 
-  // Evolución por período (para gráficos de líneas)
+  // Estudiantes en riesgo (solo si hay suficientes datos)
+  const getEstudiantesEnRiesgo = (
+    periodo?: number | "anual",
+    grado?: string,
+    salon?: string
+  ): PromedioEstudiante[] => {
+    return getPromediosEstudiantes(periodo, grado, salon)
+      .filter(e => 
+        e.promedio < 3.0 && 
+        e.sumaPorcentajes >= UMBRAL_PORCENTAJE_MINIMO &&
+        e.cantidadActividades >= UMBRAL_ACTIVIDADES_MINIMO
+      );
+  };
+
+  // Verificar si hay suficientes datos para mostrar "Estudiantes en Riesgo"
+  const tieneDatosSuficientesParaRiesgo = (
+    periodo?: number | "anual",
+    grado?: string,
+    salon?: string
+  ): boolean => {
+    const promedios = getPromediosEstudiantes(periodo, grado, salon);
+    // Verificar si al menos un estudiante tiene datos suficientes
+    return promedios.some(e => 
+      e.sumaPorcentajes >= UMBRAL_PORCENTAJE_MINIMO &&
+      e.cantidadActividades >= UMBRAL_ACTIVIDADES_MINIMO
+    );
+  };
+
+  // Evolución por período
   const getEvolucionPeriodos = (
     tipo: "institucion" | "grado" | "salon",
     grado?: string,
@@ -404,8 +483,11 @@ export const useEstadisticas = () => {
     getDistribucionDesempeno,
     getPromedioInstitucional,
     getTopEstudiantes,
+    getEstudiantesEnRiesgo,
+    tieneDatosSuficientesParaRiesgo,
     getEvolucionPeriodos,
     calcularPromedioEstudiante,
-    calcularPromedioPeriodo
+    calcularPromedioPeriodo,
+    calcularPromedioRelativo
   };
 };
