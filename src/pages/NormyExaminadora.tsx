@@ -465,7 +465,7 @@ const NormyExaminadora = () => {
                             setPreguntasMultiple("0");
                           }
                         }}
-                        className="bg-background flex-1 text-center sm:[appearance:auto] [appearance:textfield] [&::-webkit-outer-spin-button]:sm:appearance-auto [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:sm:appearance-auto [&::-webkit-inner-spin-button]:appearance-none"
+                        className="bg-background flex-1 text-center [appearance:textfield] sm:[appearance:auto] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none sm:[&::-webkit-outer-spin-button]:appearance-auto sm:[&::-webkit-inner-spin-button]:appearance-auto"
                       />
                       <button
                         type="button"
@@ -518,7 +518,7 @@ const NormyExaminadora = () => {
                             setPreguntasAbiertas("0");
                           }
                         }}
-                        className="bg-background flex-1 text-center sm:[appearance:auto] [appearance:textfield] [&::-webkit-outer-spin-button]:sm:appearance-auto [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:sm:appearance-auto [&::-webkit-inner-spin-button]:appearance-none"
+                        className="bg-background flex-1 text-center [appearance:textfield] sm:[appearance:auto] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none sm:[&::-webkit-outer-spin-button]:appearance-auto sm:[&::-webkit-inner-spin-button]:appearance-auto"
                       />
                       <button
                         type="button"
