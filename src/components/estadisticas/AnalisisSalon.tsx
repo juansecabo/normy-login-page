@@ -39,7 +39,7 @@ export const AnalisisSalon = ({ grado, salon, periodo }: AnalisisSalonProps) => 
   const materias = getPromediosMaterias(periodo, grado, salon);
   
   // Verificar completitud con el nuevo hook
-  const { completo, detalles, resumen } = verificarCompletitud("salon", periodo, grado, salon);
+  const { completo, detalles, resumen, resumenCompleto } = verificarCompletitud("salon", periodo, grado, salon);
   
   // Filtrar evolución hasta el período seleccionado
   const periodoHasta = periodo === "anual" ? 4 : periodo;
@@ -90,6 +90,7 @@ export const AnalisisSalon = ({ grado, salon, periodo }: AnalisisSalonProps) => 
           completo={completo} 
           detalles={detalles} 
           resumen={resumen}
+          resumenCompleto={resumenCompleto}
           nivel={`${grado} - ${salon}`} 
           periodo={periodoTexto}
         />

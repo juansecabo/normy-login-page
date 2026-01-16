@@ -37,7 +37,7 @@ export const AnalisisInstitucional = ({ periodo }: AnalisisInstitucionalProps) =
   const todosGrados = getPromediosGrados(periodo).sort((a, b) => b.promedio - a.promedio);
   
   // Verificar completitud con el nuevo hook
-  const { completo, detalles, resumen } = verificarCompletitud("institucion", periodo);
+  const { completo, detalles, resumen, resumenCompleto } = verificarCompletitud("institucion", periodo);
   
   // Filtrar evolución hasta el período seleccionado
   const periodoHasta = periodo === "anual" ? 4 : periodo;
@@ -105,6 +105,7 @@ export const AnalisisInstitucional = ({ periodo }: AnalisisInstitucionalProps) =
           completo={completo} 
           detalles={detalles} 
           resumen={resumen}
+          resumenCompleto={resumenCompleto}
           nivel="Institución" 
           periodo={periodoTexto}
         />
