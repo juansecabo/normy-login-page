@@ -1,6 +1,25 @@
 import Cookies from 'js-cookie';
 
-const COOKIE_OPTIONS = { expires: 30 };
+// Función para obtener el dominio base para cookies compartidas
+const getCookieDomain = (): string | undefined => {
+  const hostname = window.location.hostname;
+  // Para subdominios de lovable.app, usar el dominio base
+  if (hostname.includes('lovable.app')) {
+    return '.lovable.app';
+  }
+  // Para localhost o dominios personalizados, no especificar dominio
+  return undefined;
+};
+
+const getCookieOptions = () => {
+  const domain = getCookieDomain();
+  return {
+    expires: 30,
+    ...(domain ? { domain } : {}),
+    sameSite: 'lax' as const,
+    secure: window.location.protocol === 'https:'
+  };
+};
 
 export interface SessionData {
   codigo: string | null;
@@ -10,17 +29,19 @@ export interface SessionData {
 }
 
 export const saveSession = (codigo: string, nombres: string, apellidos: string, cargo: string = 'Profesor(a)') => {
+  const cookieOptions = getCookieOptions();
+  
   // Guardar en localStorage
   localStorage.setItem("codigo", codigo);
   localStorage.setItem("nombres", nombres);
   localStorage.setItem("apellidos", apellidos);
   localStorage.setItem("cargo", cargo);
   
-  // Guardar en cookies como respaldo
-  Cookies.set('normy_codigo', codigo, COOKIE_OPTIONS);
-  Cookies.set('normy_nombres', nombres, COOKIE_OPTIONS);
-  Cookies.set('normy_apellidos', apellidos, COOKIE_OPTIONS);
-  Cookies.set('normy_cargo', cargo, COOKIE_OPTIONS);
+  // Guardar en cookies como respaldo (con dominio compartido)
+  Cookies.set('normy_codigo', codigo, cookieOptions);
+  Cookies.set('normy_nombres', nombres, cookieOptions);
+  Cookies.set('normy_apellidos', apellidos, cookieOptions);
+  Cookies.set('normy_cargo', cargo, cookieOptions);
 };
 
 export const getSession = (): SessionData => {
@@ -48,6 +69,8 @@ export const getSession = (): SessionData => {
 };
 
 export const clearSession = () => {
+  const cookieOptions = getCookieOptions();
+  
   // Limpiar localStorage
   localStorage.removeItem("codigo");
   localStorage.removeItem("nombres");
@@ -59,11 +82,11 @@ export const clearSession = () => {
   localStorage.removeItem("modoVisualizacion");
   localStorage.removeItem("estudianteSeleccionado");
   
-  // Limpiar cookies
-  Cookies.remove('normy_codigo');
-  Cookies.remove('normy_nombres');
-  Cookies.remove('normy_apellidos');
-  Cookies.remove('normy_cargo');
+  // Limpiar cookies (con dominio compartido)
+  Cookies.remove('normy_codigo', cookieOptions);
+  Cookies.remove('normy_nombres', cookieOptions);
+  Cookies.remove('normy_apellidos', cookieOptions);
+  Cookies.remove('normy_cargo', cookieOptions);
 };
 
 export const hasValidSession = (): boolean => {
