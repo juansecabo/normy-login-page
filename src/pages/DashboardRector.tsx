@@ -88,16 +88,11 @@ const DashboardRector = () => {
             </button>
             
             <button
-              onClick={() => {
-                // TODO: Implementar estadísticas
-                console.log("Estadísticas - próximamente");
-              }}
-              className="flex flex-col items-center justify-center gap-4 p-8 rounded-lg border-2 border-border bg-background transition-all duration-200 hover:shadow-md hover:border-primary hover:bg-primary/10 opacity-60 cursor-not-allowed"
-              disabled
+              onClick={() => navigate("/rector/estadisticas")}
+              className="flex flex-col items-center justify-center gap-4 p-8 rounded-lg border-2 border-border bg-background transition-all duration-200 hover:shadow-md hover:border-primary hover:bg-primary/10"
             >
-              <BarChart3 className="w-16 h-16 text-muted-foreground" />
-              <span className="font-semibold text-lg text-muted-foreground">Estadísticas</span>
-              <span className="text-xs text-muted-foreground">(Próximamente)</span>
+              <BarChart3 className="w-16 h-16 text-primary" />
+              <span className="font-semibold text-lg text-foreground">Estadísticas</span>
             </button>
           </div>
         </div>

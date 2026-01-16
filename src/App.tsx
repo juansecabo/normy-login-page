@@ -21,6 +21,7 @@ import ListaMaterias from "./pages/rector/ListaMaterias";
 import ListaEstudiantes from "./pages/rector/ListaEstudiantes";
 import TablaNotasReadOnly from "./pages/rector/TablaNotasReadOnly";
 import EstudianteConsolidado from "./pages/rector/EstudianteConsolidado";
+import EstadisticasDashboard from "./pages/rector/EstadisticasDashboard";
 
 const queryClient = new QueryClient();
 
@@ -48,6 +49,7 @@ const App = () => (
           <Route path="/rector/lista-estudiantes" element={<ListaEstudiantes />} />
           <Route path="/rector/tabla-notas" element={<TablaNotasReadOnly />} />
           <Route path="/rector/estudiante-consolidado" element={<EstudianteConsolidado />} />
+          <Route path="/rector/estadisticas" element={<EstadisticasDashboard />} />
           
           <Route path="*" element={<NotFound />} />
         </Routes>
