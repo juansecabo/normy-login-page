@@ -228,7 +228,24 @@ export const IndicadorCompletitud = ({
               <h4 className="font-semibold text-sm flex items-center gap-2">
                 📝 DETALLE POR MATERIA Y PROFESOR
               </h4>
-              
+
+              {/* Debug: mostrar conteo de detalles */}
+              {detallesPorMateria.size === 0 && detalles.length === 0 && (
+                <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-sm text-amber-700">
+                  <p className="font-medium">⚠️ No se encontraron detalles específicos</p>
+                  <p className="mt-1 text-xs">
+                    Esto puede ocurrir si no hay asignaciones de profesores que coincidan con los estudiantes registrados.
+                    Verificar que la tabla "Asignación Profesores" tenga los grados y salones correctos.
+                  </p>
+                  <p className="mt-2 text-xs">
+                    <strong>Datos del resumen:</strong><br/>
+                    - Materias incompletas: {resumen.materiasIncompletas}<br/>
+                    - Profesores pendientes: {resumen.profesoresPendientes.length}<br/>
+                    - Grados afectados: {resumen.gradosAfectados.length}<br/>
+                    - Salones afectados: {resumen.salonesAfectados.length}
+                  </p>
+                </div>
+              )}
               {Array.from(detallesPorMateria.entries()).map(([materia, grupo]) => (
                 <div key={materia} className="border rounded-lg p-3 space-y-2">
                   <div className="flex items-start justify-between">
