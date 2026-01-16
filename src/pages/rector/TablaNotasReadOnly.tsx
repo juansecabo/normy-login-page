@@ -347,7 +347,7 @@ const TablaNotasReadOnly = () => {
         {/* Info del profesor */}
         {nombreProfesor && (
           <div className="bg-primary/5 border border-primary/20 rounded-lg p-3 mb-4 flex items-center gap-2">
-            <span className="text-sm text-muted-foreground">Profesor(a):</span>
+            <span className="text-sm text-muted-foreground">Docente:</span>
             <span className="text-sm font-medium text-foreground">{nombreProfesor}</span>
           </div>
         )}
