@@ -78,7 +78,7 @@ export const FiltrosEstadisticas = ({
           </Select>
         </div>
 
-        {/* Período */}
+        {/* Período - Orden: Período 1, 2, 3, 4, Acumulado Anual */}
         <div>
           <label className="text-sm text-muted-foreground mb-1.5 block">Período</label>
           <Select value={periodoSeleccionado} onValueChange={setPeriodoSeleccionado}>
@@ -86,11 +86,11 @@ export const FiltrosEstadisticas = ({
               <SelectValue placeholder="Seleccionar período" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="anual">Acumulado Anual</SelectItem>
               <SelectItem value="1">Período 1</SelectItem>
               <SelectItem value="2">Período 2</SelectItem>
               <SelectItem value="3">Período 3</SelectItem>
               <SelectItem value="4">Período 4</SelectItem>
+              <SelectItem value="anual">Acumulado Anual</SelectItem>
             </SelectContent>
           </Select>
         </div>
