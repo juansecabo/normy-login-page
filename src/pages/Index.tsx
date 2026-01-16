@@ -39,14 +39,30 @@ const Index = () => {
     setLoading(true);
 
     try {
+      // Buscar usuario por código (sin filtrar por cargo)
+      console.log('🔍 Buscando código:', codigo.trim());
+      
       const { data, error } = await supabase
         .from('Internos')
         .select('*')
         .eq('codigo', parseInt(codigo.trim()))
-        .eq('cargo', 'Profesor(a)')
-        .single();
+        .maybeSingle();
 
-      if (error || !data) {
+      console.log('📊 Resultado de búsqueda:', { data, error });
+
+      if (error) {
+        console.error('❌ Error en consulta:', error);
+        toast({
+          title: "Error",
+          description: "Error al verificar el código",
+          variant: "destructive",
+        });
+        setLoading(false);
+        return;
+      }
+
+      if (!data) {
+        console.log('❌ No se encontró usuario con código:', codigo.trim());
         toast({
           title: "Error",
           description: "Código no válido",
@@ -55,12 +71,27 @@ const Index = () => {
         setLoading(false);
         return;
       }
+      
+      console.log('✅ Usuario encontrado:', data.nombres, data.apellidos, '- Cargo:', data.cargo);
 
-      // Login exitoso - guardar sesión
+      // Verificar si tiene permisos (Profesor, Rector o Coordinador)
+      const cargosPermitidos = ['Profesor(a)', 'Rector', 'Coordinador(a)'];
+      if (!cargosPermitidos.includes(data.cargo)) {
+        toast({
+          title: "Acceso denegado",
+          description: "No tienes permisos de acceso",
+          variant: "destructive",
+        });
+        setLoading(false);
+        return;
+      }
+
+      // Login exitoso - guardar sesión con cargo
       saveSession(
         String(data.codigo),
         data.nombres || "",
-        data.apellidos || ""
+        data.apellidos || "",
+        data.cargo || ""
       );
 
       toast({
@@ -68,7 +99,12 @@ const Index = () => {
         description: `${data.nombres} ${data.apellidos}`,
       });
 
-      navigate("/dashboard");
+      // Redirigir según el cargo
+      if (data.cargo === 'Rector' || data.cargo === 'Coordinador(a)') {
+        navigate("/dashboard-rector");
+      } else {
+        navigate("/dashboard");
+      }
     } catch {
       toast({
         title: "Error",
