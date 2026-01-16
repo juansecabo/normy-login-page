@@ -48,8 +48,8 @@ interface AsignacionExpandida {
   materia: string;
   grado: string;
   salon: string;
-  codigoProfesor: string; // Internos.codigo
-  nombreCompleto: string; // "Apellidos Nombres"
+  codigoProfesor: string;
+  nombreCompleto: string;
 }
 
 interface ActividadRegistrada {
@@ -59,7 +59,7 @@ interface ActividadRegistrada {
   periodo: number;
   nombre_actividad: string;
   porcentaje: number | null;
-  codigo_profesor: string; // Internos.codigo
+  codigo_profesor: string;
 }
 
 interface NotaRegistrada {
@@ -80,17 +80,14 @@ interface Estudiante {
   salon_estudiante: string;
 }
 
-// Normalización global
+// Función de normalización global
 const normalize = (x: any): string => {
-  return String(x || "")
+  return String(x || '')
     .trim()
     .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "");
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
 };
-
-const DETALLE_LIMIT = 200;
-const PERCENT_TOL = 0.01;
 
 export const useCompletitud = () => {
   const [combinacionesExpandidas, setCombinacionesExpandidas] = useState<AsignacionExpandida[]>([]);
@@ -103,128 +100,139 @@ export const useCompletitud = () => {
     const fetchData = async () => {
       setLoading(true);
       try {
-        // 1) Internos
+        // 1. Obtener todos los internos con campos correctos
         const { data: internos, error: errorInternos } = await supabase
           .from("Internos")
           .select("id, codigo, nombres, apellidos, cargo");
+        
+        if (errorInternos) {
+          console.error("❌ Error obteniendo Internos:", errorInternos);
+        }
 
-        if (errorInternos) console.error("❌ Error obteniendo Internos:", errorInternos);
-
-        const soloProfesores: InternoProfesor[] = (internos || [])
-          .filter((p: any) => p.cargo === "Profesor(a)")
+        // 2. Filtrar SOLO profesores (cargo='Profesor(a)')
+        const soloProfeores: InternoProfesor[] = (internos || [])
+          .filter((p: any) => p.cargo === 'Profesor(a)')
           .map((p: any) => ({
-            id: String(p.id || ""),
-            codigo: String(p.codigo || "").trim(),
-            nombres: String(p.nombres || "").trim(),
-            apellidos: String(p.apellidos || "").trim(),
-            cargo: p.cargo,
+            id: String(p.id || ''),
+            codigo: String(p.codigo || ''),
+            nombres: String(p.nombres || ''),
+            apellidos: String(p.apellidos || ''),
+            cargo: p.cargo
           }));
 
         console.log("=== DEBUG COMPLETITUD ===");
-        console.log("totalInternosProfesores:", soloProfesores.length);
-        console.log("Cargos únicos en Internos:", [...new Set((internos || []).map((p: any) => p.cargo))]);
+        console.log("totalInternosProfesores:", soloProfeores.length);
+        
+        // Log de cargos únicos
+        const cargosUnicos = [...new Set((internos || []).map((p: any) => p.cargo))];
+        console.log("Cargos únicos en Internos:", cargosUnicos);
 
-        // Map para match rápido por id y por nombre
-        const profById = new Map<string, InternoProfesor>();
-        const profByName = new Map<string, InternoProfesor>();
-        for (const p of soloProfesores) {
-          profById.set(String(p.id), p);
-          profByName.set(`${normalize(p.apellidos)}|${normalize(p.nombres)}`, p);
+        // 3. Obtener asignaciones de profesores
+        const { data: asignacionesData, error: errorAsig } = await supabase
+          .from("Asignación Profesores")
+          .select('*');
+
+        if (errorAsig) {
+          console.error("❌ Error obteniendo Asignación Profesores:", errorAsig);
         }
 
-        // 2) Asignación Profesores
-        const { data: asignacionesData, error: errorAsig } = await supabase.from("Asignación Profesores").select("*");
-
-        if (errorAsig) console.error("❌ Error obteniendo Asignación Profesores:", errorAsig);
         console.log("Asignaciones raw encontradas:", asignacionesData?.length || 0);
 
+        // 4. Procesar y expandir asignaciones
         const combinaciones: AsignacionExpandida[] = [];
         let asignacionesValidas = 0;
         let asignacionesAsociadasAInternos = 0;
 
-        for (const asig of asignacionesData || []) {
-          // Parsear arrays
+        for (const asig of (asignacionesData || [])) {
+          // Extraer arrays
           let materias: string[] = [];
           let grados: string[] = [];
           let salones: string[] = [];
 
+          // Parsear si es necesario
           try {
             const rawMaterias = asig["Materia(s)"];
             const rawGrados = asig["Grado(s)"];
             const rawSalones = asig["Salon(es)"];
 
-            materias = Array.isArray(rawMaterias)
-              ? rawMaterias
-              : typeof rawMaterias === "string"
-                ? JSON.parse(rawMaterias)
-                : [];
-
-            grados = Array.isArray(rawGrados) ? rawGrados : typeof rawGrados === "string" ? JSON.parse(rawGrados) : [];
-
-            salones = Array.isArray(rawSalones)
-              ? rawSalones
-              : typeof rawSalones === "string"
-                ? JSON.parse(rawSalones)
-                : [];
+            materias = Array.isArray(rawMaterias) ? rawMaterias : 
+                       (typeof rawMaterias === 'string' ? JSON.parse(rawMaterias) : []);
+            grados = Array.isArray(rawGrados) ? rawGrados :
+                     (typeof rawGrados === 'string' ? JSON.parse(rawGrados) : []);
+            salones = Array.isArray(rawSalones) ? rawSalones :
+                      (typeof rawSalones === 'string' ? JSON.parse(rawSalones) : []);
           } catch (e) {
             console.warn("⚠️ Error parseando arrays de asignación:", e);
             continue;
           }
 
-          if (!materias.length || !grados.length || !salones.length) continue;
+          // Validar que tenga datos
+          if (materias.length === 0 || grados.length === 0 || salones.length === 0) {
+            continue; // Asignación inválida
+          }
+
           asignacionesValidas++;
 
-          // Encontrar profesor: por id si existe, sino por nombre
-          let prof: InternoProfesor | null = null;
+          // Buscar profesor en Internos
+          let profesorEncontrado: InternoProfesor | null = null;
 
-          if (asig.id != null && String(asig.id).trim() !== "") {
-            prof = profById.get(String(asig.id)) || null;
+          // Método 1: Match por ID
+          if (asig.id) {
+            profesorEncontrado = soloProfeores.find(p => p.id === String(asig.id)) || null;
           }
 
-          if (!prof && asig.apellidos && asig.nombres) {
-            prof = profByName.get(`${normalize(asig.apellidos)}|${normalize(asig.nombres)}`) || null;
+          // Método 2: Match por nombres normalizados (fallback)
+          if (!profesorEncontrado && asig.apellidos && asig.nombres) {
+            profesorEncontrado = soloProfeores.find(p =>
+              normalize(p.apellidos) === normalize(asig.apellidos) &&
+              normalize(p.nombres) === normalize(asig.nombres)
+            ) || null;
           }
 
-          if (!prof) {
-            console.warn(
-              `⚠️ Asignación sin match a Internos Profesor(a): ${asig.nombres || ""} ${asig.apellidos || ""}`,
+          // Si no se encontró en Internos como Profesor(a), omitir
+          if (!profesorEncontrado) {
+            // Verificar si existe pero con otro cargo
+            const personaOtroCargo = (internos || []).find((p: any) => 
+              p.id === asig.id || 
+              (normalize(p.apellidos) === normalize(asig.apellidos) && 
+               normalize(p.nombres) === normalize(asig.nombres))
             );
+            
+            if (personaOtroCargo) {
+              console.log(`⏭️ Omitiendo: ${asig.nombres} ${asig.apellidos} - cargo: ${personaOtroCargo.cargo} (no es Profesor(a))`);
+            } else {
+              console.warn(`⚠️ Asignación sin match a Internos: ${asig.nombres} ${asig.apellidos}`);
+            }
             continue;
           }
 
           asignacionesAsociadasAInternos++;
-          const nombreCompleto = `${prof.apellidos} ${prof.nombres}`.trim();
-          const codigoProfesor = prof.codigo;
+          const nombreCompleto = `${profesorEncontrado.apellidos} ${profesorEncontrado.nombres}`.trim();
+          const codigoProfesor = profesorEncontrado.codigo;
 
-          const materiasTrim = materias.map((x) => String(x).trim());
-          const gradosTrim = grados.map((x) => String(x).trim());
-          const salonesTrim = salones.map((x) => String(x).trim());
-
-          // ZIP vs cartesiano
-          if (
-            materiasTrim.length === gradosTrim.length &&
-            gradosTrim.length === salonesTrim.length &&
-            materiasTrim.length > 0
-          ) {
-            for (let i = 0; i < materiasTrim.length; i++) {
+          // Expandir: ZIP vs Producto Cartesiano
+          if (materias.length === grados.length && grados.length === salones.length) {
+            // ZIP: listas paralelas
+            for (let i = 0; i < materias.length; i++) {
               combinaciones.push({
-                materia: materiasTrim[i],
-                grado: gradosTrim[i],
-                salon: salonesTrim[i],
+                materia: String(materias[i]).trim(),
+                grado: String(grados[i]).trim(),
+                salon: String(salones[i]).trim(),
                 codigoProfesor,
-                nombreCompleto,
+                nombreCompleto
               });
             }
           } else {
-            for (const m of materiasTrim) {
-              for (const g of gradosTrim) {
-                for (const s of salonesTrim) {
+            // Producto cartesiano
+            for (const materia of materias) {
+              for (const grado of grados) {
+                for (const salon of salones) {
                   combinaciones.push({
-                    materia: m,
-                    grado: g,
-                    salon: s,
+                    materia: String(materia).trim(),
+                    grado: String(grado).trim(),
+                    salon: String(salon).trim(),
                     codigoProfesor,
-                    nombreCompleto,
+                    nombreCompleto
                   });
                 }
               }
@@ -238,65 +246,72 @@ export const useCompletitud = () => {
 
         setCombinacionesExpandidas(combinaciones);
 
-        // 3) Actividades (nombre_actividad real)
+        // 5. Obtener actividades con nombre_actividad (FIX CRÍTICO #1)
         const { data: actividadesData, error: errorAct } = await supabase
           .from("Nombre de Actividades")
           .select("materia, grado, salon, periodo, nombre_actividad, porcentaje, codigo_profesor");
-
-        if (errorAct) console.error("❌ Error obteniendo actividades:", errorAct);
+        
+        if (errorAct) {
+          console.error("❌ Error obteniendo actividades:", errorAct);
+        }
 
         const actividadesProcesadas: ActividadRegistrada[] = (actividadesData || []).map((a: any) => ({
-          materia: String(a.materia || "").trim(),
-          grado: String(a.grado || "").trim(),
-          salon: String(a.salon || "").trim(),
+          materia: String(a.materia || '').trim(),
+          grado: String(a.grado || '').trim(),
+          salon: String(a.salon || '').trim(),
           periodo: Number(a.periodo),
-          nombre_actividad: String(a.nombre_actividad || "").trim(),
+          nombre_actividad: String(a.nombre_actividad || '').trim(),
           porcentaje: a.porcentaje != null ? Number(a.porcentaje) : null,
-          codigo_profesor: String(a.codigo_profesor || "").trim(),
+          codigo_profesor: String(a.codigo_profesor || '').trim()
         }));
 
         console.log("Actividades cargadas:", actividadesProcesadas.length);
         setActividades(actividadesProcesadas);
 
-        // 4) Notas
+        // 6. Obtener todas las notas (excluyendo finales)
         const { data: notasData, error: errorNotas } = await supabase
           .from("Notas")
           .select("codigo_estudiantil, materia, grado, salon, periodo, nombre_actividad, nota")
           .not("nombre_actividad", "in", '("Final Periodo","Final Definitiva")');
-
-        if (errorNotas) console.error("❌ Error obteniendo notas:", errorNotas);
+        
+        if (errorNotas) {
+          console.error("❌ Error obteniendo notas:", errorNotas);
+        }
 
         const notasProcesadas: NotaRegistrada[] = (notasData || []).map((n: any) => ({
-          codigo_estudiantil: String(n.codigo_estudiantil || "").trim(),
-          materia: String(n.materia || "").trim(),
-          grado: String(n.grado || "").trim(),
-          salon: String(n.salon || "").trim(),
+          codigo_estudiantil: String(n.codigo_estudiantil || '').trim(),
+          materia: String(n.materia || '').trim(),
+          grado: String(n.grado || '').trim(),
+          salon: String(n.salon || '').trim(),
           periodo: Number(n.periodo),
-          nombre_actividad: String(n.nombre_actividad || "").trim(),
-          nota: n.nota != null ? Number(n.nota) : null,
+          nombre_actividad: String(n.nombre_actividad || '').trim(),
+          nota: n.nota != null ? Number(n.nota) : null
         }));
 
         console.log("Notas cargadas:", notasProcesadas.length);
         setNotas(notasProcesadas);
 
-        // 5) Estudiantes
+        // 7. Obtener todos los estudiantes
         const { data: estudiantesData, error: errorEst } = await supabase
           .from("Estudiantes")
           .select("codigo_estudiantil, nombre_estudiante, apellidos_estudiante, grado_estudiante, salon_estudiante")
           .order("apellidos_estudiante");
-
-        if (errorEst) console.error("❌ Error obteniendo estudiantes:", errorEst);
+        
+        if (errorEst) {
+          console.error("❌ Error obteniendo estudiantes:", errorEst);
+        }
 
         const estudiantesProcesados: Estudiante[] = (estudiantesData || []).map((e: any) => ({
-          codigo_estudiantil: String(e.codigo_estudiantil || "").trim(),
-          nombre_estudiante: String(e.nombre_estudiante || "").trim(),
-          apellidos_estudiante: String(e.apellidos_estudiante || "").trim(),
-          grado_estudiante: String(e.grado_estudiante || "").trim(),
-          salon_estudiante: String(e.salon_estudiante || "").trim(),
+          codigo_estudiantil: String(e.codigo_estudiantil || '').trim(),
+          nombre_estudiante: String(e.nombre_estudiante || '').trim(),
+          apellidos_estudiante: String(e.apellidos_estudiante || '').trim(),
+          grado_estudiante: String(e.grado_estudiante || '').trim(),
+          salon_estudiante: String(e.salon_estudiante || '').trim()
         }));
 
         console.log("Estudiantes cargados:", estudiantesProcesados.length);
         setEstudiantes(estudiantesProcesados);
+
       } catch (error) {
         console.error("❌ Error general en fetchData:", error);
       } finally {
@@ -307,13 +322,16 @@ export const useCompletitud = () => {
     fetchData();
   }, []);
 
+  /**
+   * Verifica la completitud según el nivel y período seleccionados
+   */
   const verificarCompletitud = (
     nivel: "institucion" | "grado" | "salon" | "materia" | "estudiante",
     periodo: number | "anual",
     grado?: string,
     salon?: string,
     materia?: string,
-    codigoEstudiante?: string,
+    codigoEstudiante?: string
   ): ResultadoCompletitud => {
     const detalles: DetalleIncompleto[] = [];
     const profesoresPendientes = new Set<string>();
@@ -321,104 +339,84 @@ export const useCompletitud = () => {
     const salonesAfectados = new Set<string>();
     const materiasIncompletas = new Set<string>();
 
+    // Períodos a verificar
     const periodosAVerificar = periodo === "anual" ? [1, 2, 3, 4] : [periodo as number];
-
-    // GUARD: si todavía está cargando, no calcular “a medias”
-    if (loading) {
-      return {
-        completo: false,
-        detalles: [
-          {
-            tipo: "sin_actividades",
-            descripcion: "Cargando datos... espera un momento y vuelve a abrir el modal.",
-            materia: "Cargando",
-          },
-        ],
-        resumen: { materiasIncompletas: 0, profesoresPendientes: [], gradosAfectados: [], salonesAfectados: [] },
-      };
-    }
-
+    
     console.log("=== VERIFICACIÓN COMPLETITUD ===");
     console.log("Período:", periodo, "→ Verificar:", periodosAVerificar);
     console.log("Nivel:", nivel, "| Grado:", grado, "| Salón:", salon, "| Materia:", materia);
 
-    // Filtrar combinaciones por nivel
+    // Filtrar combinaciones según nivel
     let combinacionesFiltradas = [...combinacionesExpandidas];
 
     if (nivel === "grado" && grado) {
-      combinacionesFiltradas = combinacionesFiltradas.filter((c) => normalize(c.grado) === normalize(grado));
+      combinacionesFiltradas = combinacionesFiltradas.filter(c => 
+        normalize(c.grado) === normalize(grado)
+      );
     }
     if (nivel === "salon" && grado && salon) {
-      combinacionesFiltradas = combinacionesFiltradas.filter(
-        (c) => normalize(c.grado) === normalize(grado) && normalize(c.salon) === normalize(salon),
+      combinacionesFiltradas = combinacionesFiltradas.filter(c => 
+        normalize(c.grado) === normalize(grado) &&
+        normalize(c.salon) === normalize(salon)
       );
     }
     if (nivel === "materia" && materia) {
-      combinacionesFiltradas = combinacionesFiltradas.filter((c) => normalize(c.materia) === normalize(materia));
+      combinacionesFiltradas = combinacionesFiltradas.filter(c => 
+        normalize(c.materia) === normalize(materia)
+      );
     }
 
     console.log("Combinaciones a verificar:", combinacionesFiltradas.length);
 
-    // Índices para rendimiento + consistencia
-    const estudiantesPorSalon = new Map<string, Estudiante[]>();
-    for (const e of estudiantes) {
-      const key = `${normalize(e.grado_estudiante)}|${normalize(e.salon_estudiante)}`;
-      if (!estudiantesPorSalon.has(key)) estudiantesPorSalon.set(key, []);
-      estudiantesPorSalon.get(key)!.push(e);
-    }
-
-    const actividadesIndex = new Map<string, ActividadRegistrada[]>();
-    for (const a of actividades) {
-      const key = `${a.codigo_profesor}|${normalize(a.materia)}|${normalize(a.grado)}|${normalize(a.salon)}|${a.periodo}`;
-      if (!actividadesIndex.has(key)) actividadesIndex.set(key, []);
-      actividadesIndex.get(key)!.push(a);
-    }
-
-    const notasIndex = new Map<string, NotaRegistrada>();
-    for (const n of notas) {
-      const key = `${n.codigo_estudiantil}|${normalize(n.materia)}|${normalize(n.grado)}|${normalize(n.salon)}|${n.periodo}|${normalize(n.nombre_actividad)}`;
-      notasIndex.set(key, n);
-    }
-
-    // Para resumen
+    // Para tracking
     const salonesVerificados = new Set<string>();
     const profesoresVerificados = new Set<string>();
     const materiasPorSalon = new Map<string, number>();
     let asignacionesVerificadas = 0;
 
-    // Verificación completa SIN CORTAR por límite de detalles
+    // Verificar cada combinación
     for (const combo of combinacionesFiltradas) {
-      const salonKey = `${normalize(combo.grado)}|${normalize(combo.salon)}`;
-      let estudiantesDelSalon = estudiantesPorSalon.get(salonKey) || [];
+      // Obtener estudiantes del grado-salón
+      let estudiantesDelSalon = estudiantes.filter(e => 
+        normalize(e.grado_estudiante) === normalize(combo.grado) &&
+        normalize(e.salon_estudiante) === normalize(combo.salon)
+      );
 
+      // Filtrar por estudiante específico si aplica
       if (codigoEstudiante) {
-        estudiantesDelSalon = estudiantesDelSalon.filter((e) => e.codigo_estudiantil === codigoEstudiante);
+        estudiantesDelSalon = estudiantesDelSalon.filter(e => 
+          e.codigo_estudiantil === codigoEstudiante
+        );
       }
 
-      if (estudiantesDelSalon.length === 0) continue;
+      // Si no hay estudiantes, omitir
+      if (estudiantesDelSalon.length === 0) {
+        continue;
+      }
 
       asignacionesVerificadas++;
       salonesVerificados.add(`${combo.grado}-${combo.salon}`);
       profesoresVerificados.add(combo.nombreCompleto);
       materiasPorSalon.set(combo.materia, (materiasPorSalon.get(combo.materia) || 0) + 1);
 
-      // Si el profe ya está pendiente, no hace falta seguir revisando más combos de él
-      // (Esto acelera y evita explotar detalles)
-      if (profesoresPendientes.has(combo.nombreCompleto)) continue;
-
-      let profPendiente = false;
-
+      // Verificar cada período
       for (const per of periodosAVerificar) {
-        const actKey = `${combo.codigoProfesor}|${normalize(combo.materia)}|${normalize(combo.grado)}|${normalize(combo.salon)}|${per}`;
-        const actsAll = actividadesIndex.get(actKey) || [];
+        let tieneProblema = false;
 
-        // Actividades con peso
-        const actividadesConPeso = actsAll.filter((a) => a.porcentaje != null && a.porcentaje > 0);
+        // FIX CRÍTICO #2: Filtrar actividades por codigo_profesor
+        const actividadesPeriodo = actividades.filter(a =>
+          a.codigo_profesor === combo.codigoProfesor &&
+          normalize(a.materia) === normalize(combo.materia) &&
+          normalize(a.grado) === normalize(combo.grado) &&
+          normalize(a.salon) === normalize(combo.salon) &&
+          a.periodo === per &&
+          a.porcentaje != null && a.porcentaje > 0
+        );
 
-        // 1) Sin actividades con peso
-        if (actividadesConPeso.length === 0) {
-          profPendiente = true;
-          if (detalles.length < DETALLE_LIMIT) {
+        // Verificación 1: ¿Hay actividades?
+        if (actividadesPeriodo.length === 0) {
+          tieneProblema = true;
+          if (detalles.length < 200) {
             detalles.push({
               tipo: "sin_actividades",
               descripcion: `${combo.materia} (${combo.grado}-${combo.salon}) P${per}: Sin actividades`,
@@ -426,88 +424,97 @@ export const useCompletitud = () => {
               profesor: combo.nombreCompleto,
               grado: combo.grado,
               salon: combo.salon,
-              periodo: per,
+              periodo: per
             });
           }
-          break; // con 1 periodo malo ya cuenta para anual/periodo
-        }
+        } else {
+          // FIX CRÍTICO #3: Suma con tolerancia
+          const sumaPorcentajes = actividadesPeriodo.reduce((sum, a) => sum + (a.porcentaje || 0), 0);
+          const porcentajeCompleto = Math.abs(sumaPorcentajes - 100) <= 0.01;
 
-        // 2) Porcentajes suman 100 (tolerancia)
-        const suma = actividadesConPeso.reduce((s, a) => s + (a.porcentaje || 0), 0);
-        const completoPorcentaje = Math.abs(suma - 100) <= PERCENT_TOL;
-
-        if (!completoPorcentaje) {
-          profPendiente = true;
-          if (detalles.length < DETALLE_LIMIT) {
-            detalles.push({
-              tipo: "porcentaje_incompleto",
-              descripcion: `${combo.materia} (${combo.grado}-${combo.salon}) P${per}: ${Math.round(suma)}%`,
-              materia: combo.materia,
-              profesor: combo.nombreCompleto,
-              grado: combo.grado,
-              salon: combo.salon,
-              periodo: per,
-              porcentajeFaltante: Math.round(100 - suma),
-            });
-          }
-          break;
-        }
-
-        // 3) Notas: debe existir y no ser null
-        for (const est of estudiantesDelSalon) {
-          for (const act of actividadesConPeso) {
-            const nKey = `${est.codigo_estudiantil}|${normalize(combo.materia)}|${normalize(combo.grado)}|${normalize(combo.salon)}|${per}|${normalize(act.nombre_actividad)}`;
-            const n = notasIndex.get(nKey);
-
-            if (!n || n.nota == null) {
-              profPendiente = true;
-              if (detalles.length < DETALLE_LIMIT) {
-                detalles.push({
-                  tipo: "nota_faltante",
-                  descripcion: "Nota faltante",
-                  materia: combo.materia,
-                  profesor: combo.nombreCompleto,
-                  grado: combo.grado,
-                  salon: combo.salon,
-                  estudiante: `${est.apellidos_estudiante} ${est.nombre_estudiante}`,
-                  periodo: per,
-                  actividad: act.nombre_actividad,
-                });
-              }
-              break;
+          if (!porcentajeCompleto) {
+            tieneProblema = true;
+            if (detalles.length < 200) {
+              detalles.push({
+                tipo: "porcentaje_incompleto",
+                descripcion: `${combo.materia} (${combo.grado}-${combo.salon}) P${per}: ${Math.round(sumaPorcentajes)}%`,
+                materia: combo.materia,
+                profesor: combo.nombreCompleto,
+                grado: combo.grado,
+                salon: combo.salon,
+                periodo: per,
+                porcentajeFaltante: 100 - Math.round(sumaPorcentajes)
+              });
             }
           }
-          if (profPendiente) break;
+
+          // Verificación 3: Notas de estudiantes (solo si porcentaje está completo)
+          if (porcentajeCompleto) {
+            for (const est of estudiantesDelSalon) {
+              for (const act of actividadesPeriodo) {
+                // FIX CRÍTICO #4: Verificar que nota exista Y no sea null
+                const notaRegistro = notas.find(n =>
+                  n.codigo_estudiantil === est.codigo_estudiantil &&
+                  normalize(n.materia) === normalize(combo.materia) &&
+                  normalize(n.grado) === normalize(combo.grado) &&
+                  normalize(n.salon) === normalize(combo.salon) &&
+                  n.periodo === per &&
+                  normalize(n.nombre_actividad) === normalize(act.nombre_actividad)
+                );
+
+                const tieneNotaValida = notaRegistro && notaRegistro.nota != null;
+
+                if (!tieneNotaValida) {
+                  tieneProblema = true;
+                  if (detalles.length < 200) {
+                    detalles.push({
+                      tipo: "nota_faltante",
+                      descripcion: `Nota faltante`,
+                      materia: combo.materia,
+                      profesor: combo.nombreCompleto,
+                      grado: combo.grado,
+                      salon: combo.salon,
+                      estudiante: `${est.apellidos_estudiante} ${est.nombre_estudiante}`,
+                      periodo: per,
+                      actividad: act.nombre_actividad
+                    });
+                  }
+                }
+              }
+            }
+          }
         }
 
-        if (profPendiente) break;
+        // Marcar profesor como pendiente
+        if (tieneProblema) {
+          profesoresPendientes.add(combo.nombreCompleto);
+          gradosAfectados.add(combo.grado);
+          salonesAfectados.add(combo.salon);
+          materiasIncompletas.add(combo.materia);
+        }
       }
 
-      if (profPendiente) {
-        profesoresPendientes.add(combo.nombreCompleto);
-        gradosAfectados.add(combo.grado);
-        salonesAfectados.add(combo.salon);
-        materiasIncompletas.add(combo.materia);
-      }
+      // Límite de rendimiento
+      if (detalles.length >= 200) break;
     }
 
-    // Estudiantes únicos (resumen)
-    const estudiantesUnicos = new Set<string>();
+    // Calcular estudiantes únicos
+    let estudiantesUnicos = new Set<string>();
     if (grado && salon) {
       estudiantes
-        .filter(
-          (e) =>
-            normalize(e.grado_estudiante) === normalize(grado) && normalize(e.salon_estudiante) === normalize(salon),
+        .filter(e => 
+          normalize(e.grado_estudiante) === normalize(grado) && 
+          normalize(e.salon_estudiante) === normalize(salon)
         )
-        .forEach((e) => estudiantesUnicos.add(e.codigo_estudiantil));
+        .forEach(e => estudiantesUnicos.add(e.codigo_estudiantil));
     } else if (grado) {
       estudiantes
-        .filter((e) => normalize(e.grado_estudiante) === normalize(grado))
-        .forEach((e) => estudiantesUnicos.add(e.codigo_estudiantil));
+        .filter(e => normalize(e.grado_estudiante) === normalize(grado))
+        .forEach(e => estudiantesUnicos.add(e.codigo_estudiantil));
     } else if (codigoEstudiante) {
       estudiantesUnicos.add(codigoEstudiante);
     } else {
-      estudiantes.forEach((e) => estudiantesUnicos.add(e.codigo_estudiantil));
+      estudiantes.forEach(e => estudiantesUnicos.add(e.codigo_estudiantil));
     }
 
     const resumenCompleto: ResumenCompleto = {
@@ -515,49 +522,49 @@ export const useCompletitud = () => {
       totalAsignacionesVerificadas: asignacionesVerificadas,
       totalSalones: salonesVerificados.size,
       totalProfesores: profesoresVerificados.size,
-      materiasPorSalon,
+      materiasPorSalon
     };
 
-    const profesoresPendientesOrdenados = Array.from(profesoresPendientes).sort((a, b) =>
-      a.localeCompare(b, "es", { sensitivity: "base" }),
+    // Ordenar profesores pendientes alfabéticamente
+    const profesoresPendientesOrdenados = Array.from(profesoresPendientes).sort((a, b) => 
+      a.localeCompare(b, 'es', { sensitivity: 'base' })
     );
 
-    const estaCompleto =
-      profesoresPendientes.size === 0 && asignacionesVerificadas > 0 && combinacionesFiltradas.length > 0;
+    const estaCompleto = profesoresPendientes.size === 0 && 
+                         asignacionesVerificadas > 0 && 
+                         combinacionesFiltradas.length > 0;
 
     console.log("=== RESULTADO ===");
     console.log("Asignaciones verificadas:", asignacionesVerificadas);
     console.log("totalProfesoresPendientes:", profesoresPendientes.size);
+    console.log("Profesores pendientes:", profesoresPendientesOrdenados);
     console.log("¿Completo?:", estaCompleto);
 
+    // Mensajes si no hay datos
     if (combinacionesFiltradas.length === 0) {
-      if (detalles.length < DETALLE_LIMIT) {
-        detalles.push({
-          tipo: "sin_actividades",
-          descripcion: "No hay asignaciones configuradas para este nivel",
-          materia: "Sin asignaciones",
-        });
-      }
+      detalles.push({
+        tipo: "sin_actividades",
+        descripcion: "No hay asignaciones configuradas para este nivel",
+        materia: "Sin asignaciones"
+      });
     } else if (asignacionesVerificadas === 0) {
-      if (detalles.length < DETALLE_LIMIT) {
-        detalles.push({
-          tipo: "sin_actividades",
-          descripcion: "No hay estudiantes registrados en las asignaciones verificadas",
-          materia: "Sin estudiantes",
-        });
-      }
+      detalles.push({
+        tipo: "sin_actividades",
+        descripcion: "No hay estudiantes registrados en las asignaciones verificadas",
+        materia: "Sin estudiantes"
+      });
     }
 
     return {
       completo: estaCompleto,
-      detalles: detalles.slice(0, DETALLE_LIMIT),
+      detalles: detalles.slice(0, 200),
       resumen: {
         materiasIncompletas: materiasIncompletas.size,
         profesoresPendientes: profesoresPendientesOrdenados,
         gradosAfectados: Array.from(gradosAfectados),
-        salonesAfectados: Array.from(salonesAfectados),
+        salonesAfectados: Array.from(salonesAfectados)
       },
-      resumenCompleto,
+      resumenCompleto
     };
   };
 
@@ -565,6 +572,6 @@ export const useCompletitud = () => {
     loading,
     verificarCompletitud,
     asignaciones: combinacionesExpandidas,
-    estudiantes,
+    estudiantes
   };
 };
