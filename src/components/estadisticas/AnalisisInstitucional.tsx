@@ -29,18 +29,44 @@ export const AnalisisInstitucional = ({ periodo }: AnalisisInstitucionalProps) =
   const distribucion = getDistribucionDesempeno(periodo);
   const topEstudiantes = getTopEstudiantes(10, periodo);
   const topSalones = getPromediosSalones(periodo).sort((a, b) => b.promedio - a.promedio).slice(0, 5);
-  const topGrados = getPromediosGrados(periodo).sort((a, b) => b.promedio - a.promedio).slice(0, 5);
+  const todosGrados = getPromediosGrados(periodo).sort((a, b) => b.promedio - a.promedio);
   const mejoresMaterias = getPromediosMaterias(periodo).slice(0, 5);
   const peoresMaterias = [...getPromediosMaterias(periodo)].sort((a, b) => a.promedio - b.promedio).slice(0, 5);
-  const evolucionPeriodos = getEvolucionPeriodos("institucion");
+  
+  // Filtrar evolución hasta el período seleccionado
+  const periodoHasta = periodo === "anual" ? 4 : periodo;
+  const evolucionPeriodos = getEvolucionPeriodos("institucion").filter(e => {
+    const numPeriodo = parseInt(e.periodo.replace("Período ", ""));
+    return numPeriodo <= periodoHasta;
+  });
 
   const mostrarRiesgo = tieneDatosSuficientesParaRiesgo(periodo);
   const estudiantesEnRiesgo = mostrarRiesgo ? getEstudiantesEnRiesgo(periodo) : [];
 
+  // Calcular mejores y peores grados SIN superposición
+  const cantidadGrados = todosGrados.length;
+  let cantidadMejores = Math.min(3, Math.floor(cantidadGrados / 2));
+  let cantidadPeores = Math.min(3, cantidadGrados - cantidadMejores);
+  
+  // Si hay muy pocos grados, ajustar
+  if (cantidadGrados <= 1) {
+    cantidadMejores = cantidadGrados;
+    cantidadPeores = 0;
+  } else if (cantidadGrados <= 3) {
+    cantidadMejores = 1;
+    cantidadPeores = 1;
+  }
+
+  const mejoresGrados = todosGrados.slice(0, cantidadMejores);
+  const peoresGrados = todosGrados.slice(-cantidadPeores).reverse();
+
   // Datos para listas
   const datosGrados = getPromediosGrados(periodo)
     .sort((a, b) => ordenGrados.indexOf(a.grado) - ordenGrados.indexOf(b.grado))
-    .map(g => ({ nombre: g.grado, valor: g.promedio, extra: `${g.cantidadEstudiantes} estudiantes` }));
+    .map(g => ({ nombre: g.grado, valor: g.promedio, extra: `${g.cantidadEstudiantes} estudiantes con notas` }));
+
+  // Contar salones únicos con datos
+  const salonesConDatos = getPromediosSalones(periodo);
 
   if (estudiantesTotales.length === 0) {
     return (
@@ -54,19 +80,25 @@ export const AnalisisInstitucional = ({ periodo }: AnalisisInstitucionalProps) =
 
   return (
     <div className="space-y-6">
+      {/* Banner informativo */}
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 flex items-center gap-2 text-sm text-blue-700">
+        <span className="font-medium">ℹ️</span>
+        <span>Estadísticas basadas únicamente en estudiantes con notas registradas. Las cifras no representan el total de estudiantes inscritos.</span>
+      </div>
+
       {/* Tarjetas de resumen */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <TarjetaResumen
           titulo="Promedio Institucional"
           valor={promedioInstitucional.toFixed(2)}
-          subtitulo={`Basado en ${estudiantesTotales.length} estudiantes`}
+          subtitulo={`Basado en ${estudiantesTotales.length} estudiantes con notas`}
           icono={School}
           color={promedioInstitucional >= 4 ? "success" : promedioInstitucional >= 3 ? "warning" : "danger"}
         />
         <TarjetaResumen
-          titulo="Total Estudiantes"
+          titulo="Estudiantes con notas"
           valor={estudiantesTotales.length}
-          subtitulo="Con calificaciones"
+          subtitulo={`En ${salonesConDatos.length} salones`}
           icono={Users}
           color="primary"
         />
@@ -106,7 +138,7 @@ export const AnalisisInstitucional = ({ periodo }: AnalisisInstitucionalProps) =
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <TablaRanking titulo="Top 10 Mejores Estudiantes" datos={topEstudiantes} tipo="estudiante" limite={10} />
         <TablaRanking titulo="Top 5 Mejores Salones" datos={topSalones} tipo="salon" limite={5} />
-        <TablaRanking titulo="Top 5 Mejores Grados" datos={topGrados} tipo="grado" limite={5} />
+        <TablaRanking titulo="Top 5 Mejores Grados" datos={todosGrados.slice(0, 5)} tipo="grado" limite={5} />
       </div>
 
       {/* Materias y Grados */}
@@ -123,6 +155,26 @@ export const AnalisisInstitucional = ({ periodo }: AnalisisInstitucionalProps) =
           mostrarPosicion
         />
       </div>
+
+      {/* Mejores y Peores Grados (sin superposición) */}
+      {cantidadGrados > 1 && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <ListaComparativa
+            titulo="Mejores Grados"
+            items={mejoresGrados.map(g => ({ nombre: g.grado, valor: g.promedio }))}
+            tipo="mejor"
+            icono={<Award className="w-5 h-5 text-green-500" />}
+          />
+          {cantidadPeores > 0 && (
+            <ListaComparativa
+              titulo="Grados a Reforzar"
+              items={peoresGrados.map(g => ({ nombre: g.grado, valor: g.promedio }))}
+              tipo="peor"
+              icono={<AlertTriangle className="w-5 h-5 text-amber-500" />}
+            />
+          )}
+        </div>
+      )}
 
       <ListaComparativa
         titulo="Materias con Menor Rendimiento (Áreas de Mejora)"

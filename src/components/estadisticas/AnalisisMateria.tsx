@@ -15,12 +15,34 @@ export const AnalisisMateria = ({ materia, periodo, grado, salon }: AnalisisMate
   const promedioMateria = getPromediosMaterias(periodo, grado, salon).find(m => m.materia === materia);
   const rendimientoPorGrado = ordenGrados.map(g => { const pm = getPromediosMaterias(periodo, g).find(m => m.materia === materia); return { nombre: g, valor: pm?.promedio || 0 }; }).filter(g => g.valor > 0);
   const gradosOrdenados = [...rendimientoPorGrado].sort((a, b) => b.valor - a.valor);
-  const mejoresGrados = gradosOrdenados.slice(0, 3);
-  const peoresGrados = [...gradosOrdenados].reverse().slice(0, 3);
+  
+  // Calcular mejores y peores grados SIN superposición
+  const cantidadGrados = gradosOrdenados.length;
+  let cantidadMejores = Math.min(3, Math.floor(cantidadGrados / 2));
+  let cantidadPeores = Math.min(3, cantidadGrados - cantidadMejores);
+  
+  if (cantidadGrados <= 1) {
+    cantidadMejores = cantidadGrados;
+    cantidadPeores = 0;
+  } else if (cantidadGrados <= 3) {
+    cantidadMejores = 1;
+    cantidadPeores = 1;
+  }
+
+  const mejoresGrados = gradosOrdenados.slice(0, cantidadMejores);
+  const peoresGrados = gradosOrdenados.slice(-cantidadPeores).reverse();
+  
   const rendimientoPorSalon = grado ? getPromediosSalones(periodo, grado).map(s => { const pm = getPromediosMaterias(periodo, grado, s.salon).find(m => m.materia === materia); return { grado: s.grado, salon: s.salon, promedio: pm?.promedio || 0, cantidadEstudiantes: s.cantidadEstudiantes }; }).filter(s => s.promedio > 0).sort((a, b) => b.promedio - a.promedio) : [];
   const estudiantesConMateria = getPromediosEstudiantes(periodo, grado, salon).map(e => ({ ...e, promedioMateria: e.promediosPorMateria?.[materia] || 0 })).filter(e => e.promedioMateria > 0).sort((a, b) => b.promedioMateria - a.promedioMateria);
   const topEstudiantes = estudiantesConMateria.slice(0, 10).map(e => ({ ...e, promedio: e.promedioMateria }));
-  const evolucionMateria = [1, 2, 3, 4].map(p => { const pm = getPromediosMaterias(p, grado, salon).find(m => m.materia === materia); return { periodo: `Período ${p}`, promedio: pm?.promedio || 0 }; }).filter(e => e.promedio > 0);
+  
+  // Filtrar evolución hasta el período seleccionado
+  const periodoHasta = periodo === "anual" ? 4 : periodo;
+  const evolucionMateria = [1, 2, 3, 4]
+    .filter(p => p <= periodoHasta)
+    .map(p => { const pm = getPromediosMaterias(p, grado, salon).find(m => m.materia === materia); return { periodo: `Período ${p}`, promedio: pm?.promedio || 0 }; })
+    .filter(e => e.promedio > 0);
+  
   const cantidadEstudiantes = estudiantesConMateria.length;
   const estudiantesAprobados = estudiantesConMateria.filter(e => e.promedioMateria >= 3.0).length;
   const estudiantesReprobados = estudiantesConMateria.filter(e => e.promedioMateria < 3.0).length;
@@ -32,6 +54,12 @@ export const AnalisisMateria = ({ materia, periodo, grado, salon }: AnalisisMate
 
   return (
     <div className="space-y-6">
+      {/* Banner informativo */}
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 flex items-center gap-2 text-sm text-blue-700">
+        <span className="font-medium">ℹ️</span>
+        <span>Estadísticas basadas únicamente en estudiantes con notas registradas.</span>
+      </div>
+
       <div className="bg-card rounded-lg shadow-soft p-6 border border-border">
         <div className="flex items-center gap-4">
           <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center"><BookOpen className="w-8 h-8 text-primary" /></div>
@@ -41,7 +69,7 @@ export const AnalisisMateria = ({ materia, periodo, grado, salon }: AnalisisMate
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <TarjetaResumen titulo="Promedio de la Materia" valor={promedioMateria.promedio.toFixed(2)} subtitulo={periodo === "anual" ? "Acumulado anual" : `Período ${periodo}`} icono={BookOpen} color={promedioMateria.promedio >= 4 ? "success" : promedioMateria.promedio >= 3 ? "warning" : "danger"} />
-        <TarjetaResumen titulo="Estudiantes" valor={cantidadEstudiantes} subtitulo="Con calificaciones" icono={Users} color="primary" />
+        <TarjetaResumen titulo="Estudiantes con notas" valor={cantidadEstudiantes} subtitulo="Con calificaciones" icono={Users} color="primary" />
         <TarjetaResumen titulo="Tasa de Aprobación" valor={`${tasaAprobacion}%`} subtitulo={`${estudiantesAprobados} aprobados`} icono={Award} color={tasaAprobacion >= 80 ? "success" : tasaAprobacion >= 60 ? "warning" : "danger"} />
         <TarjetaResumen titulo="En Riesgo" valor={estudiantesReprobados} subtitulo="Promedio < 3.0" icono={AlertTriangle} color={estudiantesReprobados > 0 ? "danger" : "success"} />
       </div>
@@ -53,8 +81,14 @@ export const AnalisisMateria = ({ materia, periodo, grado, salon }: AnalisisMate
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <TablaRanking titulo={`Top 10 Estudiantes - ${materia}`} datos={topEstudiantes} tipo="estudiante" limite={10} />
-        <ListaComparativa titulo="Mejores Grados" items={mejoresGrados} tipo="mejor" icono={<Award className="w-5 h-5 text-green-500" />} />
-        <ListaComparativa titulo="Grados a Reforzar" items={peoresGrados} tipo="peor" icono={<AlertTriangle className="w-5 h-5 text-amber-500" />} />
+        {cantidadGrados > 1 && (
+          <>
+            <ListaComparativa titulo="Mejores Grados" items={mejoresGrados} tipo="mejor" icono={<Award className="w-5 h-5 text-green-500" />} />
+            {cantidadPeores > 0 && (
+              <ListaComparativa titulo="Grados a Reforzar" items={peoresGrados} tipo="peor" icono={<AlertTriangle className="w-5 h-5 text-amber-500" />} />
+            )}
+          </>
+        )}
       </div>
 
       {grado && rendimientoPorSalon.length > 0 && (
