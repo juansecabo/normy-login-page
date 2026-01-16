@@ -1,9 +1,11 @@
+import { useNavigate } from "react-router-dom";
 import { useEstadisticas, ordenGrados } from "@/hooks/useEstadisticas";
 import { TarjetaResumen } from "./TarjetaResumen";
 import { TablaRanking } from "./TablaRanking";
 import { TablaDistribucion } from "./TablaDistribucion";
 import { TablaEvolucion } from "./TablaEvolucion";
 import { ListaComparativa } from "./ListaComparativa";
+import { IndicadorCompletitud } from "./IndicadorCompletitud";
 import { School, Users, Award, AlertTriangle } from "lucide-react";
 
 interface AnalisisInstitucionalProps {
@@ -11,17 +13,18 @@ interface AnalisisInstitucionalProps {
 }
 
 export const AnalisisInstitucional = ({ periodo }: AnalisisInstitucionalProps) => {
+  const navigate = useNavigate();
   const {
     getPromedioInstitucional,
     getPromediosEstudiantes,
     getPromediosGrados,
     getPromediosSalones,
-    getPromediosMaterias,
     getDistribucionDesempeno,
     getTopEstudiantes,
     getEvolucionPeriodos,
     tieneDatosSuficientesParaRiesgo,
-    getEstudiantesEnRiesgo
+    getEstudiantesEnRiesgo,
+    verificarCompletitud
   } = useEstadisticas();
 
   const promedioInstitucional = getPromedioInstitucional(periodo);
@@ -30,8 +33,9 @@ export const AnalisisInstitucional = ({ periodo }: AnalisisInstitucionalProps) =
   const topEstudiantes = getTopEstudiantes(10, periodo);
   const topSalones = getPromediosSalones(periodo).sort((a, b) => b.promedio - a.promedio).slice(0, 5);
   const todosGrados = getPromediosGrados(periodo).sort((a, b) => b.promedio - a.promedio);
-  const mejoresMaterias = getPromediosMaterias(periodo).slice(0, 5);
-  const peoresMaterias = [...getPromediosMaterias(periodo)].sort((a, b) => a.promedio - b.promedio).slice(0, 5);
+  
+  // Verificar completitud
+  const { completo, detalles } = verificarCompletitud(periodo);
   
   // Filtrar evolución hasta el período seleccionado
   const periodoHasta = periodo === "anual" ? 4 : periodo;
@@ -68,6 +72,12 @@ export const AnalisisInstitucional = ({ periodo }: AnalisisInstitucionalProps) =
   // Contar salones únicos con datos
   const salonesConDatos = getPromediosSalones(periodo);
 
+  const handleVerRiesgo = () => {
+    const params = new URLSearchParams();
+    params.set("periodo", String(periodo));
+    navigate(`/rector/estudiantes-riesgo?${params.toString()}`);
+  };
+
   if (estudiantesTotales.length === 0) {
     return (
       <div className="bg-card rounded-lg shadow-soft p-8 text-center">
@@ -80,10 +90,13 @@ export const AnalisisInstitucional = ({ periodo }: AnalisisInstitucionalProps) =
 
   return (
     <div className="space-y-6">
-      {/* Banner informativo */}
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 flex items-center gap-2 text-sm text-blue-700">
-        <span className="font-medium">ℹ️</span>
-        <span>Estadísticas basadas únicamente en estudiantes con notas registradas. Las cifras no representan el total de estudiantes inscritos.</span>
+      {/* Banner informativo con indicador de completitud */}
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div className="flex items-center gap-2 text-sm text-blue-700">
+          <span className="font-medium">ℹ️</span>
+          <span>Estadísticas basadas únicamente en estudiantes con notas registradas.</span>
+        </div>
+        <IndicadorCompletitud completo={completo} detalles={detalles} nivel="Institución" />
       </div>
 
       {/* Tarjetas de resumen */}
@@ -110,13 +123,18 @@ export const AnalisisInstitucional = ({ periodo }: AnalisisInstitucionalProps) =
           color="success"
         />
         {mostrarRiesgo ? (
-          <TarjetaResumen
-            titulo="En Riesgo Académico"
-            valor={estudiantesEnRiesgo.length}
-            subtitulo="Promedio menor a 3.0"
-            icono={AlertTriangle}
-            color={estudiantesEnRiesgo.length > 0 ? "danger" : "success"}
-          />
+          <div 
+            onClick={estudiantesEnRiesgo.length > 0 ? handleVerRiesgo : undefined}
+            className={estudiantesEnRiesgo.length > 0 ? "cursor-pointer hover:scale-[1.02] transition-transform" : ""}
+          >
+            <TarjetaResumen
+              titulo="En Riesgo Académico"
+              valor={estudiantesEnRiesgo.length}
+              subtitulo={estudiantesEnRiesgo.length > 0 ? "Click para ver detalles" : "Promedio menor a 3.0"}
+              icono={AlertTriangle}
+              color={estudiantesEnRiesgo.length > 0 ? "danger" : "success"}
+            />
+          </div>
         ) : (
           <TarjetaResumen
             titulo="En Riesgo Académico"
@@ -141,17 +159,11 @@ export const AnalisisInstitucional = ({ periodo }: AnalisisInstitucionalProps) =
         <TablaRanking titulo="Top 5 Mejores Grados" datos={todosGrados.slice(0, 5)} tipo="grado" limite={5} />
       </div>
 
-      {/* Materias y Grados */}
+      {/* Promedio por Grado */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <ListaComparativa
           titulo="Promedio por Grado"
           items={datosGrados}
-          mostrarPosicion
-        />
-        <ListaComparativa
-          titulo="Materias con Mejor Rendimiento"
-          items={mejoresMaterias.map(m => ({ nombre: m.materia, valor: m.promedio }))}
-          tipo="mejor"
           mostrarPosicion
         />
       </div>
@@ -175,13 +187,6 @@ export const AnalisisInstitucional = ({ periodo }: AnalisisInstitucionalProps) =
           )}
         </div>
       )}
-
-      <ListaComparativa
-        titulo="Materias con Menor Rendimiento (Áreas de Mejora)"
-        items={peoresMaterias.map(m => ({ nombre: m.materia, valor: m.promedio }))}
-        tipo="peor"
-        mostrarPosicion
-      />
     </div>
   );
 };

@@ -1,9 +1,11 @@
+import { useNavigate } from "react-router-dom";
 import { useEstadisticas } from "@/hooks/useEstadisticas";
 import { TarjetaResumen } from "./TarjetaResumen";
 import { TablaRanking } from "./TablaRanking";
 import { TablaDistribucion } from "./TablaDistribucion";
 import { TablaEvolucion } from "./TablaEvolucion";
 import { ListaComparativa } from "./ListaComparativa";
+import { IndicadorCompletitud } from "./IndicadorCompletitud";
 import { GraduationCap, Users, Award, AlertTriangle } from "lucide-react";
 
 interface AnalisisGradoProps {
@@ -12,10 +14,12 @@ interface AnalisisGradoProps {
 }
 
 export const AnalisisGrado = ({ grado, periodo }: AnalisisGradoProps) => {
+  const navigate = useNavigate();
   const {
     getPromediosEstudiantes, getPromediosSalones, getPromediosMaterias,
     getDistribucionDesempeno, getTopEstudiantes, getEvolucionPeriodos,
-    getPromedioInstitucional, tieneDatosSuficientesParaRiesgo, getEstudiantesEnRiesgo
+    getPromedioInstitucional, tieneDatosSuficientesParaRiesgo, getEstudiantesEnRiesgo,
+    verificarCompletitud
   } = useEstadisticas();
 
   if (!grado) {
@@ -29,6 +33,10 @@ export const AnalisisGrado = ({ grado, periodo }: AnalisisGradoProps) => {
   const topEstudiantes = getTopEstudiantes(10, periodo, grado);
   const salones = getPromediosSalones(periodo, grado).sort((a, b) => b.promedio - a.promedio);
   const materias = getPromediosMaterias(periodo, grado);
+  
+  // Verificar completitud
+  const { completo, detalles } = verificarCompletitud(periodo, grado);
+  
   // Filtrar evolución hasta el período seleccionado
   const periodoHasta = periodo === "anual" ? 4 : periodo;
   const evolucionPeriodos = getEvolucionPeriodos("grado", grado).filter(e => {
@@ -42,6 +50,13 @@ export const AnalisisGrado = ({ grado, periodo }: AnalisisGradoProps) => {
   // Obtener total de salones únicos con datos
   const salonesUnicos = [...new Set(estudiantesGrado.map(e => e.salon))];
 
+  const handleVerRiesgo = () => {
+    const params = new URLSearchParams();
+    params.set("periodo", String(periodo));
+    params.set("grado", grado);
+    navigate(`/rector/estudiantes-riesgo?${params.toString()}`);
+  };
+
   if (estudiantesGrado.length === 0) {
     return (
       <div className="bg-card rounded-lg shadow-soft p-8 text-center">
@@ -54,17 +69,29 @@ export const AnalisisGrado = ({ grado, periodo }: AnalisisGradoProps) => {
 
   return (
     <div className="space-y-6">
-      {/* Banner informativo */}
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 flex items-center gap-2 text-sm text-blue-700">
-        <span className="font-medium">ℹ️</span>
-        <span>Estadísticas basadas únicamente en estudiantes con notas registradas.</span>
+      {/* Banner informativo con indicador de completitud */}
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div className="flex items-center gap-2 text-sm text-blue-700">
+          <span className="font-medium">ℹ️</span>
+          <span>Estadísticas basadas únicamente en estudiantes con notas registradas.</span>
+        </div>
+        <IndicadorCompletitud completo={completo} detalles={detalles} nivel={grado} />
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <TarjetaResumen titulo={`Promedio ${grado}`} valor={promedioGrado.toFixed(2)} subtitulo={`${diferenciaConInst >= 0 ? "+" : ""}${diferenciaConInst.toFixed(2)} vs institución`} icono={GraduationCap} color={promedioGrado >= 4 ? "success" : promedioGrado >= 3 ? "warning" : "danger"} />
         <TarjetaResumen titulo="Estudiantes con notas" valor={estudiantesGrado.length} subtitulo={`En ${salonesUnicos.length} salones`} icono={Users} color="primary" />
         <TarjetaResumen titulo="Mejor Estudiante" valor={topEstudiantes[0]?.promedio.toFixed(2) || "—"} subtitulo={topEstudiantes[0]?.nombre_completo || ""} icono={Award} color="success" />
-        {mostrarRiesgo ? <TarjetaResumen titulo="En Riesgo" valor={estudiantesEnRiesgo.length} subtitulo="Promedio menor a 3.0" icono={AlertTriangle} color={estudiantesEnRiesgo.length > 0 ? "danger" : "success"} /> : <TarjetaResumen titulo="En Riesgo" valor="—" subtitulo="Se necesitan más datos" icono={AlertTriangle} color="primary" />}
+        {mostrarRiesgo ? (
+          <div 
+            onClick={estudiantesEnRiesgo.length > 0 ? handleVerRiesgo : undefined}
+            className={estudiantesEnRiesgo.length > 0 ? "cursor-pointer hover:scale-[1.02] transition-transform" : ""}
+          >
+            <TarjetaResumen titulo="En Riesgo" valor={estudiantesEnRiesgo.length} subtitulo={estudiantesEnRiesgo.length > 0 ? "Click para ver detalles" : "Promedio menor a 3.0"} icono={AlertTriangle} color={estudiantesEnRiesgo.length > 0 ? "danger" : "success"} />
+          </div>
+        ) : (
+          <TarjetaResumen titulo="En Riesgo" valor="—" subtitulo="Se necesitan más datos" icono={AlertTriangle} color="primary" />
+        )}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

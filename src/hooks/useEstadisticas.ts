@@ -469,6 +469,74 @@ export const useEstadisticas = () => {
     });
   };
 
+  // Verificar completitud de un período/nivel
+  interface DetalleIncompleto {
+    tipo: "nota_faltante" | "porcentaje_incompleto";
+    descripcion: string;
+    materia?: string;
+    estudiante?: string;
+    actividad?: string;
+  }
+
+  const verificarCompletitud = (
+    periodo: number | "anual",
+    grado?: string,
+    salon?: string,
+    codigoEstudiante?: string,
+    materia?: string
+  ): { completo: boolean; detalles: DetalleIncompleto[] } => {
+    const detalles: DetalleIncompleto[] = [];
+    
+    // Para cada estudiante, verificar que tiene 100% de porcentajes en todas sus materias
+    let estudiantesFiltrados = estudiantes;
+    if (grado) estudiantesFiltrados = estudiantesFiltrados.filter(e => e.grado_estudiante === grado);
+    if (salon) estudiantesFiltrados = estudiantesFiltrados.filter(e => e.salon_estudiante === salon);
+    if (codigoEstudiante) estudiantesFiltrados = estudiantesFiltrados.filter(e => e.codigo_estudiantil === codigoEstudiante);
+
+    const periodos = periodo === "anual" ? [1, 2, 3, 4] : [periodo];
+
+    for (const est of estudiantesFiltrados) {
+      const nombreCompleto = `${est.apellidos_estudiante} ${est.nombre_estudiante}`;
+      
+      // Obtener las materias del estudiante
+      const notasEstudiante = notas.filter(n => n.codigo_estudiantil === est.codigo_estudiantil);
+      const materiasEstudiante = materia 
+        ? [materia] 
+        : [...new Set(notasEstudiante.map(n => n.materia))];
+
+      for (const mat of materiasEstudiante) {
+        for (const per of periodos) {
+          // Obtener notas de este estudiante en esta materia y período
+          const notasPeriodo = notasEstudiante.filter(n => 
+            n.materia === mat && 
+            n.periodo === per &&
+            n.porcentaje !== null && n.porcentaje > 0
+          );
+
+          // Sumar porcentajes
+          const sumaPorcentajes = notasPeriodo.reduce((sum, n) => sum + (n.porcentaje || 0), 0);
+
+          if (sumaPorcentajes > 0 && sumaPorcentajes < 100) {
+            detalles.push({
+              tipo: "porcentaje_incompleto",
+              descripcion: `${mat} (P${per}) - ${nombreCompleto}: ${Math.round(sumaPorcentajes)}% de actividades registradas, faltan ${100 - Math.round(sumaPorcentajes)}%`,
+              materia: mat,
+              estudiante: nombreCompleto
+            });
+          }
+        }
+      }
+
+      // Limitar detalles para rendimiento
+      if (detalles.length > 50) break;
+    }
+
+    return {
+      completo: detalles.length === 0,
+      detalles: detalles.slice(0, 50)
+    };
+  };
+
   return {
     loading,
     notas,
@@ -488,6 +556,7 @@ export const useEstadisticas = () => {
     getEvolucionPeriodos,
     calcularPromedioEstudiante,
     calcularPromedioPeriodo,
-    calcularPromedioRelativo
+    calcularPromedioRelativo,
+    verificarCompletitud
   };
 };
