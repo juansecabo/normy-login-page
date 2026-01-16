@@ -245,14 +245,18 @@ export const useEstadisticas = () => {
     grado?: string,
     salon?: string
   ): { promedio: number | null; sumaPorcentajes: number; cantidadActividades: number } => {
+    // Considerar "all" como sin filtro
+    const gradoFiltro = grado && grado !== "all" ? grado : undefined;
+    const salonFiltro = salon && salon !== "all" ? salon : undefined;
+    
     let notasFiltradas = notas.filter(n => 
       n.codigo_estudiantil === codigoEstudiantil &&
       n.periodo === periodo
     );
 
     if (materia) notasFiltradas = notasFiltradas.filter(n => n.materia === materia);
-    if (grado) notasFiltradas = notasFiltradas.filter(n => n.grado === grado);
-    if (salon) notasFiltradas = notasFiltradas.filter(n => n.salon === salon);
+    if (gradoFiltro) notasFiltradas = notasFiltradas.filter(n => n.grado === gradoFiltro);
+    if (salonFiltro) notasFiltradas = notasFiltradas.filter(n => n.salon === salonFiltro);
 
     // Agrupar por materia y calcular promedio relativo de cada una
     const materiaGroups: { [key: string]: NotaCompleta[] } = {};
@@ -319,9 +323,13 @@ export const useEstadisticas = () => {
     grado?: string,
     salon?: string
   ): PromedioEstudiante[] => {
+    // Considerar "all" como sin filtro
+    const gradoFiltro = grado && grado !== "all" ? grado : undefined;
+    const salonFiltro = salon && salon !== "all" ? salon : undefined;
+    
     let estudiantesFiltrados = estudiantes;
-    if (grado) estudiantesFiltrados = estudiantesFiltrados.filter(e => e.grado_estudiante === grado);
-    if (salon) estudiantesFiltrados = estudiantesFiltrados.filter(e => e.salon_estudiante === salon);
+    if (gradoFiltro) estudiantesFiltrados = estudiantesFiltrados.filter(e => e.grado_estudiante === gradoFiltro);
+    if (salonFiltro) estudiantesFiltrados = estudiantesFiltrados.filter(e => e.salon_estudiante === salonFiltro);
 
     return estudiantesFiltrados.map(est => {
       const promediosPorPeriodo: { [periodo: number]: number } = {};
@@ -372,8 +380,11 @@ export const useEstadisticas = () => {
     periodo?: number | "anual",
     grado?: string
   ): PromedioSalon[] => {
-    const salonesUnicos = grado 
-      ? salones.filter(s => s.grado === grado)
+    // Considerar "all" como sin filtro
+    const gradoFiltro = grado && grado !== "all" ? grado : undefined;
+    
+    const salonesUnicos = gradoFiltro 
+      ? salones.filter(s => s.grado === gradoFiltro)
       : salones;
 
     return salonesUnicos.map(s => {
@@ -413,9 +424,13 @@ export const useEstadisticas = () => {
     grado?: string,
     salon?: string
   ): PromedioMateria[] => {
+    // Considerar "all" como sin filtro
+    const gradoFiltro = grado && grado !== "all" ? grado : undefined;
+    const salonFiltro = salon && salon !== "all" ? salon : undefined;
+    
     const materiasFiltradas = [...new Set(
       notas
-        .filter(n => (!grado || n.grado === grado) && (!salon || n.salon === salon))
+        .filter(n => (!gradoFiltro || n.grado === gradoFiltro) && (!salonFiltro || n.salon === salonFiltro))
         .map(n => n.materia)
     )];
 
@@ -424,8 +439,8 @@ export const useEstadisticas = () => {
         n.materia === materia &&
         n.porcentaje !== null && n.porcentaje > 0
       );
-      if (grado) notasFiltradas = notasFiltradas.filter(n => n.grado === grado);
-      if (salon) notasFiltradas = notasFiltradas.filter(n => n.salon === salon);
+      if (gradoFiltro) notasFiltradas = notasFiltradas.filter(n => n.grado === gradoFiltro);
+      if (salonFiltro) notasFiltradas = notasFiltradas.filter(n => n.salon === salonFiltro);
       if (periodo && periodo !== "anual") {
         notasFiltradas = notasFiltradas.filter(n => n.periodo === periodo);
       }
