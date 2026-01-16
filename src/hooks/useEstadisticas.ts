@@ -77,6 +77,19 @@ export const useEstadisticas = () => {
   const [grados, setGrados] = useState<string[]>([]);
   const [salones, setSalones] = useState<{ grado: string; salon: string }[]>([]);
 
+  // Función para obtener materias filtradas por grado y salón
+  const getMateriasFiltradas = (grado?: string, salon?: string): string[] => {
+    let notasFiltradas = notas;
+    if (grado && grado !== "all") {
+      notasFiltradas = notasFiltradas.filter(n => n.grado === grado);
+    }
+    if (salon && salon !== "all") {
+      notasFiltradas = notasFiltradas.filter(n => n.salon === salon);
+    }
+    const materiasUnicas = [...new Set(notasFiltradas.map(n => n.materia))].sort();
+    return materiasUnicas;
+  };
+
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
@@ -544,6 +557,7 @@ export const useEstadisticas = () => {
     materias,
     grados,
     salones,
+    getMateriasFiltradas,
     getPromediosEstudiantes,
     getPromediosSalones,
     getPromediosGrados,

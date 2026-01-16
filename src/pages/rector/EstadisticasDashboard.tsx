@@ -14,7 +14,7 @@ import { Loader2 } from "lucide-react";
 
 const EstadisticasDashboard = () => {
   const navigate = useNavigate();
-  const { loading, grados, salones, materias, getPromediosEstudiantes } = useEstadisticas();
+  const { loading, grados, salones, materias, getMateriasFiltradas, getPromediosEstudiantes } = useEstadisticas();
   
   const [nivelAnalisis, setNivelAnalisis] = useState("institucion");
   const [periodoSeleccionado, setPeriodoSeleccionado] = useState("1");
@@ -34,6 +34,20 @@ const EstadisticasDashboard = () => {
       return;
     }
   }, [navigate]);
+
+  // Obtener materias filtradas según grado y salón seleccionados
+  const materiasFiltradas = useMemo(() => {
+    // Si no hay grado seleccionado o es "all", mostrar todas las materias
+    if (!gradoSeleccionado || gradoSeleccionado === "all") {
+      return materias;
+    }
+    // Si hay grado pero no salón o es "all", filtrar solo por grado
+    if (!salonSeleccionado || salonSeleccionado === "all") {
+      return getMateriasFiltradas(gradoSeleccionado);
+    }
+    // Si hay grado y salón, filtrar por ambos
+    return getMateriasFiltradas(gradoSeleccionado, salonSeleccionado);
+  }, [gradoSeleccionado, salonSeleccionado, materias, getMateriasFiltradas]);
 
   // Obtener lista de estudiantes del salón seleccionado
   const estudiantesDelSalon = useMemo(() => {
@@ -100,7 +114,7 @@ const EstadisticasDashboard = () => {
               setEstudianteSeleccionado={setEstudianteSeleccionado}
               grados={grados}
               salones={salones}
-              materias={materias}
+              materias={materiasFiltradas}
               estudiantes={estudiantesDelSalon}
             />
 
