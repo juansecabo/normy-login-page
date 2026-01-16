@@ -107,10 +107,10 @@ const SeleccionarSalonRector = () => {
               onClick={() => navigate("/rector/seleccionar-grado")}
               className="text-primary hover:underline"
             >
-              {gradoSeleccionado}
+              Notas
             </button>
             <span className="text-muted-foreground">→</span>
-            <span className="text-foreground font-medium">Seleccionar Salón</span>
+            <span className="text-foreground font-medium">{gradoSeleccionado}</span>
           </div>
         </div>
 
