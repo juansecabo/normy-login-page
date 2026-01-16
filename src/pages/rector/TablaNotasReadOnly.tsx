@@ -4,6 +4,8 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import escudoImg from "@/assets/escudo.png";
 import { getSession, clearSession, isRectorOrCoordinador } from "@/hooks/useSession";
+import ComentarioModalReadOnly from "@/components/notas/ComentarioModalReadOnly";
+import { MessageSquare } from "lucide-react";
 
 interface Estudiante {
   codigo_estudiantil: string;
@@ -26,6 +28,14 @@ type NotasEstudiantes = {
   };
 };
 
+type ComentariosEstudiantes = {
+  [codigoEstudiantil: string]: {
+    [periodo: number]: {
+      [actividadId: string]: string | null;
+    };
+  };
+};
+
 const TablaNotasReadOnly = () => {
   const navigate = useNavigate();
   const [materiaSeleccionada, setMateriaSeleccionada] = useState("");
@@ -35,7 +45,16 @@ const TablaNotasReadOnly = () => {
   const [loading, setLoading] = useState(true);
   const [actividades, setActividades] = useState<Actividad[]>([]);
   const [notas, setNotas] = useState<NotasEstudiantes>({});
+  const [comentarios, setComentarios] = useState<ComentariosEstudiantes>({});
   const [periodoActivo, setPeriodoActivo] = useState<number>(1);
+  
+  // Modal de comentarios
+  const [comentarioModalOpen, setComentarioModalOpen] = useState(false);
+  const [comentarioModalData, setComentarioModalData] = useState<{
+    nombreEstudiante: string;
+    nombreActividad: string;
+    comentario: string | null;
+  } | null>(null);
 
   useEffect(() => {
     const inicializar = async () => {
@@ -101,7 +120,7 @@ const TablaNotasReadOnly = () => {
           setActividades(actividadesCargadas);
         }
 
-        // Fetch notas existentes
+        // Fetch notas y comentarios existentes
         const { data: notasData, error: notasError } = await supabase
           .from('Notas')
           .select('*')
@@ -111,9 +130,10 @@ const TablaNotasReadOnly = () => {
 
         if (!notasError && notasData) {
           const notasFormateadas: NotasEstudiantes = {};
+          const comentariosFormateados: ComentariosEstudiantes = {};
           
           notasData.forEach((nota) => {
-            const { codigo_estudiantil, periodo, nombre_actividad, nota: valorNota } = nota;
+            const { codigo_estudiantil, periodo, nombre_actividad, nota: valorNota, comentario } = nota;
             
             if (nombre_actividad === "Final Definitiva" || nombre_actividad === "Final Periodo") {
               return;
@@ -121,6 +141,7 @@ const TablaNotasReadOnly = () => {
             
             const actividadId = `${periodo}-${nombre_actividad}`;
             
+            // Notas
             if (!notasFormateadas[codigo_estudiantil]) {
               notasFormateadas[codigo_estudiantil] = {};
             }
@@ -128,9 +149,21 @@ const TablaNotasReadOnly = () => {
               notasFormateadas[codigo_estudiantil][periodo] = {};
             }
             notasFormateadas[codigo_estudiantil][periodo][actividadId] = valorNota;
+            
+            // Comentarios
+            if (comentario) {
+              if (!comentariosFormateados[codigo_estudiantil]) {
+                comentariosFormateados[codigo_estudiantil] = {};
+              }
+              if (!comentariosFormateados[codigo_estudiantil][periodo]) {
+                comentariosFormateados[codigo_estudiantil][periodo] = {};
+              }
+              comentariosFormateados[codigo_estudiantil][periodo][actividadId] = comentario;
+            }
           });
           
           setNotas(notasFormateadas);
+          setComentarios(comentariosFormateados);
         }
       } catch (error) {
         console.error('Error:', error);
@@ -279,12 +312,6 @@ const TablaNotasReadOnly = () => {
           </div>
         </div>
 
-        {/* Indicador de solo lectura */}
-        <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-4 text-center">
-          <span className="text-amber-800 text-sm font-medium">
-            👁️ Modo solo lectura - Las notas no pueden ser editadas desde esta vista
-          </span>
-        </div>
 
         {/* Pestañas de Períodos */}
         <div className="bg-card rounded-lg shadow-soft overflow-hidden">
@@ -456,12 +483,33 @@ const TablaNotasReadOnly = () => {
                           <>
                             {getActividadesPorPeriodo(periodoActivo).map((actividad) => {
                               const nota = notas[estudiante.codigo_estudiantil]?.[periodoActivo]?.[actividad.id];
+                              const comentario = comentarios[estudiante.codigo_estudiantil]?.[periodoActivo]?.[actividad.id];
+                              const tieneComentario = !!comentario;
+                              
                               return (
                                 <td 
                                   key={actividad.id}
-                                  className="border-r border-b border-border p-2 text-center text-sm"
+                                  className="border-r border-b border-border p-2 text-center text-sm relative"
                                 >
-                                  {nota !== undefined ? nota.toFixed(2) : '—'}
+                                  <div className="flex items-center justify-center gap-1">
+                                    <span>{nota !== undefined ? nota.toFixed(2) : '—'}</span>
+                                    {tieneComentario && (
+                                      <button
+                                        onClick={() => {
+                                          setComentarioModalData({
+                                            nombreEstudiante: `${estudiante.apellidos_estudiante} ${estudiante.nombre_estudiante}`,
+                                            nombreActividad: actividad.nombre,
+                                            comentario: comentario,
+                                          });
+                                          setComentarioModalOpen(true);
+                                        }}
+                                        className="text-amber-500 hover:text-amber-600 transition-colors"
+                                        title="Ver comentario del profesor"
+                                      >
+                                        <MessageSquare className="w-4 h-4" />
+                                      </button>
+                                    )}
+                                  </div>
                                 </td>
                               );
                             })}
@@ -479,6 +527,17 @@ const TablaNotasReadOnly = () => {
           )}
         </div>
       </main>
+      
+      {/* Modal para ver comentarios */}
+      {comentarioModalData && (
+        <ComentarioModalReadOnly
+          open={comentarioModalOpen}
+          onOpenChange={setComentarioModalOpen}
+          nombreEstudiante={comentarioModalData.nombreEstudiante}
+          nombreActividad={comentarioModalData.nombreActividad}
+          comentario={comentarioModalData.comentario}
+        />
+      )}
     </div>
   );
 };
