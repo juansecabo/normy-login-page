@@ -17,7 +17,7 @@ const EstadisticasDashboard = () => {
   const { loading, grados, salones, materias, getPromediosEstudiantes } = useEstadisticas();
   
   const [nivelAnalisis, setNivelAnalisis] = useState("institucion");
-  const [periodoSeleccionado, setPeriodoSeleccionado] = useState("anual");
+  const [periodoSeleccionado, setPeriodoSeleccionado] = useState("1");
   const [gradoSeleccionado, setGradoSeleccionado] = useState("");
   const [salonSeleccionado, setSalonSeleccionado] = useState("");
   const [materiaSeleccionada, setMateriaSeleccionada] = useState("");
