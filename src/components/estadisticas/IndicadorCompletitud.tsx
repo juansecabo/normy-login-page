@@ -173,19 +173,8 @@ export const IndicadorCompletitud = ({
   }
 
   // Contenido cuando está INCOMPLETO
-  const profesoresPendientes = agruparPorProfesor(detalles);
-
-  // Función auxiliar para formatear los salones de un grado
-  const formatearSalones = (grado: string, salones: Set<string>): string => {
-    const salonesArr = Array.from(salones).sort();
-    if (salonesArr.length === 3) {
-      return `${grado} (todos los salones)`;
-    }
-    if (salonesArr.length === 1) {
-      return `${grado} (salón: ${salonesArr[0]})`;
-    }
-    return `${grado} (salones: ${salonesArr.join(", ")})`;
-  };
+  // Simplificado: Solo lista de nombres de profesores
+  const nombresProfesores = [...new Set(detalles.map(d => d.profesor || "").filter(Boolean))].sort();
 
   return (
     <>
@@ -198,7 +187,7 @@ export const IndicadorCompletitud = ({
       </button>
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+        <DialogContent className="max-w-md max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-lg">
               <AlertCircle className="w-5 h-5 text-amber-500" />
@@ -210,58 +199,25 @@ export const IndicadorCompletitud = ({
           </DialogHeader>
 
           <div className="space-y-4 mt-4">
-            {/* Lista de profesores con pendientes */}
+            {/* Lista simple de profesores */}
             <div className="space-y-3">
               <h4 className="font-semibold text-sm flex items-center gap-2">
                 📋 PROFESORES CON NOTAS PENDIENTES:
               </h4>
 
-              {profesoresPendientes.length === 0 ? (
+              {nombresProfesores.length === 0 ? (
                 <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-sm text-amber-700">
                   <p className="font-medium">⚠️ No se encontraron detalles específicos</p>
                   <p className="mt-1 text-xs">
                     Esto puede ocurrir si no hay asignaciones de profesores configuradas o si los grados/salones no coinciden con los estudiantes registrados.
                   </p>
-                  <p className="mt-2 text-xs">
-                    Revisa la consola del navegador para ver los mensajes de debug con más información.
-                  </p>
                 </div>
               ) : (
-                <div className="space-y-3">
-                  {profesoresPendientes.map((prof, idx) => (
-                    <div key={prof.nombreProfesor} className="border rounded-lg p-3 space-y-2">
-                      <div className="flex items-center gap-2">
-                        <div className="flex items-center justify-center w-6 h-6 rounded-full bg-amber-100 text-amber-700 text-sm font-bold">
-                          {idx + 1}
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <User className="w-4 h-4 text-muted-foreground" />
-                          <span className="font-semibold">{prof.nombreProfesor}</span>
-                        </div>
-                      </div>
-                      
-                      <div className="ml-8 space-y-1">
-                        {Array.from(prof.materias.entries()).map(([materia, datos]) => {
-                          // Agrupar salones por grado
-                          const gradosInfo = Array.from(datos.grados).map(grado => {
-                            // Filtrar salones que corresponden a este grado (simplificado: mostrar todos)
-                            return formatearSalones(grado, datos.salones);
-                          });
-                          
-                          return (
-                            <div key={materia} className="flex items-start gap-2 text-sm">
-                              <span className="text-muted-foreground">•</span>
-                              <div>
-                                <span className="font-medium">{materia}</span>
-                                <span className="text-muted-foreground"> - </span>
-                                <span className="text-muted-foreground">
-                                  {gradosInfo.join(", ")}
-                                </span>
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
+                <div className="space-y-1">
+                  {nombresProfesores.map((nombre, idx) => (
+                    <div key={nombre} className="flex items-center gap-2 py-1">
+                      <User className="w-4 h-4 text-muted-foreground" />
+                      <span className="text-sm">{nombre}</span>
                     </div>
                   ))}
                 </div>
@@ -271,7 +227,7 @@ export const IndicadorCompletitud = ({
             {/* Total de profesores */}
             <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
               <p className="text-sm text-amber-800">
-                <strong>Total:</strong> {profesoresPendientes.length} profesor{profesoresPendientes.length !== 1 ? 'es' : ''} debe{profesoresPendientes.length !== 1 ? 'n' : ''} completar sus registros de notas
+                <strong>Total:</strong> {nombresProfesores.length} profesor{nombresProfesores.length !== 1 ? 'es' : ''} debe{nombresProfesores.length !== 1 ? 'n' : ''} completar sus registros de notas
               </p>
             </div>
           </div>
