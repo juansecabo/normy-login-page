@@ -401,6 +401,37 @@ export const useCompletitud = () => {
                          asignacionesVerificadas > 0 && 
                          todasLasCombinaciones.length > 0;
 
+    // Si no está completo pero no hay detalles, agregar un mensaje explicativo
+    if (!estaCompleto && detalles.length === 0) {
+      if (todasLasCombinaciones.length === 0) {
+        detalles.push({
+          tipo: "sin_actividades",
+          descripcion: "No hay asignaciones de profesores configuradas para este nivel",
+          materia: "Sin asignaciones"
+        });
+      } else if (asignacionesVerificadas === 0) {
+        // Agregar detalles de por qué no se verificaron asignaciones
+        // Probablemente los grados/salones no coinciden con los estudiantes
+        const gradosEnAsignaciones = [...new Set(todasLasCombinaciones.map(c => c.grado))];
+        const salonesEnAsignaciones = [...new Set(todasLasCombinaciones.map(c => c.salon))];
+        const gradosDeEstudiantes = [...new Set(estudiantes.map(e => e.grado_estudiante))];
+        const salonesDeEstudiantes = [...new Set(estudiantes.map(e => e.salon_estudiante))];
+        
+        detalles.push({
+          tipo: "sin_actividades",
+          descripcion: `No hay coincidencia entre asignaciones y estudiantes. Asignaciones tienen grados: ${gradosEnAsignaciones.slice(0, 5).join(", ")}. Estudiantes están en grados: ${gradosDeEstudiantes.slice(0, 5).join(", ")}`,
+          materia: "Problema de configuración"
+        });
+
+        // Agregar más contexto
+        detalles.push({
+          tipo: "sin_actividades", 
+          descripcion: `Salones en asignaciones: ${salonesEnAsignaciones.slice(0, 5).join(", ")}. Salones de estudiantes: ${salonesDeEstudiantes.slice(0, 5).join(", ")}`,
+          materia: "Detalle de salones"
+        });
+      }
+    }
+
     console.log("¿Está completo?", estaCompleto, {
       detallesCount: detalles.length,
       asignacionesVerificadas,
