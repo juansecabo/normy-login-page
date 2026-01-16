@@ -63,7 +63,14 @@ export const AnalisisMateria = ({ materia, periodo, grado, salon }: AnalisisMate
       <div className="bg-card rounded-lg shadow-soft p-6 border border-border">
         <div className="flex items-center gap-4">
           <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center"><BookOpen className="w-8 h-8 text-primary" /></div>
-          <div><h2 className="text-xl font-bold text-foreground">{materia}</h2><p className="text-muted-foreground">{grado && salon ? `${grado} - ${salon}` : grado ? `Grado: ${grado}` : "Análisis institucional"}</p></div>
+          <div><h2 className="text-xl font-bold text-foreground">{materia}</h2><p className="text-muted-foreground">{
+            // Tratar "all" como sin selección
+            grado && grado !== "all" && salon && salon !== "all" 
+              ? `${grado} - ${salon}` 
+              : grado && grado !== "all" 
+                ? `Grado: ${grado}` 
+                : "Análisis institucional"
+          }</p></div>
         </div>
       </div>
 
