@@ -116,7 +116,14 @@ export const AnalisisSalon = ({ grado, salon, periodo }: AnalisisSalonProps) => 
         <TarjetaResumen titulo={`Promedio ${grado} - ${salon}`} valor={promedioSalon.toFixed(2)} subtitulo={`#${posicionEnGrado} de ${salonesGrado.length} en ${grado}`} icono={Home} color={promedioSalon >= 4 ? "success" : promedioSalon >= 3 ? "warning" : "danger"} />
         <TarjetaResumen titulo="Estudiantes con notas" valor={estudiantesSalon.length} subtitulo="En este salón" icono={Users} color="primary" />
         <TarjetaResumen titulo="vs Grado" valor={`${diferenciaConGrado >= 0 ? "+" : ""}${diferenciaConGrado.toFixed(2)}`} subtitulo={`Prom. grado: ${promedioGrado.toFixed(2)}`} icono={TrendingUp} color={diferenciaConGrado >= 0 ? "success" : "danger"} />
-        <TarjetaResumen titulo="vs Institución" valor={`${diferenciaConInst >= 0 ? "+" : ""}${diferenciaConInst.toFixed(2)}`} subtitulo={`Prom. inst: ${promedioInstitucional.toFixed(2)}`} icono={TrendingUp} color={diferenciaConInst >= 0 ? "success" : "danger"} />
+        <TarjetaResumen 
+          titulo="En Riesgo Académico" 
+          valor={mostrarRiesgo ? estudiantesEnRiesgo.length : "—"} 
+          subtitulo={mostrarRiesgo ? "Promedio menor a 3.0" : "Se necesitan más datos"} 
+          icono={AlertTriangle} 
+          color={estudiantesEnRiesgo.length > 0 ? "danger" : "success"} 
+          onClick={mostrarRiesgo && estudiantesEnRiesgo.length > 0 ? handleVerRiesgo : undefined}
+        />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

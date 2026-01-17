@@ -2,9 +2,13 @@ import { useEstadisticas } from "@/hooks/useEstadisticas";
 import { TarjetaResumen } from "./TarjetaResumen";
 import { TablaEvolucion } from "./TablaEvolucion";
 import { ListaComparativa } from "./ListaComparativa";
-import { User, TrendingUp, Award, AlertTriangle, Medal, Star } from "lucide-react";
+import { User, TrendingUp, Award, AlertTriangle, Medal, Star, ShieldAlert, ShieldCheck } from "lucide-react";
 
 interface AnalisisEstudianteProps { codigoEstudiante: string; periodo: number | "anual"; }
+
+// Umbral de porcentaje mínimo para evaluar riesgo (debe coincidir con useEstadisticas)
+const UMBRAL_PORCENTAJE_MINIMO = 40;
+const UMBRAL_PORCENTAJE_ANUAL = 160;
 
 export const AnalisisEstudiante = ({ codigoEstudiante, periodo }: AnalisisEstudianteProps) => {
   const { getPromediosEstudiantes, getPromediosMaterias, getPromedioInstitucional, getEvolucionPeriodos } = useEstadisticas();
@@ -25,10 +29,19 @@ export const AnalisisEstudiante = ({ codigoEstudiante, periodo }: AnalisisEstudi
   const promedioSalon = estudiantesSalon.length > 0 ? Math.round((estudiantesSalon.reduce((a, e) => a + e.promedio, 0) / estudiantesSalon.length) * 100) / 100 : 0;
   const promedioGrado = estudiantesGrado.length > 0 ? Math.round((estudiantesGrado.reduce((a, e) => a + e.promedio, 0) / estudiantesGrado.length) * 100) / 100 : 0;
   const materiasEstudiante = Object.entries(estudiante.promediosPorMateria || {}).map(([materia, promedio]) => ({ materia, promedio })).sort((a, b) => b.promedio - a.promedio);
-  const mejorMateria = materiasEstudiante[0];
-  const peorMateria = materiasEstudiante[materiasEstudiante.length - 1];
+  
+  // Solo mostrar mejor/peor materia si hay más de una materia
+  const tieneSuficientesMaterias = materiasEstudiante.length >= 2;
+  const mejorMateria = tieneSuficientesMaterias ? materiasEstudiante[0] : null;
+  const peorMateria = tieneSuficientesMaterias ? materiasEstudiante[materiasEstudiante.length - 1] : null;
+  
   const fortalezas = materiasEstudiante.filter(m => m.promedio >= 4.0).slice(0, 3);
   const debilidades = materiasEstudiante.filter(m => m.promedio < 3.5).sort((a, b) => a.promedio - b.promedio).slice(0, 3);
+  
+  // Determinar si el estudiante está en riesgo académico
+  const umbral = periodo === "anual" ? UMBRAL_PORCENTAJE_ANUAL : UMBRAL_PORCENTAJE_MINIMO;
+  const tieneDatosSuficientes = estudiante.sumaPorcentajes >= umbral;
+  const estaEnRiesgo = tieneDatosSuficientes && estudiante.promedio < 3.0;
   
   // Filtrar evolución hasta el período seleccionado
   const periodoHasta = periodo === "anual" ? 4 : periodo;
@@ -56,8 +69,23 @@ export const AnalisisEstudiante = ({ codigoEstudiante, periodo }: AnalisisEstudi
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <TarjetaResumen titulo="Promedio General" valor={estudiante.promedio.toFixed(2)} subtitulo={periodo === "anual" ? "Acumulado anual" : `Período ${periodo}`} icono={Award} color={estudiante.promedio >= 4 ? "success" : estudiante.promedio >= 3 ? "warning" : "danger"} />
         <TarjetaResumen titulo="vs Salón" valor={`${(estudiante.promedio - promedioSalon) >= 0 ? "+" : ""}${(estudiante.promedio - promedioSalon).toFixed(2)}`} subtitulo={`Prom. salón: ${promedioSalon.toFixed(2)}`} icono={TrendingUp} color={(estudiante.promedio - promedioSalon) >= 0 ? "success" : "danger"} />
-        <TarjetaResumen titulo="Mejor Materia" valor={mejorMateria?.promedio.toFixed(2) || "—"} subtitulo={mejorMateria?.materia || ""} icono={Star} color="success" />
-        <TarjetaResumen titulo="Materia a Mejorar" valor={peorMateria?.promedio.toFixed(2) || "—"} subtitulo={peorMateria?.materia || ""} icono={AlertTriangle} color={peorMateria && peorMateria.promedio < 3 ? "danger" : "warning"} />
+        {tieneSuficientesMaterias ? (
+          <>
+            <TarjetaResumen titulo="Mejor Materia" valor={mejorMateria?.promedio.toFixed(2) || "—"} subtitulo={mejorMateria?.materia || ""} icono={Star} color="success" />
+            <TarjetaResumen titulo="Materia a Mejorar" valor={peorMateria?.promedio.toFixed(2) || "—"} subtitulo={peorMateria?.materia || ""} icono={AlertTriangle} color={peorMateria && peorMateria.promedio < 3 ? "danger" : "warning"} />
+          </>
+        ) : (
+          <>
+            <TarjetaResumen titulo="Materia" valor={materiasEstudiante[0]?.promedio.toFixed(2) || "—"} subtitulo={materiasEstudiante[0]?.materia || "Sin materias"} icono={Star} color={materiasEstudiante[0]?.promedio >= 3 ? "success" : "danger"} />
+            <TarjetaResumen 
+              titulo="Estado Académico" 
+              valor={!tieneDatosSuficientes ? "—" : estaEnRiesgo ? "En Riesgo" : "Estable"} 
+              subtitulo={!tieneDatosSuficientes ? "Se necesitan más datos" : estaEnRiesgo ? "Promedio < 3.0" : "Promedio ≥ 3.0"} 
+              icono={estaEnRiesgo ? ShieldAlert : ShieldCheck} 
+              color={!tieneDatosSuficientes ? "primary" : estaEnRiesgo ? "danger" : "success"} 
+            />
+          </>
+        )}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

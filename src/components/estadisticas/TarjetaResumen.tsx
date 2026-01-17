@@ -6,6 +6,7 @@ interface TarjetaResumenProps {
   subtitulo?: string;
   icono: LucideIcon;
   color?: "primary" | "success" | "warning" | "danger";
+  onClick?: () => void;
 }
 
 const colorClasses = {
@@ -20,10 +21,14 @@ export const TarjetaResumen = ({
   valor,
   subtitulo,
   icono: Icon,
-  color = "primary"
+  color = "primary",
+  onClick
 }: TarjetaResumenProps) => {
   return (
-    <div className="bg-card rounded-lg shadow-soft p-4 border border-border">
+    <div 
+      className={`bg-card rounded-lg shadow-soft p-4 border border-border ${onClick ? 'cursor-pointer hover:shadow-md transition-shadow' : ''}`}
+      onClick={onClick}
+    >
       <div className="flex items-start justify-between">
         <div>
           <p className="text-sm text-muted-foreground">{titulo}</p>
