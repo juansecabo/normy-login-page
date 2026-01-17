@@ -12,10 +12,11 @@ import { Home, Users, TrendingUp, AlertTriangle, Award } from "lucide-react";
 interface AnalisisSalonProps { 
   grado: string; 
   salon: string; 
-  periodo: number | "anual"; 
+  periodo: number | "anual";
+  titulo?: string;
 }
 
-export const AnalisisSalon = ({ grado, salon, periodo }: AnalisisSalonProps) => {
+export const AnalisisSalon = ({ grado, salon, periodo, titulo }: AnalisisSalonProps) => {
   const navigate = useNavigate();
   const { 
     getPromediosEstudiantes, getPromediosSalones, getPromediosMaterias, 
@@ -95,6 +96,13 @@ export const AnalisisSalon = ({ grado, salon, periodo }: AnalisisSalonProps) => 
           periodo={periodoTexto}
         />
       </div>
+
+      {/* Título dinámico */}
+      {titulo && (
+        <h2 className="text-xl md:text-2xl font-bold text-foreground text-center">
+          {titulo}
+        </h2>
+      )}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <TarjetaResumen titulo={`Promedio ${grado} ${salon}`} valor={promedioSalon.toFixed(2)} subtitulo={`#${posicionEnGrado} de ${salonesGrado.length} en ${grado}`} icono={Home} color={promedioSalon >= 4.5 ? "success" : promedioSalon >= 4 ? "blue" : promedioSalon >= 3 ? "warning" : "danger"} />

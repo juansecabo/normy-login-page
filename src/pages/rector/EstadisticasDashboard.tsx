@@ -182,53 +182,29 @@ const EstadisticasDashboard = () => {
             />
 
             {nivelAnalisis === "institucion" && (
-              <>
-                {/* Título dinámico */}
-                <h2 className="text-xl md:text-2xl font-bold text-foreground text-center mt-6">
-                  {getTituloDinamico()}
-                </h2>
-                <AnalisisInstitucional periodo={periodoNumerico} />
-              </>
+              <AnalisisInstitucional periodo={periodoNumerico} titulo={getTituloDinamico()} />
             )}
             {nivelAnalisis === "grado" && gradoSeleccionado && (
-              <>
-                <h2 className="text-xl md:text-2xl font-bold text-foreground text-center mt-6">
-                  {getTituloDinamico()}
-                </h2>
-                <AnalisisGrado grado={gradoSeleccionado} periodo={periodoNumerico} />
-              </>
+              <AnalisisGrado grado={gradoSeleccionado} periodo={periodoNumerico} titulo={getTituloDinamico()} />
             )}
             {nivelAnalisis === "salon" && gradoSeleccionado && salonSeleccionado && (
-              <>
-                <h2 className="text-xl md:text-2xl font-bold text-foreground text-center mt-6">
-                  {getTituloDinamico()}
-                </h2>
-                <AnalisisSalon grado={gradoSeleccionado} salon={salonSeleccionado} periodo={periodoNumerico} />
-              </>
+              <AnalisisSalon grado={gradoSeleccionado} salon={salonSeleccionado} periodo={periodoNumerico} titulo={getTituloDinamico()} />
             )}
             {nivelAnalisis === "estudiante" && estudianteSeleccionado && (
-              <>
-                <h2 className="text-xl md:text-2xl font-bold text-foreground text-center mt-6">
-                  {getTituloDinamico()}
-                </h2>
-                <AnalisisEstudiante 
-                  codigoEstudiante={estudianteSeleccionado} 
-                  periodo={periodoNumerico} 
-                />
-              </>
+              <AnalisisEstudiante 
+                codigoEstudiante={estudianteSeleccionado} 
+                periodo={periodoNumerico}
+                titulo={getTituloDinamico()}
+              />
             )}
             {nivelAnalisis === "materia" && materiaSeleccionada && (
-              <>
-                <h2 className="text-xl md:text-2xl font-bold text-foreground text-center mt-6">
-                  {getTituloDinamico()}
-                </h2>
-                <AnalisisMateria 
-                  materia={materiaSeleccionada} 
-                  periodo={periodoNumerico}
-                  grado={gradoSeleccionado}
-                  salon={salonSeleccionado}
-                />
-              </>
+              <AnalisisMateria 
+                materia={materiaSeleccionada} 
+                periodo={periodoNumerico}
+                grado={gradoSeleccionado}
+                salon={salonSeleccionado}
+                titulo={getTituloDinamico()}
+              />
             )}
             {nivelAnalisis === "grado" && !gradoSeleccionado && (
               <div className="bg-card rounded-lg shadow-soft p-8 text-center text-muted-foreground">
