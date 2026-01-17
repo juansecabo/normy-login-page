@@ -33,7 +33,7 @@ export const AnalisisInstitucional = ({ periodo }: AnalisisInstitucionalProps) =
   const estudiantesTotales = getPromediosEstudiantes(periodo);
   const distribucion = getDistribucionDesempeno(periodo);
   const topEstudiantes = getTopEstudiantes(10, periodo);
-  const topSalones = getPromediosSalones(periodo).sort((a, b) => b.promedio - a.promedio).slice(0, 5);
+  const topSalones = getPromediosSalones(periodo).sort((a, b) => b.promedio - a.promedio).slice(0, 10);
   const todosGrados = getPromediosGrados(periodo).sort((a, b) => b.promedio - a.promedio);
   
   // Verificar completitud con el nuevo hook
@@ -165,11 +165,11 @@ export const AnalisisInstitucional = ({ periodo }: AnalisisInstitucionalProps) =
         <TablaEvolucion titulo="Evolución del Rendimiento por Período" datos={evolucionPeriodos} />
       </div>
 
-      {/* Rankings */}
+      {/* Rankings - ordenados de lo más general a lo más específico */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <TablaRanking titulo="Top 10 Mejores Estudiantes" datos={topEstudiantes} tipo="estudiante" limite={10} />
-        <TablaRanking titulo="Top 5 Mejores Salones" datos={topSalones} tipo="salon" limite={5} />
         <TablaRanking titulo="Top 5 Mejores Grados" datos={todosGrados.slice(0, 5)} tipo="grado" limite={5} />
+        <TablaRanking titulo="Top 10 Mejores Salones" datos={topSalones} tipo="salon" limite={10} />
+        <TablaRanking titulo="Top 10 Mejores Estudiantes" datos={topEstudiantes} tipo="estudiante" limite={10} />
       </div>
 
       {/* Promedio por Grado */}
