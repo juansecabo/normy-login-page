@@ -115,7 +115,7 @@ export const AnalisisSalon = ({ grado, salon, periodo }: AnalisisSalonProps) => 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <TarjetaResumen titulo={`Promedio ${grado} - ${salon}`} valor={promedioSalon.toFixed(2)} subtitulo={`#${posicionEnGrado} de ${salonesGrado.length} en ${grado}`} icono={Home} color={promedioSalon >= 4.5 ? "success" : promedioSalon >= 4 ? "blue" : promedioSalon >= 3 ? "warning" : "danger"} />
         <TarjetaResumen titulo="Estudiantes con notas" valor={estudiantesSalon.length} subtitulo="En este salón" icono={Users} color="primary" />
-        <TarjetaResumen titulo="vs Grado" valor={`${diferenciaConGrado >= 0 ? "+" : ""}${diferenciaConGrado.toFixed(2)}`} subtitulo={`Prom. grado: ${promedioGrado.toFixed(2)}`} icono={TrendingUp} color={diferenciaConGrado >= 0 ? "success" : "danger"} />
+        <TarjetaResumen titulo="Mejor Estudiante" valor={topEstudiantes[0]?.promedio.toFixed(2) || "—"} subtitulo={topEstudiantes[0]?.nombre_completo || ""} icono={Award} color={topEstudiantes[0]?.promedio >= 4.5 ? "success" : topEstudiantes[0]?.promedio >= 4 ? "blue" : topEstudiantes[0]?.promedio >= 3 ? "warning" : "danger"} />
         <TarjetaResumen 
           titulo="En Riesgo Académico" 
           valor={mostrarRiesgo ? estudiantesEnRiesgo.length : "—"} 
@@ -145,6 +145,43 @@ export const AnalisisSalon = ({ grado, salon, periodo }: AnalisisSalonProps) => 
       )}
 
       <ListaComparativa titulo={`Rendimiento por Materia - ${grado} ${salon}`} items={materias.map(m => ({ nombre: m.materia, valor: m.promedio }))} mostrarPosicion />
+
+      {/* Comparativa con promedios de referencia */}
+      <div className="bg-card rounded-lg shadow-soft p-4 border border-border">
+        <h4 className="font-semibold text-foreground mb-4">Comparativa con Promedios de Referencia</h4>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-border">
+                <th className="text-left py-2 px-3 text-muted-foreground font-medium">Referencia</th>
+                <th className="text-center py-2 px-3 text-muted-foreground font-medium">Promedio</th>
+                <th className="text-center py-2 px-3 text-muted-foreground font-medium">Diferencia</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr className="border-b border-border/50">
+                <td className="py-2 px-3 font-medium text-foreground">{grado} - {salon}</td>
+                <td className="py-2 px-3 text-center font-bold text-foreground">{promedioSalon.toFixed(2)}</td>
+                <td className="py-2 px-3 text-center text-muted-foreground">—</td>
+              </tr>
+              <tr className="border-b border-border/50">
+                <td className="py-2 px-3 text-foreground">Promedio {grado}</td>
+                <td className="py-2 px-3 text-center text-foreground">{promedioGrado.toFixed(2)}</td>
+                <td className={`py-2 px-3 text-center font-medium ${diferenciaConGrado >= 0 ? "text-green-600" : "text-red-600"}`}>
+                  {diferenciaConGrado >= 0 ? "+" : ""}{diferenciaConGrado.toFixed(2)}
+                </td>
+              </tr>
+              <tr>
+                <td className="py-2 px-3 text-foreground">Promedio Institucional</td>
+                <td className="py-2 px-3 text-center text-foreground">{promedioInstitucional.toFixed(2)}</td>
+                <td className={`py-2 px-3 text-center font-medium ${diferenciaConInst >= 0 ? "text-green-600" : "text-red-600"}`}>
+                  {diferenciaConInst >= 0 ? "+" : ""}{diferenciaConInst.toFixed(2)}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
 
     </div>
   );
