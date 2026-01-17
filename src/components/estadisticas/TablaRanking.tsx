@@ -45,7 +45,7 @@ export const TablaRanking = ({
 
   const getNombre = (item: RankingItem): string => {
     if (tipo === "estudiante") return (item as PromedioEstudiante).nombre_completo;
-    if (tipo === "salon") return `${(item as PromedioSalon).grado} - ${(item as PromedioSalon).salon}`;
+    if (tipo === "salon") return `${(item as PromedioSalon).grado} ${(item as PromedioSalon).salon}`;
     if (tipo === "grado") return (item as PromedioGrado).grado;
     return (item as PromedioMateria).materia;
   };
@@ -53,7 +53,7 @@ export const TablaRanking = ({
   const getSubtitulo = (item: RankingItem): string | null => {
     if (tipo === "estudiante") {
       const est = item as PromedioEstudiante;
-      return `${est.grado} - ${est.salon}`;
+      return `${est.grado} ${est.salon}`;
     }
     if (tipo === "salon") {
       return `${(item as PromedioSalon).cantidadEstudiantes} estudiantes`;
