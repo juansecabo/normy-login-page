@@ -1,7 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { useEstadisticas } from "@/hooks/useEstadisticas";
 import { useCompletitud } from "@/hooks/useCompletitud";
-import { TarjetaResumen } from "./TarjetaResumen";
+import { TarjetaResumen, getColorPorRendimiento } from "./TarjetaResumen";
 import { TablaRanking } from "./TablaRanking";
 import { TablaDistribucion } from "./TablaDistribucion";
 import { TablaEvolucion } from "./TablaEvolucion";
@@ -92,9 +92,9 @@ export const AnalisisGrado = ({ grado, periodo }: AnalisisGradoProps) => {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <TarjetaResumen titulo={`Promedio ${grado}`} valor={promedioGrado.toFixed(2)} subtitulo={`${diferenciaConInst >= 0 ? "+" : ""}${diferenciaConInst.toFixed(2)} vs institución`} icono={GraduationCap} color={promedioGrado >= 4 ? "success" : promedioGrado >= 3 ? "warning" : "danger"} />
+        <TarjetaResumen titulo={`Promedio ${grado}`} valor={promedioGrado.toFixed(2)} subtitulo={`${diferenciaConInst >= 0 ? "+" : ""}${diferenciaConInst.toFixed(2)} vs institución`} icono={GraduationCap} color={getColorPorRendimiento(promedioGrado)} />
         <TarjetaResumen titulo="Estudiantes con notas" valor={estudiantesGrado.length} subtitulo={`En ${salonesUnicos.length} salones`} icono={Users} color="primary" />
-        <TarjetaResumen titulo="Mejor Estudiante" valor={topEstudiantes[0]?.promedio.toFixed(2) || "—"} subtitulo={topEstudiantes[0]?.nombre_completo || ""} icono={Award} color={topEstudiantes[0]?.promedio >= 4 ? "success" : topEstudiantes[0]?.promedio >= 3 ? "warning" : "danger"} />
+        <TarjetaResumen titulo="Mejor Estudiante" valor={topEstudiantes[0]?.promedio.toFixed(2) || "—"} subtitulo={topEstudiantes[0]?.nombre_completo || ""} icono={Award} color={topEstudiantes[0] ? getColorPorRendimiento(topEstudiantes[0].promedio) : "primary"} />
         {mostrarRiesgo ? (
           <div 
             onClick={estudiantesEnRiesgo.length > 0 ? handleVerRiesgo : undefined}
