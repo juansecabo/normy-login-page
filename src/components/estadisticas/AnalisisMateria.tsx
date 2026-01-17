@@ -92,7 +92,7 @@ export const AnalisisMateria = ({ materia, periodo, grado, salon }: AnalisisMate
     params.set("materia", materia);
     if (gradoEfectivo) params.set("grado", gradoEfectivo);
     if (salonEfectivo) params.set("salon", salonEfectivo);
-    navigate(`/rector/estudiantes-en-riesgo?${params.toString()}`);
+    navigate(`/rector/estudiantes-riesgo?${params.toString()}`);
   };
 
   if (!promedioMateria) {
