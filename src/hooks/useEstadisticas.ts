@@ -501,20 +501,35 @@ export const useEstadisticas = () => {
       .slice(0, cantidad);
   };
 
+  // Calcular umbral dinámico de riesgo para un estudiante basado en sus materias asignadas
+  // El umbral es 40% del total posible: (cantidadMaterias × 100%) por período, o (cantidadMaterias × 400%) anual
+  const calcularUmbralRiesgoEstudiante = (grado: string, salon: string, periodo?: number | "anual"): number => {
+    const materiasAsignadas = getMateriasFiltradas(grado, salon);
+    const cantidadMaterias = materiasAsignadas.length;
+    
+    if (cantidadMaterias === 0) return UMBRAL_PORCENTAJE_MINIMO; // Fallback
+    
+    // Total posible: materias × 100% por período, o materias × 400% anual
+    const totalPosible = periodo === "anual" 
+      ? cantidadMaterias * 400  // 4 períodos × 100% cada uno
+      : cantidadMaterias * 100; // 1 período × 100%
+    
+    // Umbral = 40% del total posible
+    return totalPosible * 0.4;
+  };
+
   // Estudiantes en riesgo (solo si hay suficientes datos)
-  // Ahora soporta filtro por materia específica
+  // Ahora soporta filtro por materia específica y umbral dinámico por estudiante
   const getEstudiantesEnRiesgo = (
     periodo?: number | "anual",
     grado?: string,
     salon?: string,
     materia?: string
   ): PromedioEstudiante[] => {
-    // Para acumulado anual, usar umbral de 160% (40% de 400%)
-    // Para períodos individuales, usar umbral de 40%
-    const umbral = periodo === "anual" ? UMBRAL_PORCENTAJE_ANUAL : UMBRAL_PORCENTAJE_MINIMO;
-    
     // Si hay filtro de materia, calcular riesgo solo para esa materia
+    // Para materia específica: umbral es 40% de 100% (período) o 40% de 400% (anual) = 40 o 160
     if (materia) {
+      const umbralMateria = periodo === "anual" ? UMBRAL_PORCENTAJE_ANUAL : UMBRAL_PORCENTAJE_MINIMO;
       const estudiantesConMateria = getPromediosEstudiantes(periodo, grado, salon);
       return estudiantesConMateria
         .filter(e => {
@@ -530,7 +545,7 @@ export const useEstadisticas = () => {
           );
           const sumaPorcentajesMateria = notasMateria.reduce((sum, n) => sum + (n.porcentaje || 0), 0);
           
-          return promedioMateria < 3.0 && sumaPorcentajesMateria >= umbral;
+          return promedioMateria < 3.0 && sumaPorcentajesMateria >= umbralMateria;
         })
         .map(e => ({
           ...e,
@@ -538,11 +553,12 @@ export const useEstadisticas = () => {
         }));
     }
     
+    // Para análisis general (institucional, grado, salón): umbral dinámico por estudiante
     return getPromediosEstudiantes(periodo, grado, salon)
-      .filter(e => 
-        e.promedio < 3.0 && 
-        e.sumaPorcentajes >= umbral
-      );
+      .filter(e => {
+        const umbralEstudiante = calcularUmbralRiesgoEstudiante(e.grado, e.salon, periodo);
+        return e.promedio < 3.0 && e.sumaPorcentajes >= umbralEstudiante;
+      });
   };
 
   // Verificar si hay suficientes datos para mostrar "Estudiantes en Riesgo"
@@ -552,11 +568,11 @@ export const useEstadisticas = () => {
     salon?: string
   ): boolean => {
     const promedios = getPromediosEstudiantes(periodo, grado, salon);
-    // Para acumulado anual, usar umbral de 160% (40% de 400%)
-    // Para períodos individuales, usar umbral de 40%
-    const umbral = periodo === "anual" ? UMBRAL_PORCENTAJE_ANUAL : UMBRAL_PORCENTAJE_MINIMO;
-    // Verificar si al menos un estudiante tiene porcentajes >= umbral
-    return promedios.some(e => e.sumaPorcentajes >= umbral);
+    // Verificar si al menos un estudiante tiene porcentajes >= su umbral dinámico
+    return promedios.some(e => {
+      const umbralEstudiante = calcularUmbralRiesgoEstudiante(e.grado, e.salon, periodo);
+      return e.sumaPorcentajes >= umbralEstudiante;
+    });
   };
 
   // Evolución por período
