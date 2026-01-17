@@ -49,6 +49,22 @@ export const AnalisisInstitucional = ({ periodo }: AnalisisInstitucionalProps) =
   const mostrarRiesgo = tieneDatosSuficientesParaRiesgo(periodo);
   const estudiantesEnRiesgo = mostrarRiesgo ? getEstudiantesEnRiesgo(periodo) : [];
 
+  // Calcular mejores y peores grados SIN superposición
+  const cantidadGrados = todosGrados.length;
+  let cantidadMejores = Math.min(3, Math.floor(cantidadGrados / 2));
+  let cantidadPeores = Math.min(3, cantidadGrados - cantidadMejores);
+  
+  // Si hay muy pocos grados, ajustar
+  if (cantidadGrados <= 1) {
+    cantidadMejores = cantidadGrados;
+    cantidadPeores = 0;
+  } else if (cantidadGrados <= 3) {
+    cantidadMejores = 1;
+    cantidadPeores = 1;
+  }
+
+  const mejoresGrados = todosGrados.slice(0, cantidadMejores);
+  const peoresGrados = todosGrados.slice(-cantidadPeores).reverse();
 
   // Datos para listas
   const datosGrados = getPromediosGrados(periodo)
@@ -150,9 +166,10 @@ export const AnalisisInstitucional = ({ periodo }: AnalisisInstitucionalProps) =
       </div>
 
       {/* Rankings - ordenados de lo más específico a lo más general */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <TablaRanking titulo="Top 10 Mejores Estudiantes" datos={topEstudiantes} tipo="estudiante" limite={10} />
         <TablaRanking titulo="Top 10 Mejores Salones" datos={topSalones} tipo="salon" limite={10} />
+        <TablaRanking titulo="Top 5 Mejores Grados" datos={todosGrados.slice(0, 5)} tipo="grado" limite={5} />
       </div>
 
       {/* Promedio por Grado */}
@@ -164,6 +181,25 @@ export const AnalisisInstitucional = ({ periodo }: AnalisisInstitucionalProps) =
         />
       </div>
 
+      {/* Mejores y Peores Grados (sin superposición) */}
+      {cantidadGrados > 1 && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <ListaComparativa
+            titulo="Mejores Grados"
+            items={mejoresGrados.map(g => ({ nombre: g.grado, valor: g.promedio }))}
+            tipo="mejor"
+            icono={<Award className="w-5 h-5 text-green-500" />}
+          />
+          {cantidadPeores > 0 && (
+            <ListaComparativa
+              titulo="Grados a Reforzar"
+              items={peoresGrados.map(g => ({ nombre: g.grado, valor: g.promedio }))}
+              tipo="peor"
+              icono={<AlertTriangle className="w-5 h-5 text-amber-500" />}
+            />
+          )}
+        </div>
+      )}
     </div>
   );
 };
