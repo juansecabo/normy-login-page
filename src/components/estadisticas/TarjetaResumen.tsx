@@ -32,7 +32,7 @@ export const TarjetaResumen = ({
       <div className="flex items-start justify-between">
         <div>
           <p className="text-sm text-muted-foreground">{titulo}</p>
-          <p className="text-2xl font-bold text-foreground mt-1">{valor}</p>
+          <p className="text-2xl font-bold text-primary mt-1">{valor}</p>
           {subtitulo && (
             <p className="text-xs text-muted-foreground mt-1">{subtitulo}</p>
           )}
