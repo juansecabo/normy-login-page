@@ -112,7 +112,7 @@ export const AnalisisMateria = ({ materia, periodo, grado, salon }: AnalisisMate
           <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center"><BookOpen className="w-8 h-8 text-primary" /></div>
           <div><h2 className="text-xl font-bold text-foreground">{materia}</h2><p className="text-muted-foreground">{
             salonEfectivo 
-              ? `${gradoEfectivo} - ${salonEfectivo}` 
+              ? `${gradoEfectivo} ${salonEfectivo}` 
               : gradoEfectivo 
                 ? `Grado: ${gradoEfectivo}` 
                 : "Análisis institucional"

@@ -70,6 +70,16 @@ const EstadisticasDashboard = () => {
     ? "anual" as const
     : parseInt(periodoSeleccionado);
 
+  // Verificar si todos los filtros necesarios están seleccionados
+  const filtrosCompletos = () => {
+    if (nivelAnalisis === "institucion") return true;
+    if (nivelAnalisis === "grado") return gradoSeleccionado && gradoSeleccionado !== "";
+    if (nivelAnalisis === "salon") return gradoSeleccionado && salonSeleccionado && salonSeleccionado !== "";
+    if (nivelAnalisis === "estudiante") return gradoSeleccionado && salonSeleccionado && estudianteSeleccionado;
+    if (nivelAnalisis === "materia") return materiaSeleccionada && materiaSeleccionada !== "";
+    return false;
+  };
+
   // Generar título dinámico basado en filtros
   const getTituloDinamico = () => {
     const periodoTexto = periodoSeleccionado === "anual" 
@@ -171,33 +181,74 @@ const EstadisticasDashboard = () => {
               estudiantes={estudiantesDelSalon}
             />
 
-            {/* Título dinámico basado en filtros */}
-            <h2 className="text-xl md:text-2xl font-bold text-foreground">
-              {getTituloDinamico()}
-            </h2>
-
             {nivelAnalisis === "institucion" && (
-              <AnalisisInstitucional periodo={periodoNumerico} />
+              <>
+                {/* Título dinámico */}
+                <h2 className="text-xl md:text-2xl font-bold text-foreground text-center mt-6">
+                  {getTituloDinamico()}
+                </h2>
+                <AnalisisInstitucional periodo={periodoNumerico} />
+              </>
             )}
-            {nivelAnalisis === "grado" && (
-              <AnalisisGrado grado={gradoSeleccionado} periodo={periodoNumerico} />
+            {nivelAnalisis === "grado" && gradoSeleccionado && (
+              <>
+                <h2 className="text-xl md:text-2xl font-bold text-foreground text-center mt-6">
+                  {getTituloDinamico()}
+                </h2>
+                <AnalisisGrado grado={gradoSeleccionado} periodo={periodoNumerico} />
+              </>
             )}
-            {nivelAnalisis === "salon" && (
-              <AnalisisSalon grado={gradoSeleccionado} salon={salonSeleccionado} periodo={periodoNumerico} />
+            {nivelAnalisis === "salon" && gradoSeleccionado && salonSeleccionado && (
+              <>
+                <h2 className="text-xl md:text-2xl font-bold text-foreground text-center mt-6">
+                  {getTituloDinamico()}
+                </h2>
+                <AnalisisSalon grado={gradoSeleccionado} salon={salonSeleccionado} periodo={periodoNumerico} />
+              </>
             )}
-            {nivelAnalisis === "estudiante" && (
-              <AnalisisEstudiante 
-                codigoEstudiante={estudianteSeleccionado} 
-                periodo={periodoNumerico} 
-              />
+            {nivelAnalisis === "estudiante" && estudianteSeleccionado && (
+              <>
+                <h2 className="text-xl md:text-2xl font-bold text-foreground text-center mt-6">
+                  {getTituloDinamico()}
+                </h2>
+                <AnalisisEstudiante 
+                  codigoEstudiante={estudianteSeleccionado} 
+                  periodo={periodoNumerico} 
+                />
+              </>
             )}
-            {nivelAnalisis === "materia" && (
-              <AnalisisMateria 
-                materia={materiaSeleccionada} 
-                periodo={periodoNumerico}
-                grado={gradoSeleccionado}
-                salon={salonSeleccionado}
-              />
+            {nivelAnalisis === "materia" && materiaSeleccionada && (
+              <>
+                <h2 className="text-xl md:text-2xl font-bold text-foreground text-center mt-6">
+                  {getTituloDinamico()}
+                </h2>
+                <AnalisisMateria 
+                  materia={materiaSeleccionada} 
+                  periodo={periodoNumerico}
+                  grado={gradoSeleccionado}
+                  salon={salonSeleccionado}
+                />
+              </>
+            )}
+            {nivelAnalisis === "grado" && !gradoSeleccionado && (
+              <div className="bg-card rounded-lg shadow-soft p-8 text-center text-muted-foreground">
+                Selecciona un grado para ver el análisis
+              </div>
+            )}
+            {nivelAnalisis === "salon" && (!gradoSeleccionado || !salonSeleccionado) && (
+              <div className="bg-card rounded-lg shadow-soft p-8 text-center text-muted-foreground">
+                Selecciona un grado y salón para ver el análisis
+              </div>
+            )}
+            {nivelAnalisis === "estudiante" && !estudianteSeleccionado && (
+              <div className="bg-card rounded-lg shadow-soft p-8 text-center text-muted-foreground">
+                Selecciona un estudiante para ver el análisis
+              </div>
+            )}
+            {nivelAnalisis === "materia" && !materiaSeleccionada && (
+              <div className="bg-card rounded-lg shadow-soft p-8 text-center text-muted-foreground">
+                Selecciona una materia para ver su análisis
+              </div>
             )}
           </>
         )}
