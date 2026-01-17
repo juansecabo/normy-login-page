@@ -35,6 +35,14 @@ export const AnalisisEstudiante = ({ codigoEstudiante, periodo }: AnalisisEstudi
   const mejorMateria = tieneSuficientesMaterias ? materiasEstudiante[0] : null;
   const peorMateria = tieneSuficientesMaterias ? materiasEstudiante[materiasEstudiante.length - 1] : null;
   
+  // Helper para color basado en rendimiento absoluto
+  const getColorPorRendimiento = (promedio: number): "primary" | "success" | "warning" | "danger" => {
+    if (promedio < 3.0) return "danger";
+    if (promedio < 4.0) return "warning";
+    if (promedio <= 4.5) return "primary";
+    return "success";
+  };
+  
   const fortalezas = materiasEstudiante.filter(m => m.promedio >= 4.0).slice(0, 3);
   const debilidades = materiasEstudiante.filter(m => m.promedio < 3.5).sort((a, b) => a.promedio - b.promedio).slice(0, 3);
   
@@ -71,12 +79,12 @@ export const AnalisisEstudiante = ({ codigoEstudiante, periodo }: AnalisisEstudi
         <TarjetaResumen titulo="vs Salón" valor={`${(estudiante.promedio - promedioSalon) >= 0 ? "+" : ""}${(estudiante.promedio - promedioSalon).toFixed(2)}`} subtitulo={`Prom. salón: ${promedioSalon.toFixed(2)}`} icono={TrendingUp} color={(estudiante.promedio - promedioSalon) >= 0 ? "success" : "danger"} />
         {tieneSuficientesMaterias ? (
           <>
-            <TarjetaResumen titulo="Mejor Materia" valor={mejorMateria?.promedio.toFixed(2) || "—"} subtitulo={mejorMateria?.materia || ""} icono={Star} color="success" />
-            <TarjetaResumen titulo="Materia a Mejorar" valor={peorMateria?.promedio.toFixed(2) || "—"} subtitulo={peorMateria?.materia || ""} icono={AlertTriangle} color={peorMateria && peorMateria.promedio < 3 ? "danger" : "warning"} />
+            <TarjetaResumen titulo="Mejor Materia" valor={mejorMateria?.promedio.toFixed(2) || "—"} subtitulo={mejorMateria?.materia || ""} icono={Star} color={mejorMateria ? getColorPorRendimiento(mejorMateria.promedio) : "primary"} />
+            <TarjetaResumen titulo="Materia a Mejorar" valor={peorMateria?.promedio.toFixed(2) || "—"} subtitulo={peorMateria?.materia || ""} icono={AlertTriangle} color={peorMateria ? getColorPorRendimiento(peorMateria.promedio) : "primary"} />
           </>
         ) : (
           <>
-            <TarjetaResumen titulo="Materia" valor={materiasEstudiante[0]?.promedio.toFixed(2) || "—"} subtitulo={materiasEstudiante[0]?.materia || "Sin materias"} icono={Star} color={materiasEstudiante[0]?.promedio >= 3 ? "success" : "danger"} />
+            <TarjetaResumen titulo="Materia" valor={materiasEstudiante[0]?.promedio.toFixed(2) || "—"} subtitulo={materiasEstudiante[0]?.materia || "Sin materias"} icono={Star} color={materiasEstudiante[0] ? getColorPorRendimiento(materiasEstudiante[0].promedio) : "primary"} />
           </>
         )}
         <TarjetaResumen 
