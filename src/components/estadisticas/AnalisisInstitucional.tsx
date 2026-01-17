@@ -165,11 +165,11 @@ export const AnalisisInstitucional = ({ periodo }: AnalisisInstitucionalProps) =
         <TablaEvolucion titulo="Evolución del Rendimiento por Período" datos={evolucionPeriodos} />
       </div>
 
-      {/* Rankings - ordenados de lo más general a lo más específico */}
+      {/* Rankings - ordenados de lo más específico a lo más general */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <TablaRanking titulo="Top 5 Mejores Grados" datos={todosGrados.slice(0, 5)} tipo="grado" limite={5} />
-        <TablaRanking titulo="Top 10 Mejores Salones" datos={topSalones} tipo="salon" limite={10} />
         <TablaRanking titulo="Top 10 Mejores Estudiantes" datos={topEstudiantes} tipo="estudiante" limite={10} />
+        <TablaRanking titulo="Top 10 Mejores Salones" datos={topSalones} tipo="salon" limite={10} />
+        <TablaRanking titulo="Top 5 Mejores Grados" datos={todosGrados.slice(0, 5)} tipo="grado" limite={5} />
       </div>
 
       {/* Promedio por Grado */}
