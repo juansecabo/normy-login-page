@@ -119,7 +119,7 @@ export const AnalisisInstitucional = ({ periodo }: AnalisisInstitucionalProps) =
           valor={promedioInstitucional.toFixed(2)}
           subtitulo={`Basado en ${estudiantesTotales.length} estudiantes con notas`}
           icono={School}
-          color={promedioInstitucional >= 4 ? "success" : promedioInstitucional >= 3 ? "warning" : "danger"}
+          color={promedioInstitucional >= 4.5 ? "success" : promedioInstitucional >= 4 ? "blue" : promedioInstitucional >= 3 ? "warning" : "danger"}
         />
         <TarjetaResumen
           titulo="Estudiantes con notas"
@@ -133,7 +133,7 @@ export const AnalisisInstitucional = ({ periodo }: AnalisisInstitucionalProps) =
           valor={topEstudiantes[0]?.promedio.toFixed(2) || "—"}
           subtitulo={topEstudiantes[0]?.nombre_completo || ""}
           icono={Award}
-          color="success"
+          color={topEstudiantes[0]?.promedio >= 4.5 ? "success" : topEstudiantes[0]?.promedio >= 4 ? "blue" : topEstudiantes[0]?.promedio >= 3 ? "warning" : "danger"}
         />
         {mostrarRiesgo ? (
           <div 
