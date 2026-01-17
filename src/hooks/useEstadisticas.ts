@@ -67,7 +67,10 @@ export const ordenGrados = [
 
 // Umbral mínimo de porcentaje para mostrar "Estudiantes en Riesgo"
 // Solo se requiere que la suma de porcentajes sea >= 40% (sin mínimo de actividades)
+// Para períodos individuales: 40% del período (100%)
+// Para acumulado anual: 40% del año (400%) = 160%
 const UMBRAL_PORCENTAJE_MINIMO = 40;
+const UMBRAL_PORCENTAJE_ANUAL = 160; // 40% de 400% (4 períodos × 100%)
 
 // Tipo para asignaciones expandidas
 interface AsignacionExpandida {
@@ -504,10 +507,14 @@ export const useEstadisticas = () => {
     grado?: string,
     salon?: string
   ): PromedioEstudiante[] => {
+    // Para acumulado anual, usar umbral de 160% (40% de 400%)
+    // Para períodos individuales, usar umbral de 40%
+    const umbral = periodo === "anual" ? UMBRAL_PORCENTAJE_ANUAL : UMBRAL_PORCENTAJE_MINIMO;
+    
     return getPromediosEstudiantes(periodo, grado, salon)
       .filter(e => 
         e.promedio < 3.0 && 
-        e.sumaPorcentajes >= UMBRAL_PORCENTAJE_MINIMO
+        e.sumaPorcentajes >= umbral
       );
   };
 
@@ -518,8 +525,11 @@ export const useEstadisticas = () => {
     salon?: string
   ): boolean => {
     const promedios = getPromediosEstudiantes(periodo, grado, salon);
-    // Verificar si al menos un estudiante tiene porcentajes >= 40%
-    return promedios.some(e => e.sumaPorcentajes >= UMBRAL_PORCENTAJE_MINIMO);
+    // Para acumulado anual, usar umbral de 160% (40% de 400%)
+    // Para períodos individuales, usar umbral de 40%
+    const umbral = periodo === "anual" ? UMBRAL_PORCENTAJE_ANUAL : UMBRAL_PORCENTAJE_MINIMO;
+    // Verificar si al menos un estudiante tiene porcentajes >= umbral
+    return promedios.some(e => e.sumaPorcentajes >= umbral);
   };
 
   // Evolución por período
