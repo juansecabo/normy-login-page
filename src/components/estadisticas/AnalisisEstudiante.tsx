@@ -77,15 +77,15 @@ export const AnalisisEstudiante = ({ codigoEstudiante, periodo }: AnalisisEstudi
         ) : (
           <>
             <TarjetaResumen titulo="Materia" valor={materiasEstudiante[0]?.promedio.toFixed(2) || "—"} subtitulo={materiasEstudiante[0]?.materia || "Sin materias"} icono={Star} color={materiasEstudiante[0]?.promedio >= 3 ? "success" : "danger"} />
-            <TarjetaResumen 
-              titulo="Estado Académico" 
-              valor={!tieneDatosSuficientes ? "—" : estaEnRiesgo ? "En Riesgo" : "Estable"} 
-              subtitulo={!tieneDatosSuficientes ? "Se necesitan más datos" : estaEnRiesgo ? "Promedio < 3.0" : "Promedio ≥ 3.0"} 
-              icono={estaEnRiesgo ? ShieldAlert : ShieldCheck} 
-              color={!tieneDatosSuficientes ? "primary" : estaEnRiesgo ? "danger" : "success"} 
-            />
           </>
         )}
+        <TarjetaResumen 
+          titulo="Estado Académico" 
+          valor={!tieneDatosSuficientes ? "—" : estaEnRiesgo ? "En Riesgo" : "Sin Riesgo"} 
+          subtitulo={!tieneDatosSuficientes ? "Se necesitan más datos" : estaEnRiesgo ? "Promedio < 3.0" : "Promedio ≥ 3.0"} 
+          icono={estaEnRiesgo ? ShieldAlert : ShieldCheck} 
+          color={!tieneDatosSuficientes ? "primary" : estaEnRiesgo ? "danger" : "success"} 
+        />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
