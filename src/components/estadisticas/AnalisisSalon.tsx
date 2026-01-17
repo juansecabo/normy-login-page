@@ -115,9 +115,10 @@ export const AnalisisSalon = ({ grado, salon, periodo }: AnalisisSalonProps) => 
         <TablaEvolucion titulo={`Evolución de ${grado} ${salon} por Período`} datos={evolucionPeriodos} />
       </div>
 
-      <TablaRanking titulo={`Top 5 Estudiantes ${grado} ${salon}`} datos={topEstudiantes} tipo="estudiante" limite={5} />
-
-      <ListaComparativa titulo={`Rendimiento por Materia ${grado} ${salon}`} items={materias.map(m => ({ nombre: m.materia, valor: m.promedio }))} mostrarPosicion />
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <TablaRanking titulo={`Top 5 Estudiantes - ${grado} ${salon}`} datos={topEstudiantes} tipo="estudiante" limite={5} />
+        <ListaComparativa titulo={`Rendimiento por Materia - ${grado} ${salon}`} items={materias.map(m => ({ nombre: m.materia, valor: m.promedio }))} mostrarPosicion />
+      </div>
 
       {/* Comparativa con promedios de referencia */}
       <div className="bg-card rounded-lg shadow-soft p-4 border border-border">
