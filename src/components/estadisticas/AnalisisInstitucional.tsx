@@ -181,25 +181,6 @@ export const AnalisisInstitucional = ({ periodo }: AnalisisInstitucionalProps) =
         />
       </div>
 
-      {/* Mejores y Peores Grados (sin superposición) */}
-      {cantidadGrados > 1 && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <ListaComparativa
-            titulo="Mejores Grados"
-            items={mejoresGrados.map(g => ({ nombre: g.grado, valor: g.promedio }))}
-            tipo="mejor"
-            icono={<Award className="w-5 h-5 text-green-500" />}
-          />
-          {cantidadPeores > 0 && (
-            <ListaComparativa
-              titulo="Grados a Reforzar"
-              items={peoresGrados.map(g => ({ nombre: g.grado, valor: g.promedio }))}
-              tipo="peor"
-              icono={<AlertTriangle className="w-5 h-5 text-amber-500" />}
-            />
-          )}
-        </div>
-      )}
     </div>
   );
 };
