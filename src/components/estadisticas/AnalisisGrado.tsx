@@ -108,7 +108,7 @@ export const AnalisisGrado = ({ grado, periodo }: AnalisisGradoProps) => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <TablaDistribucion titulo="Distribución por Desempeño" distribucion={distribucion} />
+        <TablaDistribucion titulo={`Distribución por Desempeño - ${grado}`} distribucion={distribucion} />
         <TablaEvolucion titulo={`Evolución de ${grado} por Período`} datos={evolucionPeriodos} />
       </div>
 

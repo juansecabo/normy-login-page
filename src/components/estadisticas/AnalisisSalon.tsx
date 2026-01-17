@@ -88,7 +88,7 @@ export const AnalisisSalon = ({ grado, salon, periodo }: AnalisisSalonProps) => 
     return (
       <div className="bg-card rounded-lg shadow-soft p-8 text-center">
         <AlertTriangle className="w-12 h-12 text-amber-500 mx-auto mb-4" />
-        <h3 className="text-lg font-semibold text-foreground mb-2">Aún no hay actividades con notas registradas para {grado} - {salon}</h3>
+        <h3 className="text-lg font-semibold text-foreground mb-2">Aún no hay actividades con notas registradas para {grado} {salon}</h3>
         <p className="text-muted-foreground">Las estadísticas estarán disponibles cuando se registren notas.</p>
       </div>
     );
@@ -107,13 +107,13 @@ export const AnalisisSalon = ({ grado, salon, periodo }: AnalisisSalonProps) => 
           detalles={detalles} 
           resumen={resumen}
           resumenCompleto={resumenCompleto}
-          nivel={`${grado} - ${salon}`} 
+          nivel={`${grado} ${salon}`} 
           periodo={periodoTexto}
         />
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <TarjetaResumen titulo={`Promedio ${grado} - ${salon}`} valor={promedioSalon.toFixed(2)} subtitulo={`#${posicionEnGrado} de ${salonesGrado.length} en ${grado}`} icono={Home} color={promedioSalon >= 4.5 ? "success" : promedioSalon >= 4 ? "blue" : promedioSalon >= 3 ? "warning" : "danger"} />
+        <TarjetaResumen titulo={`Promedio ${grado} ${salon}`} valor={promedioSalon.toFixed(2)} subtitulo={`#${posicionEnGrado} de ${salonesGrado.length} en ${grado}`} icono={Home} color={promedioSalon >= 4.5 ? "success" : promedioSalon >= 4 ? "blue" : promedioSalon >= 3 ? "warning" : "danger"} />
         <TarjetaResumen titulo="Estudiantes con notas" valor={estudiantesSalon.length} subtitulo="En este salón" icono={Users} color="primary" />
         <TarjetaResumen titulo="Mejor Estudiante" valor={topEstudiantes[0]?.promedio.toFixed(2) || "—"} subtitulo={topEstudiantes[0]?.nombre_completo || ""} icono={Award} color={topEstudiantes[0]?.promedio >= 4.5 ? "success" : topEstudiantes[0]?.promedio >= 4 ? "blue" : topEstudiantes[0]?.promedio >= 3 ? "warning" : "danger"} />
         <TarjetaResumen 
@@ -127,8 +127,8 @@ export const AnalisisSalon = ({ grado, salon, periodo }: AnalisisSalonProps) => 
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <TablaDistribucion titulo="Distribución por Desempeño" distribucion={distribucion} />
-        <TablaEvolucion titulo={`Evolución de ${grado} - ${salon} por Período`} datos={evolucionPeriodos} />
+        <TablaDistribucion titulo={`Distribución por Desempeño - ${grado} ${salon}`} distribucion={distribucion} />
+        <TablaEvolucion titulo={`Evolución de ${grado} ${salon} por Período`} datos={evolucionPeriodos} />
       </div>
 
       {/* Mostrar materias solo si hay más de 1, y ocultar "A Reforzar" si no hay suficientes */}
@@ -160,7 +160,7 @@ export const AnalisisSalon = ({ grado, salon, periodo }: AnalisisSalonProps) => 
             </thead>
             <tbody>
               <tr className="border-b border-border/50">
-                <td className="py-2 px-3 font-medium text-foreground">{grado} - {salon}</td>
+                <td className="py-2 px-3 font-medium text-foreground">{grado} {salon}</td>
                 <td className="py-2 px-3 text-center font-bold text-foreground">{promedioSalon.toFixed(2)}</td>
                 <td className="py-2 px-3 text-center text-muted-foreground">—</td>
               </tr>
