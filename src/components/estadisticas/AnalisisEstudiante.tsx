@@ -1,7 +1,9 @@
+import { useRef } from "react";
 import { useEstadisticas } from "@/hooks/useEstadisticas";
 import { TarjetaResumen } from "./TarjetaResumen";
 import { TablaEvolucion } from "./TablaEvolucion";
 import { ListaComparativa } from "./ListaComparativa";
+import { BotonDescarga } from "./BotonDescarga";
 import { User, TrendingUp, Award, AlertTriangle, Medal, Star, ShieldAlert, ShieldCheck } from "lucide-react";
 
 interface AnalisisEstudianteProps { codigoEstudiante: string; periodo: number | "anual"; titulo?: string; }
@@ -11,6 +13,7 @@ const UMBRAL_PORCENTAJE_MINIMO = 40;
 const UMBRAL_PORCENTAJE_ANUAL = 160;
 
 export const AnalisisEstudiante = ({ codigoEstudiante, periodo, titulo }: AnalisisEstudianteProps) => {
+  const contenidoRef = useRef<HTMLDivElement>(null);
   const { getPromediosEstudiantes, getPromediosMaterias, getPromedioInstitucional, getEvolucionPeriodos } = useEstadisticas();
 
   if (!codigoEstudiante) return <div className="bg-card rounded-lg shadow-soft p-8 text-center text-muted-foreground">Selecciona un estudiante para ver su análisis</div>;
@@ -52,22 +55,27 @@ export const AnalisisEstudiante = ({ codigoEstudiante, periodo, titulo }: Analis
 
   return (
     <div className="space-y-6">
-      {/* Título dinámico */}
-      {titulo && (
-        <h2 className="text-xl md:text-2xl font-bold text-foreground text-center">
-          {titulo}
-        </h2>
-      )}
-      <div className="bg-card rounded-lg shadow-soft p-6 border border-border">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center"><User className="w-8 h-8 text-primary" /></div>
-            <div><h2 className="text-xl font-bold text-foreground">{estudiante.nombre_completo}</h2><p className="text-muted-foreground">{estudiante.grado} - {estudiante.salon}</p></div>
+      {/* Contenido descargable */}
+      <div ref={contenidoRef} className="space-y-6 bg-background p-4 -m-4">
+        {/* Título dinámico con botón de descarga */}
+        {titulo && (
+          <div className="flex items-center justify-center gap-4">
+            <h2 className="text-xl md:text-2xl font-bold text-foreground text-center">
+              {titulo}
+            </h2>
+            <BotonDescarga contenidoRef={contenidoRef} nombreArchivo={titulo} />
           </div>
-          <div className="flex flex-wrap gap-4">
-            <div className="text-center px-4 py-2 bg-muted rounded-lg"><p className="text-xs text-muted-foreground">Salón</p><p className="text-lg font-bold text-foreground">#{posicionSalon}/{estudiantesSalon.length}</p></div>
-            <div className="text-center px-4 py-2 bg-muted rounded-lg"><p className="text-xs text-muted-foreground">Grado</p><p className="text-lg font-bold text-foreground">#{posicionGrado}/{estudiantesGrado.length}</p></div>
-            <div className="text-center px-4 py-2 bg-muted rounded-lg"><p className="text-xs text-muted-foreground">Institución</p><p className="text-lg font-bold text-foreground">#{posicionInst}/{estudiantesInst.length}</p></div>
+        )}
+        <div className="bg-card rounded-lg shadow-soft p-6 border border-border">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center"><User className="w-8 h-8 text-primary" /></div>
+              <div><h2 className="text-xl font-bold text-foreground">{estudiante.nombre_completo}</h2><p className="text-muted-foreground">{estudiante.grado} - {estudiante.salon}</p></div>
+            </div>
+            <div className="flex flex-wrap gap-4">
+              <div className="text-center px-4 py-2 bg-muted rounded-lg"><p className="text-xs text-muted-foreground">Salón</p><p className="text-lg font-bold text-foreground">#{posicionSalon}/{estudiantesSalon.length}</p></div>
+              <div className="text-center px-4 py-2 bg-muted rounded-lg"><p className="text-xs text-muted-foreground">Grado</p><p className="text-lg font-bold text-foreground">#{posicionGrado}/{estudiantesGrado.length}</p></div>
+              <div className="text-center px-4 py-2 bg-muted rounded-lg"><p className="text-xs text-muted-foreground">Institución</p><p className="text-lg font-bold text-foreground">#{posicionInst}/{estudiantesInst.length}</p></div>
           </div>
         </div>
       </div>
@@ -117,6 +125,7 @@ export const AnalisisEstudiante = ({ codigoEstudiante, periodo, titulo }: Analis
             </tbody>
           </table>
         </div>
+      </div>
       </div>
     </div>
   );

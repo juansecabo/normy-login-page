@@ -1,3 +1,4 @@
+import { useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useEstadisticas } from "@/hooks/useEstadisticas";
 import { useCompletitud } from "@/hooks/useCompletitud";
@@ -7,6 +8,7 @@ import { TablaDistribucion } from "./TablaDistribucion";
 import { TablaEvolucion } from "./TablaEvolucion";
 import { ListaComparativa } from "./ListaComparativa";
 import { IndicadorCompletitud } from "./IndicadorCompletitud";
+import { BotonDescarga } from "./BotonDescarga";
 import { Home, Users, TrendingUp, AlertTriangle, Award } from "lucide-react";
 
 interface AnalisisSalonProps { 
@@ -17,6 +19,7 @@ interface AnalisisSalonProps {
 }
 
 export const AnalisisSalon = ({ grado, salon, periodo, titulo }: AnalisisSalonProps) => {
+  const contenidoRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
   const { 
     getPromediosEstudiantes, getPromediosSalones, getPromediosMaterias, 
@@ -97,17 +100,22 @@ export const AnalisisSalon = ({ grado, salon, periodo, titulo }: AnalisisSalonPr
         />
       </div>
 
-      {/* Título dinámico */}
-      {titulo && (
-        <h2 className="text-xl md:text-2xl font-bold text-foreground text-center">
-          {titulo}
-        </h2>
-      )}
+      {/* Contenido descargable */}
+      <div ref={contenidoRef} className="space-y-6 bg-background p-4 -m-4">
+        {/* Título dinámico con botón de descarga */}
+        {titulo && (
+          <div className="flex items-center justify-center gap-4">
+            <h2 className="text-xl md:text-2xl font-bold text-foreground text-center">
+              {titulo}
+            </h2>
+            <BotonDescarga contenidoRef={contenidoRef} nombreArchivo={titulo} />
+          </div>
+        )}
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <TarjetaResumen titulo={`Promedio ${grado} ${salon}`} valor={promedioSalon.toFixed(2)} subtitulo={`#${posicionEnGrado} de ${salonesGrado.length} en ${grado}`} icono={Home} color={promedioSalon >= 4.5 ? "success" : promedioSalon >= 4 ? "blue" : promedioSalon >= 3 ? "warning" : "danger"} />
-        <TarjetaResumen titulo="Estudiantes con notas" valor={estudiantesSalon.length} subtitulo="En este salón" icono={Users} color="primary" />
-        <TarjetaResumen titulo="Mejor Estudiante" valor={topEstudiantes[0]?.promedio.toFixed(2) || "—"} subtitulo={topEstudiantes[0]?.nombre_completo || ""} icono={Award} color={topEstudiantes[0]?.promedio >= 4.5 ? "success" : topEstudiantes[0]?.promedio >= 4 ? "blue" : topEstudiantes[0]?.promedio >= 3 ? "warning" : "danger"} />
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <TarjetaResumen titulo={`Promedio ${grado} ${salon}`} valor={promedioSalon.toFixed(2)} subtitulo={`#${posicionEnGrado} de ${salonesGrado.length} en ${grado}`} icono={Home} color={promedioSalon >= 4.5 ? "success" : promedioSalon >= 4 ? "blue" : promedioSalon >= 3 ? "warning" : "danger"} />
+          <TarjetaResumen titulo="Estudiantes con notas" valor={estudiantesSalon.length} subtitulo="En este salón" icono={Users} color="primary" />
+          <TarjetaResumen titulo="Mejor Estudiante" valor={topEstudiantes[0]?.promedio.toFixed(2) || "—"} subtitulo={topEstudiantes[0]?.nombre_completo || ""} icono={Award} color={topEstudiantes[0]?.promedio >= 4.5 ? "success" : topEstudiantes[0]?.promedio >= 4 ? "blue" : topEstudiantes[0]?.promedio >= 3 ? "warning" : "danger"} />
         <TarjetaResumen 
           titulo="En Riesgo Académico" 
           valor={mostrarRiesgo ? estudiantesEnRiesgo.length : "—"} 
@@ -164,7 +172,7 @@ export const AnalisisSalon = ({ grado, salon, periodo, titulo }: AnalisisSalonPr
           </table>
         </div>
       </div>
-
+      </div>
     </div>
   );
 };

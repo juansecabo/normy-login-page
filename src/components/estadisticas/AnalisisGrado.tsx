@@ -1,3 +1,4 @@
+import { useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useEstadisticas } from "@/hooks/useEstadisticas";
 import { useCompletitud } from "@/hooks/useCompletitud";
@@ -7,6 +8,7 @@ import { TablaDistribucion } from "./TablaDistribucion";
 import { TablaEvolucion } from "./TablaEvolucion";
 import { ListaComparativa } from "./ListaComparativa";
 import { IndicadorCompletitud } from "./IndicadorCompletitud";
+import { BotonDescarga } from "./BotonDescarga";
 import { GraduationCap, Users, Award, AlertTriangle } from "lucide-react";
 
 interface AnalisisGradoProps {
@@ -16,6 +18,7 @@ interface AnalisisGradoProps {
 }
 
 export const AnalisisGrado = ({ grado, periodo, titulo }: AnalisisGradoProps) => {
+  const contenidoRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
   const {
     getPromediosEstudiantes, getPromediosSalones, getPromediosMaterias,
@@ -92,14 +95,19 @@ export const AnalisisGrado = ({ grado, periodo, titulo }: AnalisisGradoProps) =>
         />
       </div>
 
-      {/* Título dinámico */}
-      {titulo && (
-        <h2 className="text-xl md:text-2xl font-bold text-foreground text-center">
-          {titulo}
-        </h2>
-      )}
+      {/* Contenido descargable */}
+      <div ref={contenidoRef} className="space-y-6 bg-background p-4 -m-4">
+        {/* Título dinámico con botón de descarga */}
+        {titulo && (
+          <div className="flex items-center justify-center gap-4">
+            <h2 className="text-xl md:text-2xl font-bold text-foreground text-center">
+              {titulo}
+            </h2>
+            <BotonDescarga contenidoRef={contenidoRef} nombreArchivo={titulo} />
+          </div>
+        )}
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <TarjetaResumen titulo={`Promedio ${grado}`} valor={promedioGrado.toFixed(2)} subtitulo={`${diferenciaConInst >= 0 ? "+" : ""}${diferenciaConInst.toFixed(2)} vs institución`} icono={GraduationCap} color={promedioGrado >= 4.5 ? "success" : promedioGrado >= 4 ? "blue" : promedioGrado >= 3 ? "warning" : "danger"} />
         <TarjetaResumen titulo="Estudiantes con notas" valor={estudiantesGrado.length} subtitulo={`En ${salonesUnicos.length} salones`} icono={Users} color="primary" />
         <TarjetaResumen titulo="Mejor Estudiante" valor={topEstudiantes[0]?.promedio.toFixed(2) || "—"} subtitulo={topEstudiantes[0]?.nombre_completo || ""} icono={Award} color={topEstudiantes[0]?.promedio >= 4.5 ? "success" : topEstudiantes[0]?.promedio >= 4 ? "blue" : topEstudiantes[0]?.promedio >= 3 ? "warning" : "danger"} />
@@ -155,6 +163,7 @@ export const AnalisisGrado = ({ grado, periodo, titulo }: AnalisisGradoProps) =>
             </tbody>
           </table>
         </div>
+      </div>
       </div>
     </div>
   );
