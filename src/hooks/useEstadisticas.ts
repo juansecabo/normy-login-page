@@ -502,14 +502,41 @@ export const useEstadisticas = () => {
   };
 
   // Estudiantes en riesgo (solo si hay suficientes datos)
+  // Ahora soporta filtro por materia específica
   const getEstudiantesEnRiesgo = (
     periodo?: number | "anual",
     grado?: string,
-    salon?: string
+    salon?: string,
+    materia?: string
   ): PromedioEstudiante[] => {
     // Para acumulado anual, usar umbral de 160% (40% de 400%)
     // Para períodos individuales, usar umbral de 40%
     const umbral = periodo === "anual" ? UMBRAL_PORCENTAJE_ANUAL : UMBRAL_PORCENTAJE_MINIMO;
+    
+    // Si hay filtro de materia, calcular riesgo solo para esa materia
+    if (materia) {
+      const estudiantesConMateria = getPromediosEstudiantes(periodo, grado, salon);
+      return estudiantesConMateria
+        .filter(e => {
+          const promedioMateria = e.promediosPorMateria?.[materia];
+          if (promedioMateria === undefined) return false;
+          
+          // Calcular suma de porcentajes específica para la materia
+          const notasMateria = notas.filter(n => 
+            n.codigo_estudiantil === e.codigo_estudiantil &&
+            n.materia === materia &&
+            n.porcentaje !== null && n.porcentaje > 0 &&
+            (periodo === "anual" || n.periodo === periodo)
+          );
+          const sumaPorcentajesMateria = notasMateria.reduce((sum, n) => sum + (n.porcentaje || 0), 0);
+          
+          return promedioMateria < 3.0 && sumaPorcentajesMateria >= umbral;
+        })
+        .map(e => ({
+          ...e,
+          promedio: e.promediosPorMateria?.[materia] || 0
+        }));
+    }
     
     return getPromediosEstudiantes(periodo, grado, salon)
       .filter(e => 
