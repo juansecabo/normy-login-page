@@ -113,8 +113,8 @@ export const AnalisisGrado = ({ grado, periodo }: AnalisisGradoProps) => {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <ListaComparativa titulo={`Rendimiento por Salón - ${grado}`} items={salones.map(s => ({ nombre: s.salon, valor: s.promedio, extra: `${s.cantidadEstudiantes} estudiantes` }))} mostrarPosicion />
-        <ListaComparativa titulo={`Rendimiento por Materia - ${grado}`} items={materias.map(m => ({ nombre: m.materia, valor: m.promedio }))} mostrarPosicion />
+        <ListaComparativa titulo={`Rendimiento por Salón ${grado}`} items={salones.map(s => ({ nombre: `${grado} ${s.salon}`, valor: s.promedio, extra: `${s.cantidadEstudiantes} estudiantes` }))} mostrarPosicion />
+        <ListaComparativa titulo={`Rendimiento por Materia ${grado}`} items={materias.map(m => ({ nombre: m.materia, valor: m.promedio }))} mostrarPosicion />
       </div>
 
       <TablaRanking titulo={`Top 10 Estudiantes - ${grado}`} datos={topEstudiantes} tipo="estudiante" limite={10} />
