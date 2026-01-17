@@ -70,6 +70,57 @@ const EstadisticasDashboard = () => {
     ? "anual" as const
     : parseInt(periodoSeleccionado);
 
+  // Generar título dinámico basado en filtros
+  const getTituloDinamico = () => {
+    const periodoTexto = periodoSeleccionado === "anual" 
+      ? "Acumulado Anual" 
+      : `Período ${periodoSeleccionado}`;
+    
+    if (nivelAnalisis === "institucion") {
+      return `Institución - ${periodoTexto}`;
+    }
+    
+    if (nivelAnalisis === "grado") {
+      const nombreGrado = gradoSeleccionado && gradoSeleccionado !== "all" 
+        ? gradoSeleccionado 
+        : "Todos los Grados";
+      return `${nombreGrado} - ${periodoTexto}`;
+    }
+    
+    if (nivelAnalisis === "salon") {
+      const nombreGrado = gradoSeleccionado || "";
+      const nombreSalon = salonSeleccionado && salonSeleccionado !== "all" 
+        ? salonSeleccionado 
+        : "";
+      const salonCompleto = nombreSalon ? `${nombreGrado} ${nombreSalon}` : nombreGrado;
+      return `${salonCompleto} - ${periodoTexto}`;
+    }
+    
+    if (nivelAnalisis === "estudiante") {
+      const estudiante = estudiantesDelSalon.find(e => e.codigo === estudianteSeleccionado);
+      const nombreEstudiante = estudiante?.nombre || "Estudiante";
+      return `${nombreEstudiante} - ${periodoTexto}`;
+    }
+    
+    if (nivelAnalisis === "materia") {
+      const nombreMateria = materiaSeleccionada || "Materia";
+      const partes = [nombreMateria];
+      
+      if (gradoSeleccionado && gradoSeleccionado !== "all") {
+        if (salonSeleccionado && salonSeleccionado !== "all") {
+          partes.push(`${gradoSeleccionado} ${salonSeleccionado}`);
+        } else {
+          partes.push(gradoSeleccionado);
+        }
+      }
+      
+      partes.push(periodoTexto);
+      return partes.join(" - ");
+    }
+    
+    return periodoTexto;
+  };
+
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <header className="bg-primary text-primary-foreground py-2 md:py-3 px-3 md:px-4 shadow-md">
@@ -119,6 +170,11 @@ const EstadisticasDashboard = () => {
               materias={materiasFiltradas}
               estudiantes={estudiantesDelSalon}
             />
+
+            {/* Título dinámico basado en filtros */}
+            <h2 className="text-xl md:text-2xl font-bold text-foreground">
+              {getTituloDinamico()}
+            </h2>
 
             {nivelAnalisis === "institucion" && (
               <AnalisisInstitucional periodo={periodoNumerico} />
