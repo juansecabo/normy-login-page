@@ -133,7 +133,7 @@ export const AnalisisInstitucional = ({ periodo }: AnalisisInstitucionalProps) =
           valor={topEstudiantes[0]?.promedio.toFixed(2) || "—"}
           subtitulo={topEstudiantes[0]?.nombre_completo || ""}
           icono={Award}
-          color="success"
+          color={topEstudiantes[0]?.promedio >= 4 ? "success" : topEstudiantes[0]?.promedio >= 3 ? "warning" : "danger"}
         />
         {mostrarRiesgo ? (
           <div 
