@@ -5,22 +5,23 @@ interface TarjetaResumenProps {
   valor: string | number;
   subtitulo?: string;
   icono: LucideIcon;
-  color?: "primary" | "success" | "warning" | "danger";
+  color?: "primary" | "success" | "warning" | "danger" | "alto";
   onClick?: () => void;
 }
 
 const colorClasses = {
-  primary: "bg-blue-100 text-blue-600",
+  primary: "bg-primary/10 text-primary",
   success: "bg-green-100 text-green-600",
+  alto: "bg-blue-100 text-blue-600",
   warning: "bg-amber-100 text-amber-600",
   danger: "bg-red-100 text-red-600"
 };
 
 // Helper para obtener color basado en rendimiento académico
-// Superior (4.5-5): success (verde), Alto (4-4.49): primary (azul), Básico (3-3.99): warning (naranja), Bajo (<3): danger (rojo)
-export const getColorPorRendimiento = (valor: number): "primary" | "success" | "warning" | "danger" => {
+// Superior (4.5-5): success (verde), Alto (4-4.49): alto (azul), Básico (3-3.99): warning (naranja), Bajo (<3): danger (rojo)
+export const getColorPorRendimiento = (valor: number): "success" | "alto" | "warning" | "danger" => {
   if (valor >= 4.5) return "success";
-  if (valor >= 4) return "primary";
+  if (valor >= 4) return "alto";
   if (valor >= 3) return "warning";
   return "danger";
 };
