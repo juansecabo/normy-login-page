@@ -1,14 +1,17 @@
+import { useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useEstadisticas, ordenGrados } from "@/hooks/useEstadisticas";
 import { TarjetaResumen } from "./TarjetaResumen";
 import { TablaRanking } from "./TablaRanking";
 import { TablaEvolucion } from "./TablaEvolucion";
 import { ListaComparativa } from "./ListaComparativa";
+import { BotonDescarga } from "./BotonDescarga";
 import { BookOpen, Users, Award, AlertTriangle } from "lucide-react";
 
 interface AnalisisMateriaProps { materia: string; periodo: number | "anual"; grado?: string; salon?: string; titulo?: string; }
 
 export const AnalisisMateria = ({ materia, periodo, grado, salon, titulo }: AnalisisMateriaProps) => {
+  const contenidoRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
   const { getPromediosEstudiantes, getPromediosSalones, getPromediosMaterias, getEstudiantesEnRiesgo } = useEstadisticas();
 
@@ -107,27 +110,32 @@ export const AnalisisMateria = ({ materia, periodo, grado, salon, titulo }: Anal
         <span>Estadísticas basadas únicamente en estudiantes con notas registradas.</span>
       </div>
 
-      {/* Título dinámico */}
-      {titulo && (
-        <h2 className="text-xl md:text-2xl font-bold text-foreground text-center">
-          {titulo}
-        </h2>
-      )}
+      {/* Contenido descargable */}
+      <div ref={contenidoRef} className="space-y-6 bg-background p-4 -m-4">
+        {/* Título dinámico con botón de descarga */}
+        {titulo && (
+          <div className="flex items-center justify-center gap-4">
+            <h2 className="text-xl md:text-2xl font-bold text-foreground text-center">
+              {titulo}
+            </h2>
+            <BotonDescarga contenidoRef={contenidoRef} nombreArchivo={titulo} />
+          </div>
+        )}
 
-      <div className="bg-card rounded-lg shadow-soft p-6 border border-border">
-        <div className="flex items-center gap-4">
-          <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center"><BookOpen className="w-8 h-8 text-primary" /></div>
-          <div><h2 className="text-xl font-bold text-foreground">{materia}</h2><p className="text-muted-foreground">{
-            salonEfectivo 
-              ? `${gradoEfectivo} ${salonEfectivo}` 
-              : gradoEfectivo 
-                ? `Grado: ${gradoEfectivo}` 
-                : "Análisis institucional"
-          }</p></div>
+        <div className="bg-card rounded-lg shadow-soft p-6 border border-border">
+          <div className="flex items-center gap-4">
+            <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center"><BookOpen className="w-8 h-8 text-primary" /></div>
+            <div><h2 className="text-xl font-bold text-foreground">{materia}</h2><p className="text-muted-foreground">{
+              salonEfectivo 
+                ? `${gradoEfectivo} ${salonEfectivo}` 
+                : gradoEfectivo 
+                  ? `Grado: ${gradoEfectivo}` 
+                  : "Análisis institucional"
+            }</p></div>
+          </div>
         </div>
-      </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <TarjetaResumen titulo="Promedio de la Materia" valor={promedioMateria.promedio.toFixed(2)} subtitulo={periodo === "anual" ? "Acumulado anual" : `Período ${periodo}`} icono={BookOpen} color={promedioMateria.promedio >= 4 ? "success" : promedioMateria.promedio >= 3 ? "warning" : "danger"} />
         <TarjetaResumen titulo="Estudiantes con notas" valor={cantidadEstudiantes} subtitulo="Con calificaciones" icono={Users} color="primary" />
         <TarjetaResumen titulo="Tasa de Aprobación" valor={`${tasaAprobacion}%`} subtitulo={`${estudiantesAprobados} aprobados`} icono={Award} color={tasaAprobacion >= 80 ? "success" : tasaAprobacion >= 60 ? "warning" : "danger"} />
@@ -161,6 +169,7 @@ export const AnalisisMateria = ({ materia, periodo, grado, salon, titulo }: Anal
       {gradoEfectivo && rendimientoPorSalon.length > 0 && (
         <ListaComparativa titulo={`Ranking de Salones - ${gradoEfectivo} - ${materia}`} items={rendimientoPorSalon.map(s => ({ nombre: s.salon, valor: s.promedio, extra: `${s.cantidadEstudiantes} estudiantes` }))} mostrarPosicion />
       )}
+      </div>
     </div>
   );
 };
