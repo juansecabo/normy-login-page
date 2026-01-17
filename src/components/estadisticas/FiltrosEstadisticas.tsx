@@ -96,8 +96,8 @@ export const FiltrosEstadisticas = ({
               <SelectItem value="institucion">Institución</SelectItem>
               <SelectItem value="grado">Por Grado</SelectItem>
               <SelectItem value="salon">Por Salón</SelectItem>
-              <SelectItem value="estudiante">Por Estudiante</SelectItem>
               <SelectItem value="materia">Por Materia</SelectItem>
+              <SelectItem value="estudiante">Por Estudiante</SelectItem>
             </SelectContent>
           </Select>
         </div>
