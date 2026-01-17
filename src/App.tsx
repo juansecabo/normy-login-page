@@ -51,7 +51,7 @@ const App = () => (
           <Route path="/rector/tabla-notas" element={<TablaNotasReadOnly />} />
           <Route path="/rector/estudiante-consolidado" element={<EstudianteConsolidado />} />
           <Route path="/rector/estadisticas" element={<EstadisticasDashboard />} />
-          <Route path="/rector/estudiantes-riesgo" element={<EstudiantesEnRiesgo />} />
+          <Route path="/rector/estudiantes-en-riesgo" element={<EstudiantesEnRiesgo />} />
           
           <Route path="*" element={<NotFound />} />
         </Routes>
