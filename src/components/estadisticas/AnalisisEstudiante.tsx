@@ -71,8 +71,8 @@ export const AnalisisEstudiante = ({ codigoEstudiante, periodo }: AnalisisEstudi
         <TarjetaResumen titulo="vs Salón" valor={`${(estudiante.promedio - promedioSalon) >= 0 ? "+" : ""}${(estudiante.promedio - promedioSalon).toFixed(2)}`} subtitulo={`Prom. salón: ${promedioSalon.toFixed(2)}`} icono={TrendingUp} color={(estudiante.promedio - promedioSalon) >= 0 ? "success" : "danger"} />
         {tieneSuficientesMaterias ? (
           <>
-            <TarjetaResumen titulo="Mejor Materia" valor={mejorMateria?.promedio.toFixed(2) || "—"} subtitulo={mejorMateria?.materia || ""} icono={Star} color="success" />
-            <TarjetaResumen titulo="Materia a Mejorar" valor={peorMateria?.promedio.toFixed(2) || "—"} subtitulo={peorMateria?.materia || ""} icono={AlertTriangle} color={peorMateria && peorMateria.promedio < 3 ? "danger" : "warning"} />
+            <TarjetaResumen titulo="Mejor Materia" valor={mejorMateria?.promedio.toFixed(2) || "—"} subtitulo={mejorMateria?.materia || ""} icono={Star} color={mejorMateria && mejorMateria.promedio >= 4 ? "success" : mejorMateria && mejorMateria.promedio >= 3 ? "warning" : "danger"} />
+            <TarjetaResumen titulo="Materia a Mejorar" valor={peorMateria?.promedio.toFixed(2) || "—"} subtitulo={peorMateria?.materia || ""} icono={AlertTriangle} color={peorMateria && peorMateria.promedio >= 4 ? "success" : peorMateria && peorMateria.promedio >= 3 ? "warning" : "danger"} />
           </>
         ) : (
           <>
