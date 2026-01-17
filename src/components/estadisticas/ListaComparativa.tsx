@@ -52,6 +52,8 @@ export const ListaComparativa = ({
   const getTipoIcon = () => {
     if (tipo === "mejor") return <TrendingUp className="w-4 h-4 text-green-500" />;
     if (tipo === "peor") return <TrendingDown className="w-4 h-4 text-red-500" />;
+    // No mostrar ícono de guión para listas con posición (rankings de rendimiento)
+    if (mostrarPosicion) return null;
     return <Minus className="w-4 h-4 text-muted-foreground" />;
   };
 
