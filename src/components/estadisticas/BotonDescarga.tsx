@@ -1,12 +1,6 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Download, FileText, File, Loader2 } from "lucide-react";
+import { Download, Loader2 } from "lucide-react";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 
@@ -16,7 +10,7 @@ interface BotonDescargaProps {
 }
 
 export const BotonDescarga = ({ contenidoRef, nombreArchivo }: BotonDescargaProps) => {
-  const [descargando, setDescargando] = useState<"pdf" | "word" | null>(null);
+  const [descargando, setDescargando] = useState(false);
 
   const limpiarNombreArchivo = (nombre: string) => {
     return nombre
@@ -25,69 +19,80 @@ export const BotonDescarga = ({ contenidoRef, nombreArchivo }: BotonDescargaProp
       .substring(0, 50);
   };
 
-  // Obtener el botón de descarga para ocultarlo durante la captura
-  const obtenerBotonDescarga = () => {
-    return contenidoRef.current?.querySelector('[data-descarga-btn]') as HTMLElement | null;
-  };
-
   const descargarPDF = async () => {
     if (!contenidoRef.current) return;
     
-    setDescargando("pdf");
+    setDescargando(true);
     try {
       const elemento = contenidoRef.current;
-      const botonDescarga = obtenerBotonDescarga();
       
-      // Ocultar el botón de descarga temporalmente
+      // Obtener el botón para ocultarlo
+      const botonDescarga = elemento.querySelector('[data-descarga-btn]') as HTMLElement | null;
       if (botonDescarga) {
         botonDescarga.style.display = 'none';
       }
 
-      // Clonar el elemento para aplicar estilos de impresión sin afectar la vista
+      // Clonar el elemento para captura
       const clone = elemento.cloneNode(true) as HTMLElement;
-      clone.style.width = '800px';
-      clone.style.padding = '20px';
+      clone.style.width = '1100px'; // Ancho más grande para nombres completos
+      clone.style.padding = '30px';
       clone.style.backgroundColor = '#ffffff';
       clone.style.position = 'absolute';
       clone.style.left = '-9999px';
       clone.style.top = '0';
+      clone.style.overflow = 'visible'; // Evitar cortes
+      
+      // Remover el botón del clon
+      const btnInClone = clone.querySelector('[data-descarga-btn]');
+      if (btnInClone) {
+        btnInClone.remove();
+      }
+      
       document.body.appendChild(clone);
 
-      // Esperar a que los estilos se apliquen
-      await new Promise(resolve => setTimeout(resolve, 100));
+      // Esperar a que se rendericen los estilos
+      await new Promise(resolve => setTimeout(resolve, 200));
 
-      // Capturar con configuración mejorada para evitar cortes de texto
+      // Asegurar que todos los textos sean visibles en el clon
+      const allElements = clone.querySelectorAll('*');
+      allElements.forEach((el) => {
+        if (el instanceof HTMLElement) {
+          // Evitar overflow hidden que corta texto
+          if (getComputedStyle(el).overflow === 'hidden') {
+            el.style.overflow = 'visible';
+          }
+          // Evitar text-overflow ellipsis
+          el.style.textOverflow = 'clip';
+          el.style.whiteSpace = 'normal';
+        }
+      });
+
+      // Capturar con alta calidad
       const canvas = await html2canvas(clone, {
-        scale: 3, // Mayor escala para mejor calidad de texto
+        scale: 2,
         useCORS: true,
         logging: false,
         backgroundColor: "#ffffff",
         width: clone.scrollWidth,
         height: clone.scrollHeight,
-        onclone: (clonedDoc) => {
-          // Asegurar que todos los textos estén completamente renderizados
-          const allText = clonedDoc.querySelectorAll('*');
-          allText.forEach((el) => {
-            if (el instanceof HTMLElement) {
-              el.style.textRendering = 'geometricPrecision';
-              (el.style as unknown as Record<string, string>).webkitFontSmoothing = 'antialiased';
-            }
-          });
-        }
       });
 
-      // Remover el clon
+      // Limpiar
       document.body.removeChild(clone);
+
+      // Restaurar el botón
+      if (botonDescarga) {
+        botonDescarga.style.display = '';
+      }
 
       // Configuración del PDF
       const pdf = new jsPDF("p", "mm", "a4");
       const pageWidth = 210;
       const pageHeight = 297;
-      const margin = 15;
+      const margin = 12;
       const contentWidth = pageWidth - (margin * 2);
       const maxContentHeight = pageHeight - (margin * 2);
 
-      const imgData = canvas.toDataURL("image/png", 1.0);
       const imgHeight = (canvas.height * contentWidth) / canvas.width;
 
       let heightLeft = imgHeight;
@@ -99,7 +104,7 @@ export const BotonDescarga = ({ contenidoRef, nombreArchivo }: BotonDescargaProp
           pdf.addPage();
         }
 
-        // Calcular qué porción de la imagen mostrar
+        // Calcular porción de imagen
         const sourceY = position * (canvas.height / imgHeight);
         const sourceHeight = Math.min(
           maxContentHeight * (canvas.height / imgHeight),
@@ -107,7 +112,7 @@ export const BotonDescarga = ({ contenidoRef, nombreArchivo }: BotonDescargaProp
         );
         const destHeight = sourceHeight * (imgHeight / canvas.height);
 
-        // Crear canvas temporal para la porción
+        // Canvas temporal para la porción
         const tempCanvas = document.createElement('canvas');
         tempCanvas.width = canvas.width;
         tempCanvas.height = sourceHeight;
@@ -128,168 +133,29 @@ export const BotonDescarga = ({ contenidoRef, nombreArchivo }: BotonDescargaProp
         pageNum++;
       }
 
-      // Restaurar el botón de descarga
-      if (botonDescarga) {
-        botonDescarga.style.display = '';
-      }
-
       pdf.save(`${limpiarNombreArchivo(nombreArchivo)}.pdf`);
     } catch (error) {
       console.error("Error al generar PDF:", error);
-      const botonDescarga = obtenerBotonDescarga();
-      if (botonDescarga) {
-        botonDescarga.style.display = '';
-      }
     } finally {
-      setDescargando(null);
-    }
-  };
-
-  const descargarWord = async () => {
-    if (!contenidoRef.current) return;
-    
-    setDescargando("word");
-    try {
-      const elemento = contenidoRef.current;
-      const botonDescarga = obtenerBotonDescarga();
-      
-      // Ocultar el botón de descarga temporalmente
-      if (botonDescarga) {
-        botonDescarga.style.display = 'none';
-      }
-
-      // Obtener el título
-      const tituloElement = elemento.querySelector('h2');
-      const titulo = tituloElement?.textContent || nombreArchivo;
-
-      // Clonar el elemento para capturar sin el botón
-      const clone = elemento.cloneNode(true) as HTMLElement;
-      clone.style.width = '750px';
-      clone.style.padding = '20px';
-      clone.style.backgroundColor = '#ffffff';
-      clone.style.position = 'absolute';
-      clone.style.left = '-9999px';
-      clone.style.top = '0';
-      
-      // Remover el botón del clon
-      const btnInClone = clone.querySelector('[data-descarga-btn]');
-      if (btnInClone) {
-        btnInClone.remove();
-      }
-      
-      document.body.appendChild(clone);
-      await new Promise(resolve => setTimeout(resolve, 100));
-
-      // Capturar todo el contenido como una sola imagen
-      const canvas = await html2canvas(clone, {
-        scale: 2,
-        useCORS: true,
-        logging: false,
-        backgroundColor: "#ffffff",
-        width: clone.scrollWidth,
-        height: clone.scrollHeight,
-      });
-
-      document.body.removeChild(clone);
-
-      // Restaurar el botón de descarga
-      if (botonDescarga) {
-        botonDescarga.style.display = '';
-      }
-
-      // Convertir a base64 sin el prefijo data:image/png;base64,
-      const base64Data = canvas.toDataURL("image/png").split(',')[1];
-
-      // Crear documento MHTML que Word puede leer correctamente con imágenes embebidas
-      const boundary = "----=_NextPart_000_0000_01D00000.00000000";
-      
-      const mhtmlContent = `MIME-Version: 1.0
-Content-Type: multipart/related; boundary="${boundary}"
-
---${boundary}
-Content-Type: text/html; charset="utf-8"
-Content-Transfer-Encoding: quoted-printable
-
-<!DOCTYPE html>
-<html xmlns:o=3D'urn:schemas-microsoft-com:office:office' xmlns:w=3D'urn:schemas-microsoft-com:office:word'>
-<head>
-<meta charset=3D"utf-8">
-<title>${titulo}</title>
-<style>
-@page { margin: 2cm; }
-body { font-family: Calibri, Arial, sans-serif; text-align: center; }
-h1 { font-size: 20pt; font-weight: bold; margin-bottom: 30px; }
-img { max-width: 100%; height: auto; }
-</style>
-</head>
-<body>
-<h1>${titulo}</h1>
-<img src=3D"cid:imagen001@lovable.dev" alt=3D"Contenido" />
-</body>
-</html>
-
---${boundary}
-Content-Type: image/png
-Content-Transfer-Encoding: base64
-Content-ID: <imagen001@lovable.dev>
-
-${base64Data.match(/.{1,76}/g)?.join('\n') || base64Data}
-
---${boundary}--`;
-
-      const blob = new Blob([mhtmlContent], {
-        type: 'message/rfc822'
-      });
-      
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = `${limpiarNombreArchivo(nombreArchivo)}.mht`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
-    } catch (error) {
-      console.error("Error al generar Word:", error);
-      const botonDescarga = obtenerBotonDescarga();
-      if (botonDescarga) {
-        botonDescarga.style.display = '';
-      }
-    } finally {
-      setDescargando(null);
+      setDescargando(false);
     }
   };
 
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button 
-          variant="outline" 
-          size="sm" 
-          className="gap-2"
-          disabled={descargando !== null}
-          data-descarga-btn
-        >
-          {descargando ? (
-            <Loader2 className="w-4 h-4 animate-spin" />
-          ) : (
-            <Download className="w-4 h-4" />
-          )}
-          {descargando === "pdf" ? "Generando PDF..." : 
-           descargando === "word" ? "Generando Word..." : 
-           "Descargar"}
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
-        <DropdownMenuItem onClick={descargarPDF} disabled={descargando !== null}>
-          <File className="w-4 h-4 mr-2 text-red-500" />
-          Descargar como PDF
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={descargarWord} disabled={descargando !== null}>
-          <FileText className="w-4 h-4 mr-2 text-blue-500" />
-          Descargar como Word (.mht)
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
+    <Button 
+      variant="outline" 
+      size="sm" 
+      className="gap-2"
+      onClick={descargarPDF}
+      disabled={descargando}
+      data-descarga-btn
+    >
+      {descargando ? (
+        <Loader2 className="w-4 h-4 animate-spin" />
+      ) : (
+        <Download className="w-4 h-4" />
+      )}
+      {descargando ? "Generando..." : "Descargar PDF"}
+    </Button>
   );
 };
