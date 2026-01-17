@@ -118,6 +118,36 @@ export const AnalisisGrado = ({ grado, periodo }: AnalisisGradoProps) => {
       </div>
 
       <TablaRanking titulo={`Top 10 Estudiantes - ${grado}`} datos={topEstudiantes} tipo="estudiante" limite={10} />
+
+      {/* Comparativa con promedios de referencia */}
+      <div className="bg-card rounded-lg shadow-soft p-4 border border-border">
+        <h4 className="font-semibold text-foreground mb-4">Comparativa con Promedios de Referencia</h4>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-border">
+                <th className="text-left py-2 px-3 text-muted-foreground font-medium">Referencia</th>
+                <th className="text-center py-2 px-3 text-muted-foreground font-medium">Promedio</th>
+                <th className="text-center py-2 px-3 text-muted-foreground font-medium">Diferencia</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr className="border-b border-border/50">
+                <td className="py-2 px-3 font-medium text-foreground">{grado}</td>
+                <td className="py-2 px-3 text-center font-bold text-foreground">{promedioGrado.toFixed(2)}</td>
+                <td className="py-2 px-3 text-center text-muted-foreground">—</td>
+              </tr>
+              <tr>
+                <td className="py-2 px-3 text-foreground">Promedio Institucional</td>
+                <td className="py-2 px-3 text-center text-foreground">{promedioInstitucional.toFixed(2)}</td>
+                <td className={`py-2 px-3 text-center font-medium ${diferenciaConInst >= 0 ? "text-green-600" : "text-red-600"}`}>
+                  {diferenciaConInst >= 0 ? "+" : ""}{diferenciaConInst.toFixed(2)}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
   );
 };
