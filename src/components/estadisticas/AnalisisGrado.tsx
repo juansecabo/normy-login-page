@@ -12,9 +12,10 @@ import { GraduationCap, Users, Award, AlertTriangle } from "lucide-react";
 interface AnalisisGradoProps {
   grado: string;
   periodo: number | "anual";
+  titulo?: string;
 }
 
-export const AnalisisGrado = ({ grado, periodo }: AnalisisGradoProps) => {
+export const AnalisisGrado = ({ grado, periodo, titulo }: AnalisisGradoProps) => {
   const navigate = useNavigate();
   const {
     getPromediosEstudiantes, getPromediosSalones, getPromediosMaterias,
@@ -90,6 +91,13 @@ export const AnalisisGrado = ({ grado, periodo }: AnalisisGradoProps) => {
           periodo={periodoTexto}
         />
       </div>
+
+      {/* Título dinámico */}
+      {titulo && (
+        <h2 className="text-xl md:text-2xl font-bold text-foreground text-center">
+          {titulo}
+        </h2>
+      )}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <TarjetaResumen titulo={`Promedio ${grado}`} valor={promedioGrado.toFixed(2)} subtitulo={`${diferenciaConInst >= 0 ? "+" : ""}${diferenciaConInst.toFixed(2)} vs institución`} icono={GraduationCap} color={promedioGrado >= 4.5 ? "success" : promedioGrado >= 4 ? "blue" : promedioGrado >= 3 ? "warning" : "danger"} />

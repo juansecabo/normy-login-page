@@ -11,9 +11,10 @@ import { School, Users, Award, AlertTriangle } from "lucide-react";
 
 interface AnalisisInstitucionalProps {
   periodo: number | "anual";
+  titulo?: string;
 }
 
-export const AnalisisInstitucional = ({ periodo }: AnalisisInstitucionalProps) => {
+export const AnalisisInstitucional = ({ periodo, titulo }: AnalisisInstitucionalProps) => {
   const navigate = useNavigate();
   const {
     getPromedioInstitucional,
@@ -111,6 +112,13 @@ export const AnalisisInstitucional = ({ periodo }: AnalisisInstitucionalProps) =
           periodo={periodoTexto}
         />
       </div>
+
+      {/* Título dinámico */}
+      {titulo && (
+        <h2 className="text-xl md:text-2xl font-bold text-foreground text-center">
+          {titulo}
+        </h2>
+      )}
 
       {/* Tarjetas de resumen */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">

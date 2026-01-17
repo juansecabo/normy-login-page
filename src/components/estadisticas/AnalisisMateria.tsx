@@ -6,9 +6,9 @@ import { TablaEvolucion } from "./TablaEvolucion";
 import { ListaComparativa } from "./ListaComparativa";
 import { BookOpen, Users, Award, AlertTriangle } from "lucide-react";
 
-interface AnalisisMateriaProps { materia: string; periodo: number | "anual"; grado?: string; salon?: string; }
+interface AnalisisMateriaProps { materia: string; periodo: number | "anual"; grado?: string; salon?: string; titulo?: string; }
 
-export const AnalisisMateria = ({ materia, periodo, grado, salon }: AnalisisMateriaProps) => {
+export const AnalisisMateria = ({ materia, periodo, grado, salon, titulo }: AnalisisMateriaProps) => {
   const navigate = useNavigate();
   const { getPromediosEstudiantes, getPromediosSalones, getPromediosMaterias, getEstudiantesEnRiesgo } = useEstadisticas();
 
@@ -106,6 +106,13 @@ export const AnalisisMateria = ({ materia, periodo, grado, salon }: AnalisisMate
         <span className="font-medium">ℹ️</span>
         <span>Estadísticas basadas únicamente en estudiantes con notas registradas.</span>
       </div>
+
+      {/* Título dinámico */}
+      {titulo && (
+        <h2 className="text-xl md:text-2xl font-bold text-foreground text-center">
+          {titulo}
+        </h2>
+      )}
 
       <div className="bg-card rounded-lg shadow-soft p-6 border border-border">
         <div className="flex items-center gap-4">
