@@ -1,7 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { useEstadisticas } from "@/hooks/useEstadisticas";
 import { useCompletitud } from "@/hooks/useCompletitud";
-import { TarjetaResumen, getColorPorRendimiento } from "./TarjetaResumen";
+import { TarjetaResumen } from "./TarjetaResumen";
 import { TablaRanking } from "./TablaRanking";
 import { TablaDistribucion } from "./TablaDistribucion";
 import { TablaEvolucion } from "./TablaEvolucion";
@@ -113,7 +113,7 @@ export const AnalisisSalon = ({ grado, salon, periodo }: AnalisisSalonProps) => 
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <TarjetaResumen titulo={`Promedio ${grado} - ${salon}`} valor={promedioSalon.toFixed(2)} subtitulo={`#${posicionEnGrado} de ${salonesGrado.length} en ${grado}`} icono={Home} color={getColorPorRendimiento(promedioSalon)} />
+        <TarjetaResumen titulo={`Promedio ${grado} - ${salon}`} valor={promedioSalon.toFixed(2)} subtitulo={`#${posicionEnGrado} de ${salonesGrado.length} en ${grado}`} icono={Home} color={promedioSalon >= 4 ? "success" : promedioSalon >= 3 ? "warning" : "danger"} />
         <TarjetaResumen titulo="Estudiantes con notas" valor={estudiantesSalon.length} subtitulo="En este salón" icono={Users} color="primary" />
         <TarjetaResumen titulo="vs Grado" valor={`${diferenciaConGrado >= 0 ? "+" : ""}${diferenciaConGrado.toFixed(2)}`} subtitulo={`Prom. grado: ${promedioGrado.toFixed(2)}`} icono={TrendingUp} color={diferenciaConGrado >= 0 ? "success" : "danger"} />
         <TarjetaResumen 
@@ -145,6 +145,31 @@ export const AnalisisSalon = ({ grado, salon, periodo }: AnalisisSalonProps) => 
       )}
 
       <ListaComparativa titulo={`Rendimiento por Materia - ${grado} ${salon}`} items={materias.map(m => ({ nombre: m.materia, valor: m.promedio }))} mostrarPosicion />
+
+      {mostrarRiesgo && estudiantesEnRiesgo.length > 0 && (
+        <div 
+          onClick={handleVerRiesgo}
+          className="bg-red-50 border border-red-200 rounded-lg p-4 cursor-pointer hover:bg-red-100 transition-colors"
+        >
+          <h4 className="font-semibold text-red-700 mb-3 flex items-center gap-2">
+            <AlertTriangle className="w-5 h-5" />
+            Estudiantes en Riesgo Académico ({estudiantesEnRiesgo.length}) - Click para ver detalles
+          </h4>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+            {estudiantesEnRiesgo.slice(0, 6).map((est, idx) => (
+              <div key={idx} className="flex justify-between items-center p-2 bg-white rounded border border-red-200">
+                <span className="text-sm text-foreground truncate">{est.nombre_completo}</span>
+                <span className="text-sm font-bold text-red-600 ml-2">{est.promedio.toFixed(2)}</span>
+              </div>
+            ))}
+            {estudiantesEnRiesgo.length > 6 && (
+              <div className="flex items-center justify-center p-2 bg-white rounded border border-red-200 text-sm text-red-600">
+                +{estudiantesEnRiesgo.length - 6} más
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 };

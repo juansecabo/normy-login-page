@@ -1,7 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { useEstadisticas, ordenGrados } from "@/hooks/useEstadisticas";
 import { useCompletitud } from "@/hooks/useCompletitud";
-import { TarjetaResumen, getColorPorRendimiento } from "./TarjetaResumen";
+import { TarjetaResumen } from "./TarjetaResumen";
 import { TablaRanking } from "./TablaRanking";
 import { TablaDistribucion } from "./TablaDistribucion";
 import { TablaEvolucion } from "./TablaEvolucion";
@@ -119,7 +119,7 @@ export const AnalisisInstitucional = ({ periodo }: AnalisisInstitucionalProps) =
           valor={promedioInstitucional.toFixed(2)}
           subtitulo={`Basado en ${estudiantesTotales.length} estudiantes con notas`}
           icono={School}
-          color={getColorPorRendimiento(promedioInstitucional)}
+          color={promedioInstitucional >= 4 ? "success" : promedioInstitucional >= 3 ? "warning" : "danger"}
         />
         <TarjetaResumen
           titulo="Estudiantes con notas"
@@ -133,7 +133,7 @@ export const AnalisisInstitucional = ({ periodo }: AnalisisInstitucionalProps) =
           valor={topEstudiantes[0]?.promedio.toFixed(2) || "—"}
           subtitulo={topEstudiantes[0]?.nombre_completo || ""}
           icono={Award}
-          color={topEstudiantes[0] ? getColorPorRendimiento(topEstudiantes[0].promedio) : "primary"}
+          color="success"
         />
         {mostrarRiesgo ? (
           <div 
