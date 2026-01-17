@@ -43,123 +43,89 @@ export const BotonDescarga = ({ contenidoRef, nombreArchivo }: BotonDescargaProp
         botonDescarga.style.display = 'none';
       }
 
-      // Obtener todas las secciones/cards para capturar individualmente
-      const secciones = Array.from(elemento.querySelectorAll(':scope > div, :scope > .grid > div'));
-      
+      // Clonar el elemento para aplicar estilos de impresión sin afectar la vista
+      const clone = elemento.cloneNode(true) as HTMLElement;
+      clone.style.width = '800px';
+      clone.style.padding = '20px';
+      clone.style.backgroundColor = '#ffffff';
+      clone.style.position = 'absolute';
+      clone.style.left = '-9999px';
+      clone.style.top = '0';
+      document.body.appendChild(clone);
+
+      // Esperar a que los estilos se apliquen
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      // Capturar con configuración mejorada para evitar cortes de texto
+      const canvas = await html2canvas(clone, {
+        scale: 3, // Mayor escala para mejor calidad de texto
+        useCORS: true,
+        logging: false,
+        backgroundColor: "#ffffff",
+        width: clone.scrollWidth,
+        height: clone.scrollHeight,
+        onclone: (clonedDoc) => {
+          // Asegurar que todos los textos estén completamente renderizados
+          const allText = clonedDoc.querySelectorAll('*');
+          allText.forEach((el) => {
+            if (el instanceof HTMLElement) {
+              el.style.textRendering = 'geometricPrecision';
+              (el.style as unknown as Record<string, string>).webkitFontSmoothing = 'antialiased';
+            }
+          });
+        }
+      });
+
+      // Remover el clon
+      document.body.removeChild(clone);
+
       // Configuración del PDF
       const pdf = new jsPDF("p", "mm", "a4");
       const pageWidth = 210;
       const pageHeight = 297;
-      const margin = 15; // Margen de 15mm
+      const margin = 15;
       const contentWidth = pageWidth - (margin * 2);
       const maxContentHeight = pageHeight - (margin * 2);
-      
-      let currentY = margin;
-      let isFirstPage = true;
 
-      // Capturar todo el contenido como una sola imagen primero para obtener el título
-      const fullCanvas = await html2canvas(elemento, {
-        scale: 2,
-        useCORS: true,
-        logging: false,
-        backgroundColor: "#ffffff",
-        windowWidth: elemento.scrollWidth,
-        windowHeight: elemento.scrollHeight,
-      });
+      const imgData = canvas.toDataURL("image/png", 1.0);
+      const imgHeight = (canvas.height * contentWidth) / canvas.width;
 
-      const fullImgData = fullCanvas.toDataURL("image/png");
-      const fullImgHeight = (fullCanvas.height * contentWidth) / fullCanvas.width;
+      let heightLeft = imgHeight;
+      let position = 0;
+      let pageNum = 0;
 
-      // Si el contenido es pequeño, usar el método simple con márgenes
-      if (fullImgHeight <= maxContentHeight * 1.5) {
-        // Contenido cabe en 1-2 páginas, usar método simple con márgenes
-        let heightLeft = fullImgHeight;
-        let position = margin;
-
-        pdf.addImage(fullImgData, "PNG", margin, position, contentWidth, fullImgHeight);
-        heightLeft -= maxContentHeight;
-
-        while (heightLeft > 0) {
-          position = margin - (fullImgHeight - heightLeft);
+      while (heightLeft > 0) {
+        if (pageNum > 0) {
           pdf.addPage();
-          pdf.addImage(fullImgData, "PNG", margin, position, contentWidth, fullImgHeight);
-          heightLeft -= maxContentHeight;
         }
-      } else {
-        // Contenido largo: capturar sección por sección para evitar cortes
-        const gridContainers = elemento.querySelectorAll('.grid');
-        const allElements: HTMLElement[] = [];
+
+        // Calcular qué porción de la imagen mostrar
+        const sourceY = position * (canvas.height / imgHeight);
+        const sourceHeight = Math.min(
+          maxContentHeight * (canvas.height / imgHeight),
+          canvas.height - sourceY
+        );
+        const destHeight = sourceHeight * (imgHeight / canvas.height);
+
+        // Crear canvas temporal para la porción
+        const tempCanvas = document.createElement('canvas');
+        tempCanvas.width = canvas.width;
+        tempCanvas.height = sourceHeight;
+        const tempCtx = tempCanvas.getContext('2d');
         
-        // Recopilar elementos de nivel superior
-        elemento.childNodes.forEach((child) => {
-          if (child instanceof HTMLElement) {
-            allElements.push(child);
-          }
-        });
-
-        for (const section of allElements) {
-          // Capturar cada sección
-          const sectionCanvas = await html2canvas(section, {
-            scale: 2,
-            useCORS: true,
-            logging: false,
-            backgroundColor: "#ffffff",
-            windowWidth: section.scrollWidth,
-          });
-
-          const sectionImgData = sectionCanvas.toDataURL("image/png");
-          const sectionImgHeight = (sectionCanvas.height * contentWidth) / sectionCanvas.width;
-
-          // Verificar si la sección cabe en la página actual
-          if (currentY + sectionImgHeight > pageHeight - margin && !isFirstPage) {
-            // Nueva página
-            pdf.addPage();
-            currentY = margin;
-          }
-
-          // Si la sección es muy alta, dividirla
-          if (sectionImgHeight > maxContentHeight) {
-            let sectionHeightLeft = sectionImgHeight;
-            let sectionPosition = 0;
-
-            while (sectionHeightLeft > 0) {
-              if (sectionPosition !== 0) {
-                pdf.addPage();
-                currentY = margin;
-              }
-
-              const drawHeight = Math.min(sectionHeightLeft, maxContentHeight);
-              
-              // Calcular la porción de la imagen a dibujar
-              const sourceY = (sectionPosition / sectionImgHeight) * sectionCanvas.height;
-              const sourceHeight = (drawHeight / sectionImgHeight) * sectionCanvas.height;
-
-              // Crear canvas temporal para la porción
-              const tempCanvas = document.createElement('canvas');
-              tempCanvas.width = sectionCanvas.width;
-              tempCanvas.height = sourceHeight;
-              const tempCtx = tempCanvas.getContext('2d');
-              if (tempCtx) {
-                tempCtx.drawImage(
-                  sectionCanvas,
-                  0, sourceY, sectionCanvas.width, sourceHeight,
-                  0, 0, sectionCanvas.width, sourceHeight
-                );
-                const tempImgData = tempCanvas.toDataURL("image/png");
-                pdf.addImage(tempImgData, "PNG", margin, currentY, contentWidth, drawHeight);
-              }
-
-              sectionPosition += drawHeight;
-              sectionHeightLeft -= drawHeight;
-              currentY = margin + drawHeight;
-            }
-          } else {
-            pdf.addImage(sectionImgData, "PNG", margin, currentY, contentWidth, sectionImgHeight);
-            currentY += sectionImgHeight + 5; // 5mm de espacio entre secciones
-          }
-
-          isFirstPage = false;
+        if (tempCtx) {
+          tempCtx.drawImage(
+            canvas,
+            0, sourceY, canvas.width, sourceHeight,
+            0, 0, canvas.width, sourceHeight
+          );
+          const tempImgData = tempCanvas.toDataURL("image/png", 1.0);
+          pdf.addImage(tempImgData, "PNG", margin, margin, contentWidth, destHeight);
         }
+
+        position += maxContentHeight;
+        heightLeft -= maxContentHeight;
+        pageNum++;
       }
 
       // Restaurar el botón de descarga
@@ -170,7 +136,6 @@ export const BotonDescarga = ({ contenidoRef, nombreArchivo }: BotonDescargaProp
       pdf.save(`${limpiarNombreArchivo(nombreArchivo)}.pdf`);
     } catch (error) {
       console.error("Error al generar PDF:", error);
-      // Restaurar el botón en caso de error
       const botonDescarga = obtenerBotonDescarga();
       if (botonDescarga) {
         botonDescarga.style.display = '';
@@ -193,97 +158,99 @@ export const BotonDescarga = ({ contenidoRef, nombreArchivo }: BotonDescargaProp
         botonDescarga.style.display = 'none';
       }
 
-      // Capturar secciones como imágenes para Word
-      const imagenes: string[] = [];
-      
-      // Obtener el título primero
+      // Obtener el título
       const tituloElement = elemento.querySelector('h2');
       const titulo = tituloElement?.textContent || nombreArchivo;
 
-      // Capturar cada sección principal como imagen
-      const secciones = elemento.querySelectorAll(':scope > div');
+      // Clonar el elemento para capturar sin el botón
+      const clone = elemento.cloneNode(true) as HTMLElement;
+      clone.style.width = '750px';
+      clone.style.padding = '20px';
+      clone.style.backgroundColor = '#ffffff';
+      clone.style.position = 'absolute';
+      clone.style.left = '-9999px';
+      clone.style.top = '0';
       
-      for (const seccion of Array.from(secciones)) {
-        if (seccion instanceof HTMLElement && !seccion.hasAttribute('data-descarga-btn')) {
-          const canvas = await html2canvas(seccion, {
-            scale: 1.5,
-            useCORS: true,
-            logging: false,
-            backgroundColor: "#ffffff",
-            windowWidth: seccion.scrollWidth,
-          });
-          
-          const imgData = canvas.toDataURL("image/png");
-          imagenes.push(imgData);
-        }
+      // Remover el botón del clon
+      const btnInClone = clone.querySelector('[data-descarga-btn]');
+      if (btnInClone) {
+        btnInClone.remove();
       }
+      
+      document.body.appendChild(clone);
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      // Capturar todo el contenido como una sola imagen
+      const canvas = await html2canvas(clone, {
+        scale: 2,
+        useCORS: true,
+        logging: false,
+        backgroundColor: "#ffffff",
+        width: clone.scrollWidth,
+        height: clone.scrollHeight,
+      });
+
+      document.body.removeChild(clone);
 
       // Restaurar el botón de descarga
       if (botonDescarga) {
         botonDescarga.style.display = '';
       }
 
-      // Crear documento Word con imágenes
-      const imagenesHtml = imagenes.map(img => 
-        `<p style="text-align: center; margin: 20px 0; page-break-inside: avoid;">
-          <img src="${img}" style="max-width: 100%; height: auto; border: 1px solid #e0e0e0; border-radius: 8px;" />
-        </p>`
-      ).join('\n');
+      // Convertir a base64 sin el prefijo data:image/png;base64,
+      const base64Data = canvas.toDataURL("image/png").split(',')[1];
 
-      const htmlContent = `
-        <!DOCTYPE html>
-        <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
-        <head>
-          <meta charset="utf-8">
-          <title>${titulo}</title>
-          <style>
-            @page {
-              margin: 2cm;
-            }
-            body { 
-              font-family: Calibri, Arial, sans-serif; 
-              font-size: 12pt; 
-              padding: 20px;
-              max-width: 100%;
-            }
-            h1 { 
-              font-size: 20pt; 
-              font-weight: bold; 
-              text-align: center; 
-              margin-bottom: 30px; 
-              color: #1a1a1a; 
-            }
-            img {
-              max-width: 100%;
-              height: auto;
-            }
-            p {
-              page-break-inside: avoid;
-            }
-          </style>
-        </head>
-        <body>
-          <h1>${titulo}</h1>
-          ${imagenesHtml}
-        </body>
-        </html>
-      `;
+      // Crear documento MHTML que Word puede leer correctamente con imágenes embebidas
+      const boundary = "----=_NextPart_000_0000_01D00000.00000000";
+      
+      const mhtmlContent = `MIME-Version: 1.0
+Content-Type: multipart/related; boundary="${boundary}"
 
-      const blob = new Blob(['\ufeff', htmlContent], {
-        type: 'application/msword'
+--${boundary}
+Content-Type: text/html; charset="utf-8"
+Content-Transfer-Encoding: quoted-printable
+
+<!DOCTYPE html>
+<html xmlns:o=3D'urn:schemas-microsoft-com:office:office' xmlns:w=3D'urn:schemas-microsoft-com:office:word'>
+<head>
+<meta charset=3D"utf-8">
+<title>${titulo}</title>
+<style>
+@page { margin: 2cm; }
+body { font-family: Calibri, Arial, sans-serif; text-align: center; }
+h1 { font-size: 20pt; font-weight: bold; margin-bottom: 30px; }
+img { max-width: 100%; height: auto; }
+</style>
+</head>
+<body>
+<h1>${titulo}</h1>
+<img src=3D"cid:imagen001@lovable.dev" alt=3D"Contenido" />
+</body>
+</html>
+
+--${boundary}
+Content-Type: image/png
+Content-Transfer-Encoding: base64
+Content-ID: <imagen001@lovable.dev>
+
+${base64Data.match(/.{1,76}/g)?.join('\n') || base64Data}
+
+--${boundary}--`;
+
+      const blob = new Blob([mhtmlContent], {
+        type: 'message/rfc822'
       });
       
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
-      link.download = `${limpiarNombreArchivo(nombreArchivo)}.doc`;
+      link.download = `${limpiarNombreArchivo(nombreArchivo)}.mht`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
     } catch (error) {
       console.error("Error al generar Word:", error);
-      // Restaurar el botón en caso de error
       const botonDescarga = obtenerBotonDescarga();
       if (botonDescarga) {
         botonDescarga.style.display = '';
@@ -320,7 +287,7 @@ export const BotonDescarga = ({ contenidoRef, nombreArchivo }: BotonDescargaProp
         </DropdownMenuItem>
         <DropdownMenuItem onClick={descargarWord} disabled={descargando !== null}>
           <FileText className="w-4 h-4 mr-2 text-blue-500" />
-          Descargar como Word
+          Descargar como Word (.mht)
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
