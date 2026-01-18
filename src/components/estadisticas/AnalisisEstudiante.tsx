@@ -1,9 +1,7 @@
-import { useRef } from "react";
 import { useEstadisticas } from "@/hooks/useEstadisticas";
 import { TarjetaResumen } from "./TarjetaResumen";
 import { TablaEvolucion } from "./TablaEvolucion";
 import { ListaComparativa } from "./ListaComparativa";
-import { BotonDescarga } from "./BotonDescarga";
 import { User, TrendingUp, Award, AlertTriangle, Medal, Star, ShieldAlert, ShieldCheck } from "lucide-react";
 
 interface AnalisisEstudianteProps { codigoEstudiante: string; periodo: number | "anual"; titulo?: string; }
@@ -13,7 +11,6 @@ const UMBRAL_PORCENTAJE_MINIMO = 40;
 const UMBRAL_PORCENTAJE_ANUAL = 160;
 
 export const AnalisisEstudiante = ({ codigoEstudiante, periodo, titulo }: AnalisisEstudianteProps) => {
-  const contenidoRef = useRef<HTMLDivElement>(null);
   const { getPromediosEstudiantes, getPromediosMaterias, getPromedioInstitucional, getEvolucionPeriodos } = useEstadisticas();
 
   if (!codigoEstudiante) return <div className="bg-card rounded-lg shadow-soft p-8 text-center text-muted-foreground">Selecciona un estudiante para ver su análisis</div>;
@@ -55,16 +52,12 @@ export const AnalisisEstudiante = ({ codigoEstudiante, periodo, titulo }: Analis
 
   return (
     <div className="space-y-6">
-      {/* Contenido descargable */}
-      <div ref={contenidoRef} className="space-y-6 bg-background p-4 -m-4">
-        {/* Título dinámico con botón de descarga */}
+      <div className="space-y-6">
+        {/* Título dinámico */}
         {titulo && (
-          <div className="flex items-center justify-center gap-4">
-            <h2 className="text-xl md:text-2xl font-bold text-foreground text-center">
-              {titulo}
-            </h2>
-            <BotonDescarga contenidoRef={contenidoRef} nombreArchivo={titulo} />
-          </div>
+          <h2 className="text-xl md:text-2xl font-bold text-foreground text-center">
+            {titulo}
+          </h2>
         )}
         <div className="bg-card rounded-lg shadow-soft p-6 border border-border">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
