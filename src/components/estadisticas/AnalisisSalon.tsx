@@ -131,7 +131,13 @@ export const AnalisisSalon = ({ grado, salon, periodo, titulo }: AnalisisSalonPr
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <TablaRanking titulo={`Top 5 Estudiantes - ${grado} ${salon}`} datos={topEstudiantes} tipo="estudiante" limite={5} />
+        <TablaRanking 
+          titulo={`Ranking de Estudiantes - ${grado} ${salon}`} 
+          datos={estudiantesSalon.sort((a, b) => b.promedio - a.promedio || a.nombre_completo.localeCompare(b.nombre_completo))} 
+          tipo="estudiante" 
+          mostrarTodosSinLimite={true}
+          ocultarIconosDespuesDe={3}
+        />
         <ListaComparativa titulo={`Rendimiento por Materia - ${grado} ${salon}`} items={materias.map(m => ({ nombre: m.materia, valor: m.promedio }))} mostrarPosicion />
       </div>
 

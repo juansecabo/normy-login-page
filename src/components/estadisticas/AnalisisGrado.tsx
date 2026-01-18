@@ -37,6 +37,7 @@ export const AnalisisGrado = ({ grado, periodo, titulo }: AnalisisGradoProps) =>
   const promedioInstitucional = getPromedioInstitucional(periodo);
   const distribucion = getDistribucionDesempeno(periodo, grado);
   const topEstudiantes = getTopEstudiantes(10, periodo, grado);
+  const peoresEstudiantes = [...getPromediosEstudiantes(periodo, grado)].sort((a, b) => a.promedio - b.promedio || a.nombre_completo.localeCompare(b.nombre_completo)).slice(0, 10);
   const salones = getPromediosSalones(periodo, grado).sort((a, b) => b.promedio - a.promedio);
   const materias = getPromediosMaterias(periodo, grado);
   
@@ -132,7 +133,10 @@ export const AnalisisGrado = ({ grado, periodo, titulo }: AnalisisGradoProps) =>
         <ListaComparativa titulo={`Rendimiento por Materia - ${grado}`} items={materias.map(m => ({ nombre: m.materia, valor: m.promedio }))} mostrarPosicion />
       </div>
 
-      <TablaRanking titulo={`Top 10 Estudiantes - ${grado}`} datos={topEstudiantes} tipo="estudiante" limite={10} />
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <TablaRanking titulo={`Top 10 Mejores Estudiantes - ${grado}`} datos={topEstudiantes} tipo="estudiante" limite={10} />
+        <TablaRanking titulo={`Top 10 Estudiantes a Reforzar - ${grado}`} datos={peoresEstudiantes} tipo="estudiante" limite={10} ocultarIconosDespuesDe={0} />
+      </div>
 
       {/* Comparativa con promedios de referencia */}
       <div className="bg-card rounded-lg shadow-soft p-4 border border-border">
