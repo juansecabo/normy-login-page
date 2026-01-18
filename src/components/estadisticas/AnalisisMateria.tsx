@@ -48,20 +48,37 @@ export const AnalisisMateria = ({ materia, periodo, grado, salon, titulo }: Anal
   const mejoresGrados = gradosOrdenados.slice(0, cantidadMejores);
   const peoresGrados = gradosOrdenados.slice(-cantidadPeores).reverse();
   
-  const rendimientoPorSalon = gradoEfectivo ? getPromediosSalones(periodo, gradoEfectivo).map(s => { const pm = getPromediosMaterias(periodo, gradoEfectivo, s.salon).find(m => m.materia === materia); return { grado: s.grado, salon: s.salon, promedio: pm?.promedio || 0, cantidadEstudiantes: s.cantidadEstudiantes }; }).filter(s => s.promedio > 0).sort((a, b) => b.promedio - a.promedio) : [];
+  const rendimientoPorSalon = gradoEfectivo && !salonEfectivo ? getPromediosSalones(periodo, gradoEfectivo).map(s => { const pm = getPromediosMaterias(periodo, gradoEfectivo, s.salon).find(m => m.materia === materia); return { grado: s.grado, salon: s.salon, promedio: pm?.promedio || 0, cantidadEstudiantes: s.cantidadEstudiantes }; }).filter(s => s.promedio > 0).sort((a, b) => b.promedio - a.promedio) : [];
   
   // Obtener estudiantes con nota en esta materia
-  const estudiantesConMateria = getPromediosEstudiantes(periodo, grado, salon).map(e => ({ ...e, promedioMateria: e.promediosPorMateria?.[materia] || 0 })).filter(e => e.promedioMateria > 0).sort((a, b) => b.promedioMateria - a.promedioMateria);
+  const estudiantesConMateria = getPromediosEstudiantes(periodo, grado, salon).map(e => ({ ...e, promedioMateria: e.promediosPorMateria?.[materia] || 0 })).filter(e => e.promedioMateria > 0).sort((a, b) => {
+    if (b.promedioMateria !== a.promedioMateria) return b.promedioMateria - a.promedioMateria;
+    return a.nombre_completo.localeCompare(b.nombre_completo);
+  });
   
-  // Límite de top según nivel
-  const limiteTop = salonEfectivo ? 5 : 10;
+  // Determinar si mostrar todos o solo top
+  const mostrarTodosEstudiantes = !!salonEfectivo;
+  const limiteTop = mostrarTodosEstudiantes ? estudiantesConMateria.length : 10;
   const topEstudiantes = estudiantesConMateria.slice(0, limiteTop).map(e => ({ ...e, promedio: e.promedioMateria }));
+  
+  // Estudiantes a reforzar (solo cuando no es nivel salón individual)
+  const peoresEstudiantes = !salonEfectivo 
+    ? [...estudiantesConMateria].sort((a, b) => {
+        if (a.promedioMateria !== b.promedioMateria) return a.promedioMateria - b.promedioMateria;
+        return a.nombre_completo.localeCompare(b.nombre_completo);
+      }).slice(0, 10).map(e => ({ ...e, promedio: e.promedioMateria }))
+    : [];
   
   // Título del ranking según contexto
   const getTituloRanking = () => {
-    if (salonEfectivo) return `Top ${limiteTop} Estudiantes - ${gradoEfectivo} ${salonEfectivo} - ${materia}`;
-    if (gradoEfectivo) return `Top ${limiteTop} Estudiantes - ${gradoEfectivo} - ${materia}`;
-    return `Top ${limiteTop} Estudiantes - ${materia}`;
+    if (salonEfectivo) return `Ranking de Estudiantes - ${gradoEfectivo} ${salonEfectivo} - ${materia}`;
+    if (gradoEfectivo) return `Top 10 Mejores Estudiantes - ${gradoEfectivo} - ${materia}`;
+    return `Top 10 Mejores Estudiantes - ${materia}`;
+  };
+  
+  const getTituloPeores = () => {
+    if (gradoEfectivo) return `Top 10 Estudiantes a Reforzar - ${gradoEfectivo} - ${materia}`;
+    return `Top 10 Estudiantes a Reforzar - ${materia}`;
   };
   
   // Calcular evolución específica por nivel
@@ -150,22 +167,29 @@ export const AnalisisMateria = ({ materia, periodo, grado, salon, titulo }: Anal
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <TablaEvolucion titulo={getTituloEvolucion()} datos={evolucionMateria} />
-        <ListaComparativa titulo="Rendimiento por Grado" items={rendimientoPorGrado} mostrarPosicion />
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <TablaRanking titulo={getTituloRanking()} datos={topEstudiantes} tipo="estudiante" limite={limiteTop} />
-        {cantidadGrados > 1 && (
-          <>
-            <ListaComparativa titulo="Mejores Grados" items={mejoresGrados} tipo="mejor" icono={<Award className="w-5 h-5 text-green-500" />} />
-            {cantidadPeores > 0 && (
-              <ListaComparativa titulo="Grados a Reforzar" items={peoresGrados} tipo="peor" icono={<AlertTriangle className="w-5 h-5 text-amber-500" />} />
-            )}
-          </>
+        {/* Ranking de grados solo cuando es nivel institucional (todos los grados) */}
+        {!gradoEfectivo && cantidadGrados > 1 && (
+          <ListaComparativa titulo={`Ranking de Grados - ${materia}`} items={rendimientoPorGrado.sort((a, b) => b.valor - a.valor)} mostrarPosicion />
         )}
       </div>
 
-      {gradoEfectivo && rendimientoPorSalon.length > 0 && (
+      {/* Nivel Salón específico: Ranking completo de estudiantes */}
+      {salonEfectivo && (
+        <TablaRanking titulo={getTituloRanking()} datos={topEstudiantes} tipo="estudiante" mostrarTodosSinLimite />
+      )}
+
+      {/* Nivel Grado o Institucional: Top mejores y Top a reforzar */}
+      {!salonEfectivo && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <TablaRanking titulo={getTituloRanking()} datos={topEstudiantes} tipo="estudiante" limite={10} />
+          {peoresEstudiantes.length > 0 && (
+            <TablaRanking titulo={getTituloPeores()} datos={peoresEstudiantes} tipo="estudiante" limite={10} ocultarIconosDespuesDe={0} />
+          )}
+        </div>
+      )}
+
+      {/* Ranking de salones solo cuando hay grado específico pero no salón específico */}
+      {gradoEfectivo && !salonEfectivo && rendimientoPorSalon.length > 0 && (
         <ListaComparativa titulo={`Ranking de Salones - ${gradoEfectivo} - ${materia}`} items={rendimientoPorSalon.map(s => ({ nombre: s.salon, valor: s.promedio, extra: `${s.cantidadEstudiantes} estudiantes` }))} mostrarPosicion />
       )}
       </div>
