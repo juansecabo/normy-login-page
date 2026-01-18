@@ -465,8 +465,25 @@ export const useEstadisticas = () => {
   const getDistribucionDesempeno = (
     periodo?: number | "anual",
     grado?: string,
-    salon?: string
+    salon?: string,
+    materia?: string
   ): DistribucionDesempeno => {
+    // Si hay materia específica, calcular distribución basada en promedios de esa materia
+    if (materia) {
+      const estudiantes = getPromediosEstudiantes(periodo, grado, salon);
+      const estudiantesConMateria = estudiantes
+        .map(e => ({ ...e, promedioMateria: e.promediosPorMateria?.[materia] || 0 }))
+        .filter(e => e.promedioMateria > 0);
+      
+      return {
+        bajo: estudiantesConMateria.filter(e => e.promedioMateria < 3.0).length,
+        basico: estudiantesConMateria.filter(e => e.promedioMateria >= 3.0 && e.promedioMateria < 4.0).length,
+        alto: estudiantesConMateria.filter(e => e.promedioMateria >= 4.0 && e.promedioMateria <= 4.5).length,
+        superior: estudiantesConMateria.filter(e => e.promedioMateria > 4.5).length
+      };
+    }
+    
+    // Distribución general basada en promedios globales
     const promedios = getPromediosEstudiantes(periodo, grado, salon);
     
     return {

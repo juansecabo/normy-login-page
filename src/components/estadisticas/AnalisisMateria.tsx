@@ -6,6 +6,7 @@ import { TarjetaResumen } from "./TarjetaResumen";
 import { TablaRanking } from "./TablaRanking";
 import { TablaEvolucion } from "./TablaEvolucion";
 import { ListaComparativa } from "./ListaComparativa";
+import { TablaDistribucion } from "./TablaDistribucion";
 import { IndicadorCompletitud } from "./IndicadorCompletitud";
 import BotonDescarga from "./BotonDescarga";
 import { BookOpen, Users, Award, AlertTriangle } from "lucide-react";
@@ -15,7 +16,7 @@ interface AnalisisMateriaProps { materia: string; periodo: number | "anual"; gra
 export const AnalisisMateria = ({ materia, periodo, grado, salon, titulo }: AnalisisMateriaProps) => {
   const contenidoRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
-  const { getPromediosEstudiantes, getPromediosSalones, getPromediosMaterias, getEstudiantesEnRiesgo } = useEstadisticas();
+  const { getPromediosEstudiantes, getPromediosSalones, getPromediosMaterias, getEstudiantesEnRiesgo, getDistribucionDesempeno } = useEstadisticas();
   const { verificarCompletitud } = useCompletitud();
 
   if (!materia) return <div className="bg-card rounded-lg shadow-soft p-8 text-center text-muted-foreground">Selecciona una materia para ver su análisis</div>;
@@ -107,6 +108,16 @@ export const AnalisisMateria = ({ materia, periodo, grado, salon, titulo }: Anal
   
   const tasaAprobacion = cantidadEstudiantes > 0 ? Math.round((estudiantesAprobados / cantidadEstudiantes) * 100) : 0;
 
+  // Calcular distribución de desempeño para esta materia
+  const distribucionMateria = getDistribucionDesempeno(periodo, grado, salon, materia);
+
+  // Título de la distribución según contexto
+  const getTituloDistribucion = () => {
+    if (salonEfectivo) return `Distribución por Desempeño - ${gradoEfectivo} ${salonEfectivo} - ${materia}`;
+    if (gradoEfectivo) return `Distribución por Desempeño - ${gradoEfectivo} - ${materia}`;
+    return `Distribución por Desempeño - ${materia}`;
+  };
+
   // Verificar completitud para esta materia específica
   const { completo, detalles, resumen, resumenCompleto } = verificarCompletitud("materia", periodo, gradoEfectivo, salonEfectivo, materia);
 
@@ -185,7 +196,11 @@ export const AnalisisMateria = ({ materia, periodo, grado, salon, titulo }: Anal
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <TablaDistribucion titulo={getTituloDistribucion()} distribucion={distribucionMateria} />
         <TablaEvolucion titulo={getTituloEvolucion()} datos={evolucionMateria} />
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Rendimiento por grado solo cuando es nivel institucional (todos los grados) */}
         {!gradoEfectivo && cantidadGrados > 1 && (
           <ListaComparativa titulo={`Rendimiento por Grado - ${materia}`} items={rendimientoPorGrado.sort((a, b) => b.valor - a.valor)} mostrarPosicion />
