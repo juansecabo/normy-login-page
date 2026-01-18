@@ -8,6 +8,8 @@ interface TablaRankingProps {
   datos: RankingItem[];
   tipo: "estudiante" | "salon" | "grado" | "materia";
   limite?: number;
+  mostrarTodosSinLimite?: boolean;
+  ocultarIconosDespuesDe?: number;
 }
 
 const getColorPorRendimiento = (valor: number): string => {
@@ -17,10 +19,10 @@ const getColorPorRendimiento = (valor: number): string => {
   return "text-green-600 bg-green-50";
 };
 
-const getPosicionIcono = (posicion: number) => {
-  if (posicion === 1) return <Trophy className="w-5 h-5 text-yellow-500" />;
-  if (posicion === 2) return <Medal className="w-5 h-5 text-gray-400" />;
-  if (posicion === 3) return <Award className="w-5 h-5 text-amber-600" />;
+const getPosicionIcono = (posicion: number, ocultarIconosDespuesDe: number = 3) => {
+  if (posicion === 1 && ocultarIconosDespuesDe >= 1) return <Trophy className="w-5 h-5 text-yellow-500" />;
+  if (posicion === 2 && ocultarIconosDespuesDe >= 2) return <Medal className="w-5 h-5 text-gray-400" />;
+  if (posicion === 3 && ocultarIconosDespuesDe >= 3) return <Award className="w-5 h-5 text-amber-600" />;
   return <span className="w-5 h-5 flex items-center justify-center text-sm font-medium text-muted-foreground">{posicion}</span>;
 };
 
@@ -28,9 +30,11 @@ export const TablaRanking = ({
   titulo,
   datos,
   tipo,
-  limite = 10
+  limite = 10,
+  mostrarTodosSinLimite = false,
+  ocultarIconosDespuesDe = 3
 }: TablaRankingProps) => {
-  const datosLimitados = datos.slice(0, limite);
+  const datosLimitados = mostrarTodosSinLimite ? datos : datos.slice(0, limite);
 
   if (datosLimitados.length === 0) {
     return (
@@ -74,7 +78,7 @@ export const TablaRanking = ({
             className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50 transition-colors"
           >
             <div className="flex-shrink-0 w-8 flex justify-center">
-              {getPosicionIcono(index + 1)}
+              {getPosicionIcono(index + 1, ocultarIconosDespuesDe)}
             </div>
             <div className="flex-1 min-w-0">
               <p className="font-medium text-foreground text-sm truncate">
