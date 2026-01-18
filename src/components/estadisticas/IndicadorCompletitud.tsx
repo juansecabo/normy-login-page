@@ -174,7 +174,7 @@ export const IndicadorCompletitud = ({
 
   // Contenido cuando está INCOMPLETO
   // Simplificado: Solo lista de nombres de profesores
-  const nombresProfesores = [...new Set(detalles.map(d => d.profesor || "").filter(Boolean))].sort();
+  const nombresProfesores = [...new Set(detalles.map(d => d.profesor || "").filter(Boolean))].sort((a, b) => a.localeCompare(b, 'es', { sensitivity: 'base' }));
 
   return (
     <>
