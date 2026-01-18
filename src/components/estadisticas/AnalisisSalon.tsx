@@ -1,4 +1,3 @@
-import { useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useEstadisticas } from "@/hooks/useEstadisticas";
 import { useCompletitud } from "@/hooks/useCompletitud";
@@ -8,7 +7,6 @@ import { TablaDistribucion } from "./TablaDistribucion";
 import { TablaEvolucion } from "./TablaEvolucion";
 import { ListaComparativa } from "./ListaComparativa";
 import { IndicadorCompletitud } from "./IndicadorCompletitud";
-import { BotonDescarga } from "./BotonDescarga";
 import { Home, Users, TrendingUp, AlertTriangle, Award } from "lucide-react";
 
 interface AnalisisSalonProps { 
@@ -19,7 +17,6 @@ interface AnalisisSalonProps {
 }
 
 export const AnalisisSalon = ({ grado, salon, periodo, titulo }: AnalisisSalonProps) => {
-  const contenidoRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
   const { 
     getPromediosEstudiantes, getPromediosSalones, getPromediosMaterias, 
@@ -100,16 +97,12 @@ export const AnalisisSalon = ({ grado, salon, periodo, titulo }: AnalisisSalonPr
         />
       </div>
 
-      {/* Contenido descargable */}
-      <div ref={contenidoRef} className="space-y-6 bg-background p-4 -m-4">
-        {/* Título dinámico con botón de descarga */}
+      <div className="space-y-6">
+        {/* Título dinámico */}
         {titulo && (
-          <div className="flex items-center justify-center gap-4">
-            <h2 className="text-xl md:text-2xl font-bold text-foreground text-center">
-              {titulo}
-            </h2>
-            <BotonDescarga contenidoRef={contenidoRef} nombreArchivo={titulo} />
-          </div>
+          <h2 className="text-xl md:text-2xl font-bold text-foreground text-center">
+            {titulo}
+          </h2>
         )}
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
