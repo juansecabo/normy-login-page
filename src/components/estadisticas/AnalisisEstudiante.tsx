@@ -1,7 +1,9 @@
+import { useRef } from "react";
 import { useEstadisticas } from "@/hooks/useEstadisticas";
 import { TarjetaResumen } from "./TarjetaResumen";
 import { TablaEvolucion } from "./TablaEvolucion";
 import { ListaComparativa } from "./ListaComparativa";
+import BotonDescarga from "./BotonDescarga";
 import { User, TrendingUp, Award, AlertTriangle, Medal, Star, ShieldAlert, ShieldCheck } from "lucide-react";
 
 interface AnalisisEstudianteProps { codigoEstudiante: string; periodo: number | "anual"; titulo?: string; }
@@ -11,6 +13,7 @@ const UMBRAL_PORCENTAJE_MINIMO = 40;
 const UMBRAL_PORCENTAJE_ANUAL = 160;
 
 export const AnalisisEstudiante = ({ codigoEstudiante, periodo, titulo }: AnalisisEstudianteProps) => {
+  const contentRef = useRef<HTMLDivElement>(null);
   const { getPromediosEstudiantes, getPromediosMaterias, getPromedioInstitucional, getEvolucionPeriodos } = useEstadisticas();
 
   if (!codigoEstudiante) return <div className="bg-card rounded-lg shadow-soft p-8 text-center text-muted-foreground">Selecciona un estudiante para ver su análisis</div>;
@@ -52,6 +55,13 @@ export const AnalisisEstudiante = ({ codigoEstudiante, periodo, titulo }: Analis
 
   return (
     <div className="space-y-6">
+      {/* Botón de descarga FUERA del contenido capturado */}
+      <div className="flex justify-end">
+        <BotonDescarga contentRef={contentRef} nombreArchivo={`estadisticas-estudiante-${codigoEstudiante}-${periodo === "anual" ? "anual" : `periodo-${periodo}`}`} />
+      </div>
+
+      {/* Contenido capturado para PDF */}
+      <div ref={contentRef}>
       <div className="space-y-6">
         {/* Título dinámico */}
         {titulo && (
@@ -118,6 +128,7 @@ export const AnalisisEstudiante = ({ codigoEstudiante, periodo, titulo }: Analis
             </tbody>
           </table>
         </div>
+      </div>
       </div>
       </div>
     </div>
