@@ -110,7 +110,7 @@ export const AnalisisMateria = ({ materia, periodo, grado, salon, titulo }: Anal
           <span className="font-medium">ℹ️</span>
           <span>Estadísticas basadas únicamente en estudiantes con notas registradas.</span>
         </div>
-        <BotonDescarga contenidoRef={contenidoRef} nombreArchivo={`estadisticas-${materia}-${periodo}`} />
+        <BotonDescarga contenidoRef={contenidoRef} nombreArchivo={titulo || `${materia} - ${getContextoLabel()} - ${periodo === "anual" ? "Acumulado Anual" : `Período ${periodo}`}`} />
       </div>
 
       <div ref={contenidoRef} className="space-y-6">
