@@ -1,10 +1,12 @@
 import { useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useEstadisticas, ordenGrados } from "@/hooks/useEstadisticas";
+import { useCompletitud } from "@/hooks/useCompletitud";
 import { TarjetaResumen } from "./TarjetaResumen";
 import { TablaRanking } from "./TablaRanking";
 import { TablaEvolucion } from "./TablaEvolucion";
 import { ListaComparativa } from "./ListaComparativa";
+import { IndicadorCompletitud } from "./IndicadorCompletitud";
 import BotonDescarga from "./BotonDescarga";
 import { BookOpen, Users, Award, AlertTriangle } from "lucide-react";
 
@@ -14,6 +16,7 @@ export const AnalisisMateria = ({ materia, periodo, grado, salon, titulo }: Anal
   const contenidoRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
   const { getPromediosEstudiantes, getPromediosSalones, getPromediosMaterias, getEstudiantesEnRiesgo } = useEstadisticas();
+  const { verificarCompletitud } = useCompletitud();
 
   if (!materia) return <div className="bg-card rounded-lg shadow-soft p-8 text-center text-muted-foreground">Selecciona una materia para ver su análisis</div>;
 
@@ -104,6 +107,12 @@ export const AnalisisMateria = ({ materia, periodo, grado, salon, titulo }: Anal
   
   const tasaAprobacion = cantidadEstudiantes > 0 ? Math.round((estudiantesAprobados / cantidadEstudiantes) * 100) : 0;
 
+  // Verificar completitud para esta materia específica
+  const { completo, detalles, resumen, resumenCompleto } = verificarCompletitud("materia", periodo, gradoEfectivo, salonEfectivo, materia);
+
+  // Formatear período para mostrar
+  const periodoTexto = periodo === "anual" ? "Acumulado Anual" : `Período ${periodo}`;
+
   // Navegar a página de riesgo con filtro de materia
   const handleRiesgoClick = () => {
     const params = new URLSearchParams();
@@ -121,13 +130,23 @@ export const AnalisisMateria = ({ materia, periodo, grado, salon, titulo }: Anal
 
   return (
     <div className="space-y-6">
-      {/* Banner informativo */}
+      {/* Banner informativo con indicador de completitud */}
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div className="flex items-center gap-2 text-sm text-blue-700">
           <span className="font-medium">ℹ️</span>
           <span>Estadísticas basadas únicamente en estudiantes con notas registradas.</span>
         </div>
-        <BotonDescarga contenidoRef={contenidoRef} nombreArchivo={titulo || `${materia} - ${getContextoLabel()} - ${periodo === "anual" ? "Acumulado Anual" : `Período ${periodo}`}`} />
+        <div className="flex items-center gap-2">
+          <IndicadorCompletitud 
+            completo={completo} 
+            detalles={detalles} 
+            resumen={resumen}
+            resumenCompleto={resumenCompleto}
+            nivel={materia} 
+            periodo={periodoTexto}
+          />
+          <BotonDescarga contenidoRef={contenidoRef} nombreArchivo={titulo || `${materia} - ${getContextoLabel()} - ${periodo === "anual" ? "Acumulado Anual" : `Período ${periodo}`}`} />
+        </div>
       </div>
 
       <div ref={contenidoRef} className="space-y-6">
