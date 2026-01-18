@@ -1,17 +1,14 @@
-import { useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useEstadisticas, ordenGrados } from "@/hooks/useEstadisticas";
 import { TarjetaResumen } from "./TarjetaResumen";
 import { TablaRanking } from "./TablaRanking";
 import { TablaEvolucion } from "./TablaEvolucion";
 import { ListaComparativa } from "./ListaComparativa";
-import { BotonDescarga } from "./BotonDescarga";
 import { BookOpen, Users, Award, AlertTriangle } from "lucide-react";
 
 interface AnalisisMateriaProps { materia: string; periodo: number | "anual"; grado?: string; salon?: string; titulo?: string; }
 
 export const AnalisisMateria = ({ materia, periodo, grado, salon, titulo }: AnalisisMateriaProps) => {
-  const contenidoRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
   const { getPromediosEstudiantes, getPromediosSalones, getPromediosMaterias, getEstudiantesEnRiesgo } = useEstadisticas();
 
@@ -110,16 +107,12 @@ export const AnalisisMateria = ({ materia, periodo, grado, salon, titulo }: Anal
         <span>Estadísticas basadas únicamente en estudiantes con notas registradas.</span>
       </div>
 
-      {/* Contenido descargable */}
-      <div ref={contenidoRef} className="space-y-6 bg-background p-4 -m-4">
-        {/* Título dinámico con botón de descarga */}
+      <div className="space-y-6">
+        {/* Título dinámico */}
         {titulo && (
-          <div className="flex items-center justify-center gap-4">
-            <h2 className="text-xl md:text-2xl font-bold text-foreground text-center">
-              {titulo}
-            </h2>
-            <BotonDescarga contenidoRef={contenidoRef} nombreArchivo={titulo} />
-          </div>
+          <h2 className="text-xl md:text-2xl font-bold text-foreground text-center">
+            {titulo}
+          </h2>
         )}
 
         <div className="bg-card rounded-lg shadow-soft p-6 border border-border">
