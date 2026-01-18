@@ -1,3 +1,4 @@
+import { useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useEstadisticas, ordenGrados } from "@/hooks/useEstadisticas";
 import { useCompletitud } from "@/hooks/useCompletitud";
@@ -7,6 +8,7 @@ import { TablaDistribucion } from "./TablaDistribucion";
 import { TablaEvolucion } from "./TablaEvolucion";
 import { ListaComparativa } from "./ListaComparativa";
 import { IndicadorCompletitud } from "./IndicadorCompletitud";
+import BotonDescarga from "./BotonDescarga";
 import { School, Users, Award, AlertTriangle } from "lucide-react";
 
 interface AnalisisInstitucionalProps {
@@ -15,6 +17,7 @@ interface AnalisisInstitucionalProps {
 }
 
 export const AnalisisInstitucional = ({ periodo, titulo }: AnalisisInstitucionalProps) => {
+  const contentRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
   const {
     getPromedioInstitucional,
@@ -97,6 +100,13 @@ export const AnalisisInstitucional = ({ periodo, titulo }: AnalisisInstitucional
 
   return (
     <div className="space-y-6">
+      {/* Botón de descarga FUERA del contenido capturado */}
+      <div className="flex justify-end">
+        <BotonDescarga contentRef={contentRef} nombreArchivo={`estadisticas-institucional-${periodo === "anual" ? "anual" : `periodo-${periodo}`}`} />
+      </div>
+
+      {/* Contenido capturado para PDF */}
+      <div ref={contentRef}>
       {/* Banner informativo con indicador de completitud */}
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div className="flex items-center gap-2 text-sm text-blue-700">
@@ -186,6 +196,7 @@ export const AnalisisInstitucional = ({ periodo, titulo }: AnalisisInstitucional
           items={datosGrados}
           mostrarPosicion
         />
+      </div>
       </div>
       </div>
     </div>
