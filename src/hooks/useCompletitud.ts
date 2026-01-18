@@ -354,7 +354,19 @@ export const useCompletitud = () => {
       );
     }
     if (nivel === "materia" && materia) {
-      combinacionesFiltradas = combinacionesFiltradas.filter((c) => normalize(c.materia) === normalize(materia));
+      // Filtrar por materia, y opcionalmente por grado/salón si están definidos
+      combinacionesFiltradas = combinacionesFiltradas.filter((c) => {
+        const matchMateria = normalize(c.materia) === normalize(materia);
+        if (!matchMateria) return false;
+        
+        // Si hay grado específico, filtrar por grado
+        if (grado && grado !== "all" && normalize(c.grado) !== normalize(grado)) return false;
+        
+        // Si hay salón específico, filtrar por salón
+        if (salon && salon !== "all" && normalize(c.salon) !== normalize(salon)) return false;
+        
+        return true;
+      });
     }
 
     console.log("Combinaciones a verificar:", combinacionesFiltradas.length);
