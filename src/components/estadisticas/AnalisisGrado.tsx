@@ -1,3 +1,4 @@
+import { useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useEstadisticas } from "@/hooks/useEstadisticas";
 import { useCompletitud } from "@/hooks/useCompletitud";
@@ -7,6 +8,7 @@ import { TablaDistribucion } from "./TablaDistribucion";
 import { TablaEvolucion } from "./TablaEvolucion";
 import { ListaComparativa } from "./ListaComparativa";
 import { IndicadorCompletitud } from "./IndicadorCompletitud";
+import BotonDescarga from "./BotonDescarga";
 import { GraduationCap, Users, Award, AlertTriangle } from "lucide-react";
 
 interface AnalisisGradoProps {
@@ -16,6 +18,7 @@ interface AnalisisGradoProps {
 }
 
 export const AnalisisGrado = ({ grado, periodo, titulo }: AnalisisGradoProps) => {
+  const contenidoRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
   const {
     getPromediosEstudiantes, getPromediosSalones, getPromediosMaterias,
@@ -82,17 +85,20 @@ export const AnalisisGrado = ({ grado, periodo, titulo }: AnalisisGradoProps) =>
           <span className="font-medium">ℹ️</span>
           <span>Estadísticas basadas únicamente en estudiantes con notas registradas.</span>
         </div>
-        <IndicadorCompletitud 
-          completo={completo} 
-          detalles={detalles} 
-          resumen={resumen}
-          resumenCompleto={resumenCompleto}
-          nivel={grado} 
-          periodo={periodoTexto}
-        />
+        <div className="flex items-center gap-2">
+          <IndicadorCompletitud 
+            completo={completo} 
+            detalles={detalles} 
+            resumen={resumen}
+            resumenCompleto={resumenCompleto}
+            nivel={grado} 
+            periodo={periodoTexto}
+          />
+          <BotonDescarga contenidoRef={contenidoRef} nombreArchivo={`estadisticas-${grado}-${periodo}`} />
+        </div>
       </div>
 
-      <div className="space-y-6">
+      <div ref={contenidoRef} className="space-y-6">
         {/* Título dinámico */}
         {titulo && (
           <h2 className="text-xl md:text-2xl font-bold text-foreground text-center">
