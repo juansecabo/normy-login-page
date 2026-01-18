@@ -1,3 +1,4 @@
+import { useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useEstadisticas } from "@/hooks/useEstadisticas";
 import { useCompletitud } from "@/hooks/useCompletitud";
@@ -7,6 +8,7 @@ import { TablaDistribucion } from "./TablaDistribucion";
 import { TablaEvolucion } from "./TablaEvolucion";
 import { ListaComparativa } from "./ListaComparativa";
 import { IndicadorCompletitud } from "./IndicadorCompletitud";
+import BotonDescarga from "./BotonDescarga";
 import { Home, Users, TrendingUp, AlertTriangle, Award } from "lucide-react";
 
 interface AnalisisSalonProps { 
@@ -17,6 +19,7 @@ interface AnalisisSalonProps {
 }
 
 export const AnalisisSalon = ({ grado, salon, periodo, titulo }: AnalisisSalonProps) => {
+  const contenidoRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
   const { 
     getPromediosEstudiantes, getPromediosSalones, getPromediosMaterias, 
@@ -87,17 +90,20 @@ export const AnalisisSalon = ({ grado, salon, periodo, titulo }: AnalisisSalonPr
           <span className="font-medium">ℹ️</span>
           <span>Estadísticas basadas únicamente en estudiantes con notas registradas.</span>
         </div>
-        <IndicadorCompletitud 
-          completo={completo} 
-          detalles={detalles} 
-          resumen={resumen}
-          resumenCompleto={resumenCompleto}
-          nivel={`${grado} ${salon}`} 
-          periodo={periodoTexto}
-        />
+        <div className="flex items-center gap-2">
+          <IndicadorCompletitud 
+            completo={completo} 
+            detalles={detalles} 
+            resumen={resumen}
+            resumenCompleto={resumenCompleto}
+            nivel={`${grado} ${salon}`} 
+            periodo={periodoTexto}
+          />
+          <BotonDescarga contenidoRef={contenidoRef} nombreArchivo={`estadisticas-${grado}-${salon}-${periodo}`} />
+        </div>
       </div>
 
-      <div className="space-y-6">
+      <div ref={contenidoRef} className="space-y-6">
         {/* Título dinámico */}
         {titulo && (
           <h2 className="text-xl md:text-2xl font-bold text-foreground text-center">

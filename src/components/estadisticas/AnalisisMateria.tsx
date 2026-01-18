@@ -1,14 +1,17 @@
+import { useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useEstadisticas, ordenGrados } from "@/hooks/useEstadisticas";
 import { TarjetaResumen } from "./TarjetaResumen";
 import { TablaRanking } from "./TablaRanking";
 import { TablaEvolucion } from "./TablaEvolucion";
 import { ListaComparativa } from "./ListaComparativa";
+import BotonDescarga from "./BotonDescarga";
 import { BookOpen, Users, Award, AlertTriangle } from "lucide-react";
 
 interface AnalisisMateriaProps { materia: string; periodo: number | "anual"; grado?: string; salon?: string; titulo?: string; }
 
 export const AnalisisMateria = ({ materia, periodo, grado, salon, titulo }: AnalisisMateriaProps) => {
+  const contenidoRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
   const { getPromediosEstudiantes, getPromediosSalones, getPromediosMaterias, getEstudiantesEnRiesgo } = useEstadisticas();
 
@@ -102,12 +105,15 @@ export const AnalisisMateria = ({ materia, periodo, grado, salon, titulo }: Anal
   return (
     <div className="space-y-6">
       {/* Banner informativo */}
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 flex items-center gap-2 text-sm text-blue-700">
-        <span className="font-medium">ℹ️</span>
-        <span>Estadísticas basadas únicamente en estudiantes con notas registradas.</span>
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div className="flex items-center gap-2 text-sm text-blue-700">
+          <span className="font-medium">ℹ️</span>
+          <span>Estadísticas basadas únicamente en estudiantes con notas registradas.</span>
+        </div>
+        <BotonDescarga contenidoRef={contenidoRef} nombreArchivo={`estadisticas-${materia}-${periodo}`} />
       </div>
 
-      <div className="space-y-6">
+      <div ref={contenidoRef} className="space-y-6">
         {/* Título dinámico */}
         {titulo && (
           <h2 className="text-xl md:text-2xl font-bold text-foreground text-center">
