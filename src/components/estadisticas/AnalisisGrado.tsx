@@ -94,7 +94,7 @@ export const AnalisisGrado = ({ grado, periodo, titulo }: AnalisisGradoProps) =>
             nivel={grado} 
             periodo={periodoTexto}
           />
-          <BotonDescarga contenidoRef={contenidoRef} nombreArchivo={`estadisticas-${grado}-${periodo}`} />
+          <BotonDescarga contenidoRef={contenidoRef} nombreArchivo={titulo || `${grado} - ${periodoTexto}`} />
         </div>
       </div>
 

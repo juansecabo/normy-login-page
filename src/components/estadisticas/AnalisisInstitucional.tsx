@@ -115,7 +115,7 @@ export const AnalisisInstitucional = ({ periodo, titulo }: AnalisisInstitucional
             nivel="Institución" 
             periodo={periodoTexto}
           />
-          <BotonDescarga contenidoRef={contenidoRef} nombreArchivo={`estadisticas-institucional-${periodo}`} />
+          <BotonDescarga contenidoRef={contenidoRef} nombreArchivo={titulo || `Institución - ${periodoTexto}`} />
         </div>
       </div>
 

@@ -99,7 +99,7 @@ export const AnalisisSalon = ({ grado, salon, periodo, titulo }: AnalisisSalonPr
             nivel={`${grado} ${salon}`} 
             periodo={periodoTexto}
           />
-          <BotonDescarga contenidoRef={contenidoRef} nombreArchivo={`estadisticas-${grado}-${salon}-${periodo}`} />
+          <BotonDescarga contenidoRef={contenidoRef} nombreArchivo={titulo || `${grado} ${salon} - ${periodoTexto}`} />
         </div>
       </div>
 
