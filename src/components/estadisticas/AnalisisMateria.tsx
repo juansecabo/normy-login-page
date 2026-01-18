@@ -167,9 +167,13 @@ export const AnalisisMateria = ({ materia, periodo, grado, salon, titulo }: Anal
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <TablaEvolucion titulo={getTituloEvolucion()} datos={evolucionMateria} />
-        {/* Ranking de grados solo cuando es nivel institucional (todos los grados) */}
+        {/* Rendimiento por grado solo cuando es nivel institucional (todos los grados) */}
         {!gradoEfectivo && cantidadGrados > 1 && (
-          <ListaComparativa titulo={`Ranking de Grados - ${materia}`} items={rendimientoPorGrado.sort((a, b) => b.valor - a.valor)} mostrarPosicion />
+          <ListaComparativa titulo={`Rendimiento por Grado - ${materia}`} items={rendimientoPorGrado.sort((a, b) => b.valor - a.valor)} mostrarPosicion />
+        )}
+        {/* Rendimiento por salón cuando hay grado específico pero no salón específico */}
+        {gradoEfectivo && !salonEfectivo && rendimientoPorSalon.length > 0 && (
+          <ListaComparativa titulo={`Rendimiento por Salón - ${gradoEfectivo} - ${materia}`} items={rendimientoPorSalon.map(s => ({ nombre: s.salon, valor: s.promedio, extra: `${s.cantidadEstudiantes} estudiantes` }))} mostrarPosicion />
         )}
       </div>
 
@@ -186,11 +190,6 @@ export const AnalisisMateria = ({ materia, periodo, grado, salon, titulo }: Anal
             <TablaRanking titulo={getTituloPeores()} datos={peoresEstudiantes} tipo="estudiante" limite={10} ocultarIconosDespuesDe={0} />
           )}
         </div>
-      )}
-
-      {/* Ranking de salones solo cuando hay grado específico pero no salón específico */}
-      {gradoEfectivo && !salonEfectivo && rendimientoPorSalon.length > 0 && (
-        <ListaComparativa titulo={`Ranking de Salones - ${gradoEfectivo} - ${materia}`} items={rendimientoPorSalon.map(s => ({ nombre: s.salon, valor: s.promedio, extra: `${s.cantidadEstudiantes} estudiantes` }))} mostrarPosicion />
       )}
       </div>
     </div>
