@@ -107,17 +107,14 @@ export const AnalisisInstitucional = ({ periodo, titulo }: AnalisisInstitucional
           <span className="font-medium">ℹ️</span>
           <span>Estadísticas basadas únicamente en estudiantes con notas registradas.</span>
         </div>
-        <div className="flex items-center gap-2">
-          <IndicadorCompletitud 
-            completo={completo} 
-            detalles={detalles} 
-            resumen={resumen}
-            resumenCompleto={resumenCompleto}
-            nivel="Institución" 
-            periodo={periodoTexto}
-          />
-          <BotonDescarga contenidoRef={contenidoRef} nombreArchivo={titulo || `Institución - ${periodoTexto}`} />
-        </div>
+        <IndicadorCompletitud 
+          completo={completo} 
+          detalles={detalles} 
+          resumen={resumen}
+          resumenCompleto={resumenCompleto}
+          nivel="Institución" 
+          periodo={periodoTexto}
+        />
       </div>
 
       <div ref={contenidoRef} className="space-y-6">

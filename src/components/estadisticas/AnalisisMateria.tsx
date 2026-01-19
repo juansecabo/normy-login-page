@@ -147,17 +147,14 @@ export const AnalisisMateria = ({ materia, periodo, grado, salon, titulo }: Anal
           <span className="font-medium">ℹ️</span>
           <span>Estadísticas basadas únicamente en estudiantes con notas registradas.</span>
         </div>
-        <div className="flex items-center gap-2">
-          <IndicadorCompletitud 
-            completo={completo} 
-            detalles={detalles} 
-            resumen={resumen}
-            resumenCompleto={resumenCompleto}
-            nivel={materia} 
-            periodo={periodoTexto}
-          />
-          <BotonDescarga contenidoRef={contenidoRef} nombreArchivo={titulo || `${materia} - ${getContextoLabel()} - ${periodo === "anual" ? "Acumulado Anual" : `Período ${periodo}`}`} />
-        </div>
+        <IndicadorCompletitud 
+          completo={completo} 
+          detalles={detalles} 
+          resumen={resumen}
+          resumenCompleto={resumenCompleto}
+          nivel={materia} 
+          periodo={periodoTexto}
+        />
       </div>
 
       <div ref={contenidoRef} className="space-y-6">
