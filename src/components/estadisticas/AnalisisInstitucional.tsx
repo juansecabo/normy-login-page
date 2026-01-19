@@ -181,7 +181,7 @@ export const AnalisisInstitucional = ({ periodo, titulo }: AnalisisInstitucional
 
       {/* Rankings - Grados y Salones primero, luego Estudiantes */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <TablaRanking titulo="Rendimiento por Grado" datos={todosGrados} tipo="grado" mostrarTodosSinLimite={true} ocultarIconosDespuesDe={0} />
+        <TablaRanking titulo="Rendimiento por Grado" datos={todosGrados} tipo="grado" mostrarTodosSinLimite={true} />
         <TablaRanking titulo="Top 10 Mejores Salones" datos={topSalones} tipo="salon" limite={10} />
       </div>
 
