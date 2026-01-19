@@ -71,7 +71,7 @@ export const AnalisisEstudiante = ({ codigoEstudiante, periodo, titulo }: Analis
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div className="flex items-center gap-4">
               <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center"><User className="w-8 h-8 text-primary" /></div>
-              <div><h2 className="text-xl font-bold text-foreground">{estudiante.nombre_completo}</h2><p className="text-muted-foreground">{estudiante.grado} - {estudiante.salon}</p></div>
+              <div><h2 className="text-xl font-bold text-foreground">{estudiante.nombre_completo}</h2><p className="text-muted-foreground">{estudiante.grado} {estudiante.salon}</p></div>
             </div>
             <div className="flex flex-wrap gap-4">
               <div className="text-center px-4 py-2 bg-muted rounded-lg"><p className="text-xs text-muted-foreground">Salón</p><p className="text-lg font-bold text-foreground">#{posicionSalon}/{estudiantesSalon.length}</p></div>
