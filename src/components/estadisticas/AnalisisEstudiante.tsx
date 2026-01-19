@@ -55,6 +55,10 @@ export const AnalisisEstudiante = ({ codigoEstudiante, periodo, titulo }: Analis
 
   return (
     <div className="space-y-6">
+      {/* Botón de descarga */}
+      <div className="flex justify-end">
+        <BotonDescarga contenidoRef={contenidoRef} nombreArchivo={titulo || estudiante.nombre_completo} />
+      </div>
 
       <div ref={contenidoRef} className="space-y-6">
         {/* Título dinámico */}
