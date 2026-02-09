@@ -2,8 +2,8 @@ import { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
-import escudoImg from "@/assets/escudo.png";
-import normyExaminadoraImg from "@/assets/normy-examinadora.png";
+import escudoImg from "@/assets/escudo.webp";
+import normyExaminadoraImg from "@/assets/normy-examinadora.webp";
 import { getSession, clearSession } from "@/hooks/useSession";
 
 const Dashboard = () => {

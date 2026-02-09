@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import escudoImg from "@/assets/escudo.png";
+import escudoImg from "@/assets/escudo.webp";
 import { getSession, clearSession, isRectorOrCoordinador } from "@/hooks/useSession";
 import { BookOpen, Users } from "lucide-react";
 

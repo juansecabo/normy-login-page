@@ -1,7 +1,7 @@
 import { useEffect, useState, useMemo } from "react";
 import { useNavigate, Link, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import escudoImg from "@/assets/escudo.png";
+import escudoImg from "@/assets/escudo.webp";
 import { getSession, clearSession, isRectorOrCoordinador } from "@/hooks/useSession";
 import { useEstadisticas } from "@/hooks/useEstadisticas";
 import { FiltrosEstadisticas } from "@/components/estadisticas/FiltrosEstadisticas";

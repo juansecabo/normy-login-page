@@ -2,7 +2,7 @@ import { useEffect, useState, useRef, useCallback } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
-import escudoImg from "@/assets/escudo.png";
+import escudoImg from "@/assets/escudo.webp";
 import { Plus, MoreVertical, Pencil, Trash2, Send, Calendar } from "lucide-react";
 import { getSession, clearSession } from "@/hooks/useSession";
 import {

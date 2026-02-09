@@ -11,8 +11,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
-import escudoImg from "@/assets/escudo.png";
-import normyImg from "@/assets/normy-examinadora.png";
+import escudoImg from "@/assets/escudo.webp";
+import normyImg from "@/assets/normy-examinadora.webp";
 import { getSession, clearSession } from "@/hooks/useSession";
 import { Loader2 } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
