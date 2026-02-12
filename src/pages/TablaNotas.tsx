@@ -2559,9 +2559,19 @@ const TablaNotas = () => {
                     
                     {esFinalDefinitiva ? (
                       <>
-                        {/* Celdas vacías para períodos */}
+                        {/* Botones Notificar para cada período */}
                         {periodos.map((periodo) => (
-                          <td key={periodo.numero} className="border-r border-b border-border p-1 text-center"></td>
+                          <td key={periodo.numero} className="border-r border-b border-border p-1 text-center">
+                            {periodoTieneFinal(periodo.numero) && (
+                              <button
+                                onClick={() => handleNotificarPeriodoCompleto(periodo.numero)}
+                                className="w-full px-1 py-1 text-xs rounded-md bg-green-100 hover:bg-green-200 text-green-800 transition-colors flex flex-col items-center justify-center h-10"
+                              >
+                                <span className="text-[10px]">📱 Notificar</span>
+                                <span className="font-semibold text-[10px] leading-tight">Final Periodo</span>
+                              </button>
+                            )}
+                          </td>
                         ))}
                         {/* Botón Final Definitiva */}
                         <td className="border-r border-b border-border p-1 text-center">
