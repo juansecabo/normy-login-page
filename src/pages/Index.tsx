@@ -10,7 +10,6 @@ import { useToast } from "@/hooks/use-toast";
 import { saveSession } from "@/hooks/useSession";
 
 const Index = () => {
-  const [codigo, setCodigo] = useState("");
   const [contrasena, setContrasena] = useState("");
   const [showContrasena, setShowContrasena] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -20,25 +19,8 @@ const Index = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!codigo.trim()) {
-      toast({
-        title: "Error",
-        description: "Por favor ingresa tu código",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (!/^\d+$/.test(codigo.trim())) {
-      toast({
-        title: "Error",
-        description: "El código debe contener solo números",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (!contrasena) {
+    const input = contrasena.trim();
+    if (!input) {
       toast({
         title: "Error",
         description: "Por favor ingresa tu contraseña",
@@ -50,35 +32,42 @@ const Index = () => {
     setLoading(true);
 
     try {
-      const { data, error } = await supabase
-        .from('Internos')
-        .select('*')
-        .eq('codigo', parseInt(codigo.trim()))
-        .maybeSingle();
+      let data = null;
 
-      if (error) {
-        toast({
-          title: "Error",
-          description: "Error al verificar el código",
-          variant: "destructive",
-        });
-        setLoading(false);
-        return;
+      // 1. Si es numérico, buscar por código (usuario sin contraseña personalizada)
+      if (/^\d+$/.test(input)) {
+        const { data: porCodigo, error } = await supabase
+          .from('Internos')
+          .select('*')
+          .eq('codigo', parseInt(input))
+          .is('contrasena', null)
+          .maybeSingle();
+
+        if (error) {
+          toast({ title: "Error", description: "Error al verificar", variant: "destructive" });
+          setLoading(false);
+          return;
+        }
+        data = porCodigo;
+      }
+
+      // 2. Si no encontró por código, buscar por contraseña personalizada
+      if (!data) {
+        const { data: porContrasena, error } = await supabase
+          .from('Internos')
+          .select('*')
+          .eq('contrasena', input)
+          .maybeSingle();
+
+        if (error) {
+          toast({ title: "Error", description: "Error al verificar", variant: "destructive" });
+          setLoading(false);
+          return;
+        }
+        data = porContrasena;
       }
 
       if (!data) {
-        toast({
-          title: "Error",
-          description: "Código no válido",
-          variant: "destructive",
-        });
-        setLoading(false);
-        return;
-      }
-
-      // Verificar contraseña: si contrasena en BD es null, usar codigo
-      const contrasenaEsperada = data.contrasena ?? String(data.codigo);
-      if (contrasena !== contrasenaEsperada) {
         toast({
           title: "Error",
           description: "Contraseña incorrecta",
@@ -167,24 +156,6 @@ const Index = () => {
 
           {/* Formulario */}
           <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="space-y-2">
-              <label
-                htmlFor="codigo"
-                className="block text-sm font-medium text-foreground"
-              >
-                Digita tu código aquí
-              </label>
-              <Input
-                id="codigo"
-                type="text"
-                placeholder="Código de profesor"
-                value={codigo}
-                onChange={(e) => setCodigo(e.target.value)}
-                className="w-full h-12 text-base border-input bg-background focus:ring-2 focus:ring-primary/20 transition-all"
-                disabled={loading}
-              />
-            </div>
-
             <div className="space-y-2">
               <label
                 htmlFor="contrasena"
