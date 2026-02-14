@@ -101,22 +101,26 @@ const EstadisticasProfesor = () => {
     return gs.sort((a, b) => ordenGrados.indexOf(a) - ordenGrados.indexOf(b));
   }, [trios, materiaSeleccionada]);
 
-  // Salones para materia + grado
+  // Salones para materia + grado (excluye "all")
   const salonesParaGrado = useMemo(() => {
-    if (!materiaSeleccionada || !gradoSeleccionado) return [];
+    if (!materiaSeleccionada || !gradoSeleccionado || gradoSeleccionado === "all") return [];
     const ss = [...new Set(
       trios.filter(t => t.materia === materiaSeleccionada && t.grado === gradoSeleccionado).map(t => t.salon)
     )];
     return ss.sort((a, b) => (parseInt(a) || 0) - (parseInt(b) || 0));
   }, [trios, materiaSeleccionada, gradoSeleccionado]);
 
-  // Estudiantes del salón
+  // Estudiantes del salón (solo cuando grado y salon son específicos)
   const estudiantesDelSalon = useMemo(() => {
-    if (!gradoSeleccionado || !salonSeleccionado) return [];
+    if (!gradoSeleccionado || gradoSeleccionado === "all" || !salonSeleccionado || salonSeleccionado === "all") return [];
     return getPromediosEstudiantes("anual", gradoSeleccionado, salonSeleccionado)
       .map(e => ({ codigo: e.codigo_estudiantil, nombre: e.nombre_completo }))
       .sort((a, b) => a.nombre.localeCompare(b.nombre));
   }, [gradoSeleccionado, salonSeleccionado, getPromediosEstudiantes]);
+
+  // Valores efectivos para pasar a los componentes ("all" → undefined)
+  const gradoEfectivo = gradoSeleccionado === "all" ? "" : gradoSeleccionado;
+  const salonEfectivo = salonSeleccionado === "all" ? "" : salonSeleccionado;
 
   const periodoNumerico = periodoSeleccionado === "anual"
     ? ("anual" as const)
@@ -130,8 +134,10 @@ const EstadisticasProfesor = () => {
       return `${est?.nombre || "Estudiante"} - ${periodoTexto}`;
     }
     const partes = [materiaSeleccionada || "Materia"];
-    if (gradoSeleccionado) {
-      partes.push(salonSeleccionado ? `${gradoSeleccionado} ${salonSeleccionado}` : gradoSeleccionado);
+    if (gradoEfectivo) {
+      partes.push(salonEfectivo ? `${gradoEfectivo} ${salonEfectivo}` : gradoEfectivo);
+    } else if (gradoSeleccionado === "all") {
+      partes.push("Todos los grados");
     }
     partes.push(periodoTexto);
     return partes.join(" - ");
@@ -225,6 +231,9 @@ const EstadisticasProfesor = () => {
                     }}>
                       <SelectTrigger><SelectValue placeholder="Seleccionar grado" /></SelectTrigger>
                       <SelectContent>
+                        {(nivelAnalisis === "grado" || nivelAnalisis === "salon") && (
+                          <SelectItem value="all">Todos los grados</SelectItem>
+                        )}
                         {gradosParaMateria.map(g => (
                           <SelectItem key={g} value={g}>{g}</SelectItem>
                         ))}
@@ -233,8 +242,8 @@ const EstadisticasProfesor = () => {
                   </div>
                 )}
 
-                {/* 5. Salón - visible para salon, estudiante */}
-                {(nivelAnalisis === "salon" || nivelAnalisis === "estudiante") && gradoSeleccionado && (
+                {/* 5. Salón - visible para salon y estudiante, solo si grado es específico */}
+                {(nivelAnalisis === "salon" || nivelAnalisis === "estudiante") && gradoSeleccionado && gradoSeleccionado !== "all" && (
                   <div>
                     <label className="text-sm text-muted-foreground mb-1.5 block">Salón</label>
                     <Select value={salonSeleccionado} onValueChange={(val) => {
@@ -243,6 +252,9 @@ const EstadisticasProfesor = () => {
                     }}>
                       <SelectTrigger><SelectValue placeholder="Seleccionar salón" /></SelectTrigger>
                       <SelectContent>
+                        {nivelAnalisis === "salon" && (
+                          <SelectItem value="all">Todos los salones</SelectItem>
+                        )}
                         {salonesParaGrado.map(s => (
                           <SelectItem key={s} value={s}>{s}</SelectItem>
                         ))}
@@ -251,8 +263,8 @@ const EstadisticasProfesor = () => {
                   </div>
                 )}
 
-                {/* 6. Estudiante - visible para estudiante */}
-                {nivelAnalisis === "estudiante" && gradoSeleccionado && salonSeleccionado && (
+                {/* 6. Estudiante - visible solo con grado y salon específicos */}
+                {nivelAnalisis === "estudiante" && gradoSeleccionado && gradoSeleccionado !== "all" && salonSeleccionado && salonSeleccionado !== "all" && (
                   <div>
                     <label className="text-sm text-muted-foreground mb-1.5 block">Estudiante</label>
                     <Select value={estudianteSeleccionado} onValueChange={setEstudianteSeleccionado}>
@@ -273,17 +285,17 @@ const EstadisticasProfesor = () => {
               <AnalisisMateria
                 materia={materiaSeleccionada}
                 periodo={periodoNumerico}
-                grado={gradoSeleccionado}
+                grado={gradoEfectivo}
                 salon=""
                 titulo={getTitulo()}
               />
             )}
-            {nivelAnalisis === "salon" && gradoSeleccionado && salonSeleccionado && (
+            {nivelAnalisis === "salon" && gradoSeleccionado && (gradoSeleccionado === "all" || salonSeleccionado) && (
               <AnalisisMateria
                 materia={materiaSeleccionada}
                 periodo={periodoNumerico}
-                grado={gradoSeleccionado}
-                salon={salonSeleccionado}
+                grado={gradoEfectivo}
+                salon={salonEfectivo}
                 titulo={getTitulo()}
               />
             )}
@@ -296,17 +308,17 @@ const EstadisticasProfesor = () => {
             )}
 
             {/* Mensajes guía */}
-            {(nivelAnalisis === "grado" || nivelAnalisis === "salon" || nivelAnalisis === "estudiante") && !gradoSeleccionado && (
+            {!gradoSeleccionado && (
               <div className="bg-card rounded-lg shadow-soft p-8 text-center text-muted-foreground">
                 Selecciona un grado para ver el análisis
               </div>
             )}
-            {(nivelAnalisis === "salon" || nivelAnalisis === "estudiante") && gradoSeleccionado && !salonSeleccionado && (
+            {(nivelAnalisis === "salon" || nivelAnalisis === "estudiante") && gradoSeleccionado && gradoSeleccionado !== "all" && !salonSeleccionado && (
               <div className="bg-card rounded-lg shadow-soft p-8 text-center text-muted-foreground">
                 Selecciona un salón para ver el análisis
               </div>
             )}
-            {nivelAnalisis === "estudiante" && gradoSeleccionado && salonSeleccionado && !estudianteSeleccionado && (
+            {nivelAnalisis === "estudiante" && gradoSeleccionado && gradoSeleccionado !== "all" && salonSeleccionado && salonSeleccionado !== "all" && !estudianteSeleccionado && (
               <div className="bg-card rounded-lg shadow-soft p-8 text-center text-muted-foreground">
                 Selecciona un estudiante para ver el análisis
               </div>
