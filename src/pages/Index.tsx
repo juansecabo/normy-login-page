@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Eye, EyeOff } from "lucide-react";
 import escudoImg from "@/assets/escudo.webp";
@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { saveSession } from "@/hooks/useSession";
+import { saveSession, getSession } from "@/hooks/useSession";
 
 const Index = () => {
   const [contrasena, setContrasena] = useState("");
@@ -15,6 +15,18 @@ const Index = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  // Si ya hay sesión activa, redirigir sin pedir contraseña
+  useEffect(() => {
+    const session = getSession();
+    if (session.codigo) {
+      if (session.cargo === 'Rector' || session.cargo === 'Coordinador(a)') {
+        navigate("/dashboard-rector", { replace: true });
+      } else {
+        navigate("/dashboard", { replace: true });
+      }
+    }
+  }, [navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
