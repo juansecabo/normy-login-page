@@ -30,6 +30,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "@/hooks/use-toast";
 import { toast as sonnerToast } from "sonner";
 import NotaCelda from "@/components/notas/NotaCelda";
@@ -105,7 +106,12 @@ const TablaNotas = () => {
   const [nombreActividad, setNombreActividad] = useState("");
   const [porcentajeActividad, setPorcentajeActividad] = useState("");
   const [actividadEditando, setActividadEditando] = useState<Actividad | null>(null);
-  
+
+  // Estado para crear actividad en múltiples salones
+  const [otrosSalones, setOtrosSalones] = useState<string[]>([]);
+  const [crearParaTodosSalones, setCrearParaTodosSalones] = useState(false);
+  const [guardandoMultiple, setGuardandoMultiple] = useState(false);
+
   // Modal state para confirmar eliminación
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [actividadAEliminar, setActividadAEliminar] = useState<Actividad | null>(null);
@@ -173,6 +179,38 @@ const TablaNotas = () => {
       setMateriaSeleccionada(storedMateria);
       setGradoSeleccionado(storedGrado);
       setSalonSeleccionado(storedSalon);
+
+      // 2.5. Obtener otros salones del mismo grado+materia
+      try {
+        const { data: profesor } = await supabase
+          .from('Internos')
+          .select('id')
+          .eq('codigo', parseInt(session.codigo!))
+          .maybeSingle();
+
+        if (profesor) {
+          const { data: asignaciones } = await supabase
+            .from('Asignación Profesores')
+            .select('"Materia(s)", "Grado(s)", "Salon(es)"')
+            .eq('id', profesor.id);
+
+          if (asignaciones) {
+            const asignacionesFiltradas = asignaciones.filter(a => {
+              const materias = (a['Materia(s)'] || []).flat();
+              const grados = (a['Grado(s)'] || []).flat();
+              return materias.includes(storedMateria) && grados.includes(storedGrado);
+            });
+
+            const todosSalones = asignacionesFiltradas
+              .flatMap(a => a['Salon(es)'] || [])
+              .flat();
+            const salonesUnicos = [...new Set(todosSalones)].filter(s => s !== storedSalon);
+            setOtrosSalones(salonesUnicos);
+          }
+        }
+      } catch (error) {
+        console.error('Error obteniendo otros salones:', error);
+      }
 
       // 3. Cargar datos
       const codigoProfesor = session.codigo;
@@ -381,6 +419,7 @@ const TablaNotas = () => {
     setNombreActividad("");
     setPorcentajeActividad("");
     setActividadEditando(null);
+    setCrearParaTodosSalones(false);
     setModalOpen(true);
   };
 
@@ -389,6 +428,7 @@ const TablaNotas = () => {
     setNombreActividad(actividad.nombre);
     setPorcentajeActividad(actividad.porcentaje?.toString() || "");
     setActividadEditando(actividad);
+    setCrearParaTodosSalones(false);
     setModalOpen(true);
   };
 
@@ -537,22 +577,77 @@ const TablaNotas = () => {
       // CREAR nueva actividad
       const nombreTrimmed = nombreActividad.trim();
       const actividadId = `${periodoActual}-${nombreTrimmed}`;
-      
-      // Guardar en tabla "Nombre de Actividades"
+
       const session = getSession();
+      const salonesParaCrear = crearParaTodosSalones && otrosSalones.length > 0
+        ? [salonSeleccionado, ...otrosSalones]
+        : [salonSeleccionado];
+
+      // Validar porcentaje en otros salones si aplica
+      if (crearParaTodosSalones && otrosSalones.length > 0 && porcentaje !== null) {
+        setGuardandoMultiple(true);
+        try {
+          const { data: actividadesOtros, error: errorOtros } = await supabase
+            .from('Nombre de Actividades')
+            .select('salon, porcentaje')
+            .eq('codigo_profesor', session.codigo)
+            .eq('materia', materiaSeleccionada)
+            .eq('grado', gradoSeleccionado)
+            .in('salon', otrosSalones)
+            .eq('periodo', periodoActual)
+            .not('porcentaje', 'is', null);
+
+          if (errorOtros) {
+            console.error('Error verificando porcentajes:', errorOtros);
+            setGuardandoMultiple(false);
+            toast({ title: "Error", description: "No se pudo verificar los porcentajes de otros salones", variant: "destructive" });
+            return;
+          }
+
+          // Calcular porcentaje usado por salón
+          const porcentajePorSalon: { [salon: string]: number } = {};
+          (actividadesOtros || []).forEach(a => {
+            porcentajePorSalon[a.salon] = (porcentajePorSalon[a.salon] || 0) + (a.porcentaje || 0);
+          });
+
+          const salonesExcedidos = otrosSalones.filter(s => {
+            const usado = porcentajePorSalon[s] || 0;
+            return usado + porcentaje > 100;
+          });
+
+          if (salonesExcedidos.length > 0) {
+            setGuardandoMultiple(false);
+            toast({
+              title: "Error de porcentaje",
+              description: `El porcentaje superaría 100% en: ${salonesExcedidos.join(', ')}`,
+              variant: "destructive",
+            });
+            return;
+          }
+        } catch (error) {
+          console.error('Error:', error);
+          setGuardandoMultiple(false);
+          toast({ title: "Error", description: "Error de conexión al verificar porcentajes", variant: "destructive" });
+          return;
+        }
+      }
+
+      // Construir filas para insertar
+      const filasParaInsertar = salonesParaCrear.map(salon => ({
+        codigo_profesor: session.codigo,
+        materia: materiaSeleccionada,
+        grado: gradoSeleccionado,
+        salon: salon,
+        periodo: periodoActual,
+        nombre_actividad: nombreTrimmed,
+        porcentaje: porcentaje,
+      }));
+
       try {
         const { error } = await supabase
           .from('Nombre de Actividades')
-          .insert({
-            codigo_profesor: session.codigo,
-            materia: materiaSeleccionada,
-            grado: gradoSeleccionado,
-            salon: salonSeleccionado,
-            periodo: periodoActual,
-            nombre_actividad: nombreTrimmed,
-            porcentaje: porcentaje,
-          });
-        
+          .insert(filasParaInsertar);
+
         if (error) {
           console.error('Error guardando actividad:', error);
           toast({
@@ -560,10 +655,11 @@ const TablaNotas = () => {
             description: "No se pudo guardar la actividad",
             variant: "destructive",
           });
+          setGuardandoMultiple(false);
           return;
         }
-        
-        console.log('✅ Actividad guardada en Nombre de Actividades');
+
+        console.log(`✅ Actividad guardada en ${salonesParaCrear.length} salón(es)`);
       } catch (error) {
         console.error('Error:', error);
         toast({
@@ -571,9 +667,10 @@ const TablaNotas = () => {
           description: "Error de conexión al guardar la actividad",
           variant: "destructive",
         });
+        setGuardandoMultiple(false);
         return;
       }
-      
+
       const nuevaActividad: Actividad = {
         id: actividadId,
         periodo: periodoActual,
@@ -583,11 +680,19 @@ const TablaNotas = () => {
 
       setActividades([...actividades, nuevaActividad]);
       setModalOpen(false);
-      
-      toast({
-        title: "Actividad creada",
-        description: `"${nuevaActividad.nombre}" agregada al ${periodos[periodoActual - 1].nombre}`,
-      });
+      setGuardandoMultiple(false);
+
+      if (salonesParaCrear.length > 1) {
+        toast({
+          title: "Actividad creada",
+          description: `"${nuevaActividad.nombre}" creada en ${salonesParaCrear.length} salones del ${periodos[periodoActual - 1].nombre}`,
+        });
+      } else {
+        toast({
+          title: "Actividad creada",
+          description: `"${nuevaActividad.nombre}" agregada al ${periodos[periodoActual - 1].nombre}`,
+        });
+      }
     }
   };
 
@@ -2640,13 +2745,34 @@ const TablaNotas = () => {
                 Porcentaje usado: {getPorcentajeUsadoParaModal()}% / 100%
               </p>
             </div>
+            {!actividadEditando && otrosSalones.length > 0 && (
+              <div className="flex items-start space-x-2">
+                <Checkbox
+                  id="crearParaTodos"
+                  checked={crearParaTodosSalones}
+                  onCheckedChange={(checked) => setCrearParaTodosSalones(checked === true)}
+                />
+                <div className="grid gap-1">
+                  <Label htmlFor="crearParaTodos" className="text-sm font-normal cursor-pointer">
+                    Crear en todos los salones de este grado
+                  </Label>
+                  <p className="text-xs text-muted-foreground">
+                    También se creará en: {otrosSalones.join(', ')}
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setModalOpen(false)}>
+            <Button variant="outline" onClick={() => setModalOpen(false)} disabled={guardandoMultiple}>
               Cancelar
             </Button>
-            <Button onClick={handleGuardarActividad} className="bg-primary hover:bg-primary/90">
-              {actividadEditando ? "Guardar cambios" : "Crear Actividad"}
+            <Button
+              onClick={handleGuardarActividad}
+              className="bg-primary hover:bg-primary/90"
+              disabled={guardandoMultiple}
+            >
+              {guardandoMultiple ? "Creando..." : actividadEditando ? "Guardar cambios" : "Crear Actividad"}
             </Button>
           </DialogFooter>
         </DialogContent>
