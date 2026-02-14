@@ -33,9 +33,11 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "@/hooks/use-toast";
 import { toast as sonnerToast } from "sonner";
+import escudoImg from "@/assets/escudo.png";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
-import * as XLSX from "xlsx";
+import ExcelJS from "exceljs";
+import { saveAs } from "file-saver";
 import NotaCelda from "@/components/notas/NotaCelda";
 import FinalPeriodoCelda from "@/components/notas/FinalPeriodoCelda";
 import ComentarioModal from "@/components/notas/ComentarioModal";
@@ -944,9 +946,12 @@ const TablaNotas = () => {
     return `${materiaSeleccionada} - ${gradoSeleccionado} ${salonSeleccionado} - ${periodoNombre}`;
   };
 
-  const descargarExcel = () => {
+  const descargarExcel = async () => {
     setDescargandoExcel(true);
     try {
+      const wb = new ExcelJS.Workbook();
+      const ws = wb.addWorksheet("Notas");
+
       const headers: string[] = ["Código", "Apellidos", "Nombre"];
       const rows: (string | number | null)[][] = [];
 
@@ -991,11 +996,49 @@ const TablaNotas = () => {
         });
       }
 
-      const wsData = [headers, ...rows];
-      const ws = XLSX.utils.aoa_to_sheet(wsData);
-      const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, "Notas");
-      XLSX.writeFile(wb, `${getNombreArchivo()}.xlsx`);
+      // Header row con estilo verde
+      const headerRow = ws.addRow(headers);
+      headerRow.eachCell(cell => {
+        cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF16A34A" } };
+        cell.font = { bold: true, color: { argb: "FFFFFFFF" }, size: 11 };
+        cell.alignment = { horizontal: "center", vertical: "middle" };
+        cell.border = {
+          top: { style: "thin" }, bottom: { style: "thin" },
+          left: { style: "thin" }, right: { style: "thin" },
+        };
+      });
+      headerRow.height = 22;
+
+      // Data rows
+      rows.forEach(row => {
+        const dataRow = ws.addRow(row);
+        dataRow.eachCell({ includeEmpty: true }, (cell, colNumber) => {
+          cell.border = {
+            top: { style: "thin", color: { argb: "FFD0D0D0" } },
+            bottom: { style: "thin", color: { argb: "FFD0D0D0" } },
+            left: { style: "thin", color: { argb: "FFD0D0D0" } },
+            right: { style: "thin", color: { argb: "FFD0D0D0" } },
+          };
+          if (colNumber >= 4) {
+            cell.alignment = { horizontal: "center" };
+          }
+        });
+      });
+
+      // Auto-fit column widths
+      ws.columns.forEach((col, idx) => {
+        let maxLen = headers[idx]?.length || 10;
+        rows.forEach(row => {
+          const val = row[idx];
+          if (val !== null && val !== undefined) {
+            maxLen = Math.max(maxLen, val.toString().length);
+          }
+        });
+        col.width = Math.min(maxLen + 4, 40);
+      });
+
+      const buffer = await wb.xlsx.writeBuffer();
+      saveAs(new Blob([buffer]), `${getNombreArchivo()}.xlsx`);
     } catch (error) {
       console.error("Error al generar Excel:", error);
     } finally {
@@ -1007,7 +1050,7 @@ const TablaNotas = () => {
     setDescargandoPDF(true);
 
     try {
-      // Construir tabla limpia desde los datos
+      // Construir datos
       const headers: string[] = ["Código", "Apellidos", "Nombre"];
       const rows: string[][] = [];
 
@@ -1052,108 +1095,159 @@ const TablaNotas = () => {
         });
       }
 
-      // Construir HTML limpio
-      const container = document.createElement("div");
-      container.style.cssText = "position:absolute;left:-9999px;top:0;background:white;padding:24px;font-family:Arial,sans-serif;";
+      // Función helper para construir tabla HTML
+      const session = getSession();
+      const nombreProfesor = `${session.nombres || ""} ${session.apellidos || ""}`.trim();
 
-      // Título
-      const titulo = document.createElement("h2");
-      titulo.style.cssText = "margin:0 0 16px 0;font-size:18px;color:#1a1a1a;";
-      titulo.textContent = getNombreArchivo();
-      container.appendChild(titulo);
+      const buildTableHTML = (dataRows: string[], showTitle: boolean) => {
+        const container = document.createElement("div");
+        container.style.cssText = "position:absolute;left:-9999px;top:0;background:white;padding:24px;font-family:'Segoe UI',Arial,sans-serif;-webkit-font-smoothing:antialiased;";
 
-      // Tabla
-      const table = document.createElement("table");
-      table.style.cssText = "border-collapse:collapse;width:100%;font-size:11px;";
+        if (showTitle) {
+          // Encabezado institucional: escudo + nombre
+          const headerDiv = document.createElement("div");
+          headerDiv.style.cssText = "display:flex;align-items:center;gap:12px;margin-bottom:8px;";
 
-      const thead = document.createElement("thead");
-      const headerRow = document.createElement("tr");
-      headers.forEach(h => {
-        const th = document.createElement("th");
-        th.style.cssText = "background:#16a34a;color:white;padding:8px 6px;border:1px solid #ccc;text-align:center;font-weight:600;white-space:nowrap;";
-        if (h === "Código" || h === "Apellidos" || h === "Nombre") {
-          th.style.textAlign = "left";
+          const img = document.createElement("img");
+          img.src = escudoImg;
+          img.style.cssText = "width:48px;height:48px;object-fit:contain;";
+          headerDiv.appendChild(img);
+
+          const instName = document.createElement("div");
+          instName.style.cssText = "font-size:18px;font-weight:700;color:#1a1a1a;";
+          instName.textContent = "I.E. Normal Superior de Corozal";
+          headerDiv.appendChild(instName);
+
+          container.appendChild(headerDiv);
+
+          // Profesor
+          if (nombreProfesor) {
+            const profDiv = document.createElement("div");
+            profDiv.style.cssText = "font-size:13px;color:#444;margin-bottom:4px;font-weight:500;";
+            profDiv.textContent = `Profesor(a): ${nombreProfesor}`;
+            container.appendChild(profDiv);
+          }
+
+          // Título de la tabla (materia - grado - periodo)
+          const titulo = document.createElement("div");
+          titulo.style.cssText = "margin:0 0 12px 0;font-size:15px;color:#333;font-weight:600;";
+          titulo.textContent = getNombreArchivo();
+          container.appendChild(titulo);
         }
-        th.textContent = h;
-        headerRow.appendChild(th);
-      });
-      thead.appendChild(headerRow);
-      table.appendChild(thead);
 
-      const tbody = document.createElement("tbody");
-      rows.forEach((row, rowIdx) => {
-        const tr = document.createElement("tr");
-        tr.style.backgroundColor = rowIdx % 2 === 0 ? "#ffffff" : "#f0fdf4";
-        row.forEach((cell, colIdx) => {
-          const td = document.createElement("td");
-          td.style.cssText = "padding:6px;border:1px solid #ddd;white-space:nowrap;";
-          if (colIdx >= 3) {
-            td.style.textAlign = "center";
-          }
-          // Última columna (Final) en negrita
-          if (colIdx === row.length - 1 && cell !== "—") {
-            td.style.fontWeight = "600";
-          }
-          td.textContent = cell;
-          tr.appendChild(td);
+        const table = document.createElement("table");
+        table.style.cssText = "border-collapse:collapse;width:100%;font-size:13px;";
+
+        const thead = document.createElement("thead");
+        const headerRow = document.createElement("tr");
+        headers.forEach(h => {
+          const th = document.createElement("th");
+          th.style.cssText = "background:#16a34a;color:white;padding:10px 8px;border:1px solid #0d8a35;text-align:center;font-weight:700;white-space:nowrap;font-size:13px;";
+          if (h === "Código" || h === "Apellidos" || h === "Nombre") th.style.textAlign = "left";
+          th.textContent = h;
+          headerRow.appendChild(th);
         });
-        tbody.appendChild(tr);
-      });
-      table.appendChild(tbody);
-      container.appendChild(table);
+        thead.appendChild(headerRow);
+        table.appendChild(thead);
 
-      // Ajustar ancho según columnas
-      const anchoBase = Math.max(headers.length * 110, 900);
-      container.style.width = `${anchoBase}px`;
+        const tbody = document.createElement("tbody");
+        dataRows.forEach((rowStr, rowIdx) => {
+          const row = JSON.parse(rowStr) as string[];
+          const tr = document.createElement("tr");
+          tr.style.backgroundColor = rowIdx % 2 === 0 ? "#ffffff" : "#f0fdf4";
+          row.forEach((cell, colIdx) => {
+            const td = document.createElement("td");
+            td.style.cssText = "padding:8px;border:1px solid #d0d0d0;white-space:nowrap;font-size:13px;font-weight:500;color:#1a1a1a;";
+            if (colIdx >= 3) td.style.textAlign = "center";
+            if (colIdx === row.length - 1 && cell !== "—") td.style.fontWeight = "700";
+            td.textContent = cell;
+            tr.appendChild(td);
+          });
+          tbody.appendChild(tr);
+        });
+        table.appendChild(tbody);
+        container.appendChild(table);
 
-      document.body.appendChild(container);
+        const anchoBase = Math.max(headers.length * 120, 900);
+        container.style.width = `${anchoBase}px`;
+        return { container, anchoBase };
+      };
 
-      const canvas = await html2canvas(container, {
-        scale: 2,
-        useCORS: true,
-        logging: false,
-        backgroundColor: "#ffffff",
-        windowWidth: anchoBase,
-      });
+      // Renderizar tabla completa para medir altura de filas
+      const serializedRows = rows.map(r => JSON.stringify(r));
+      const { container: measureContainer, anchoBase } = buildTableHTML(serializedRows, true);
+      document.body.appendChild(measureContainer);
 
-      document.body.removeChild(container);
+      // Medir alturas individuales
+      const tableEl = measureContainer.querySelector("table")!;
+      const theadEl = tableEl.querySelector("thead")!;
+      const tbodyEl = tableEl.querySelector("tbody")!;
+      const titleEl = measureContainer.querySelector("h2");
+      const titleHeight = titleEl ? titleEl.offsetHeight + 16 : 0; // +margin
+      const headerHeight = theadEl.offsetHeight;
+      const rowHeights: number[] = [];
+      const tbodyRows = tbodyEl.querySelectorAll("tr");
+      tbodyRows.forEach(tr => rowHeights.push((tr as HTMLElement).offsetHeight));
 
-      // Landscape para tablas anchas
+      document.body.removeChild(measureContainer);
+
+      // Calcular páginas sin cortar filas
       const pdf = new jsPDF("l", "mm", "a4");
       const pdfWidth = pdf.internal.pageSize.getWidth();
       const pdfHeight = pdf.internal.pageSize.getHeight();
-      const margin = 8;
-      const contentWidth = pdfWidth - margin * 2;
+      const margin = 10;
+      const contentWidthMM = pdfWidth - margin * 2;
+      const pxPerMM = anchoBase / contentWidthMM;
+      const pageContentHeightPx = (pdfHeight - margin * 2) * pxPerMM;
 
-      const imgWidth = canvas.width;
-      const imgHeight = canvas.height;
-      const ratio = contentWidth / imgWidth;
-      const scaledHeight = imgHeight * ratio;
+      const pages: { rowStart: number; rowEnd: number; isFirst: boolean }[] = [];
+      let currentRow = 0;
 
-      const pageContentHeight = pdfHeight - margin * 2;
-      let yPosition = 0;
-      let pageNumber = 0;
+      while (currentRow < rows.length) {
+        const isFirst = currentRow === 0;
+        let availableHeight = pageContentHeightPx - headerHeight;
+        if (isFirst) availableHeight -= titleHeight;
 
-      while (yPosition < scaledHeight) {
-        if (pageNumber > 0) pdf.addPage();
-
-        const sourceY = yPosition / ratio;
-        const sourceHeight = Math.min(pageContentHeight / ratio, imgHeight - sourceY);
-        const destHeight = sourceHeight * ratio;
-
-        const tempCanvas = document.createElement("canvas");
-        tempCanvas.width = imgWidth;
-        tempCanvas.height = sourceHeight;
-        const tempCtx = tempCanvas.getContext("2d");
-
-        if (tempCtx) {
-          tempCtx.drawImage(canvas, 0, sourceY, imgWidth, sourceHeight, 0, 0, imgWidth, sourceHeight);
-          const tempImgData = tempCanvas.toDataURL("image/png");
-          pdf.addImage(tempImgData, "PNG", margin, margin, contentWidth, destHeight);
+        let rowEnd = currentRow;
+        let usedHeight = 0;
+        while (rowEnd < rows.length) {
+          const rh = rowHeights[rowEnd] || 30;
+          if (usedHeight + rh > availableHeight) break;
+          usedHeight += rh;
+          rowEnd++;
         }
+        if (rowEnd === currentRow) rowEnd = currentRow + 1; // al menos 1 fila
 
-        yPosition += pageContentHeight;
-        pageNumber++;
+        pages.push({ rowStart: currentRow, rowEnd, isFirst });
+        currentRow = rowEnd;
+      }
+
+      // Renderizar y agregar cada página al PDF
+      for (let p = 0; p < pages.length; p++) {
+        const page = pages[p];
+        const pageRows = serializedRows.slice(page.rowStart, page.rowEnd);
+        const { container: pageContainer, anchoBase: pageAncho } = buildTableHTML(pageRows, page.isFirst);
+        document.body.appendChild(pageContainer);
+
+        const canvas = await html2canvas(pageContainer, {
+          scale: 3,
+          useCORS: true,
+          logging: false,
+          backgroundColor: "#ffffff",
+          windowWidth: pageAncho,
+        });
+
+        document.body.removeChild(pageContainer);
+
+        if (p > 0) pdf.addPage();
+
+        const imgData = canvas.toDataURL("image/png");
+        const imgWidth = canvas.width;
+        const imgHeight = canvas.height;
+        const ratio = contentWidthMM / imgWidth;
+        const destHeight = imgHeight * ratio;
+
+        pdf.addImage(imgData, "PNG", margin, margin, contentWidthMM, destHeight);
       }
 
       pdf.save(`${getNombreArchivo()}.pdf`);
