@@ -3,18 +3,15 @@ import Cookies from 'js-cookie';
 // Función para obtener el dominio base para cookies compartidas
 const getCookieDomain = (): string | undefined => {
   const hostname = window.location.hostname;
-  // Para subdominios de lovable.app, usar el dominio base
   if (hostname.includes('lovable.app')) {
     return '.lovable.app';
   }
-  // Para localhost o dominios personalizados, no especificar dominio
   return undefined;
 };
 
 const getCookieOptions = () => {
   const domain = getCookieDomain();
   return {
-    expires: 30,
     ...(domain ? { domain } : {}),
     sameSite: 'lax' as const,
     secure: window.location.protocol === 'https:'
@@ -28,50 +25,43 @@ export interface SessionData {
   cargo: string | null;
 }
 
+// Cookie de sesión (sin expires → muere cuando el navegador se cierra)
+const SESSION_COOKIE = 'normy_session_active';
+
 export const saveSession = (codigo: string, nombres: string, apellidos: string, cargo: string = 'Profesor(a)') => {
   const cookieOptions = getCookieOptions();
-  
-  // Guardar en localStorage
+
+  // Guardar datos en localStorage (persiste entre pestañas)
   localStorage.setItem("codigo", codigo);
   localStorage.setItem("nombres", nombres);
   localStorage.setItem("apellidos", apellidos);
   localStorage.setItem("cargo", cargo);
-  
-  // Guardar en cookies como respaldo (con dominio compartido)
-  Cookies.set('normy_codigo', codigo, cookieOptions);
-  Cookies.set('normy_nombres', nombres, cookieOptions);
-  Cookies.set('normy_apellidos', apellidos, cookieOptions);
-  Cookies.set('normy_cargo', cargo, cookieOptions);
+
+  // Cookie de sesión sin expires → se borra al cerrar el navegador
+  Cookies.set(SESSION_COOKIE, '1', cookieOptions);
 };
 
 export const getSession = (): SessionData => {
-  // Intentar obtener de localStorage primero, luego de cookies
-  let codigo = localStorage.getItem("codigo") || Cookies.get('normy_codigo') || null;
-  let nombres = localStorage.getItem("nombres") || Cookies.get('normy_nombres') || null;
-  let apellidos = localStorage.getItem("apellidos") || Cookies.get('normy_apellidos') || null;
-  let cargo = localStorage.getItem("cargo") || Cookies.get('normy_cargo') || null;
-  
-  // Si hay cookie pero no localStorage, restaurar localStorage
-  if (codigo && !localStorage.getItem("codigo")) {
-    localStorage.setItem("codigo", codigo);
+  // Si la cookie de sesión no existe, el navegador se reinició → limpiar todo
+  if (!Cookies.get(SESSION_COOKIE)) {
+    localStorage.removeItem("codigo");
+    localStorage.removeItem("nombres");
+    localStorage.removeItem("apellidos");
+    localStorage.removeItem("cargo");
+    return { codigo: null, nombres: null, apellidos: null, cargo: null };
   }
-  if (nombres && !localStorage.getItem("nombres")) {
-    localStorage.setItem("nombres", nombres);
-  }
-  if (apellidos && !localStorage.getItem("apellidos")) {
-    localStorage.setItem("apellidos", apellidos);
-  }
-  if (cargo && !localStorage.getItem("cargo")) {
-    localStorage.setItem("cargo", cargo);
-  }
-  
+
+  const codigo = localStorage.getItem("codigo") || null;
+  const nombres = localStorage.getItem("nombres") || null;
+  const apellidos = localStorage.getItem("apellidos") || null;
+  const cargo = localStorage.getItem("cargo") || null;
+
   return { codigo, nombres, apellidos, cargo };
 };
 
 export const clearSession = () => {
   const cookieOptions = getCookieOptions();
-  
-  // Limpiar localStorage
+
   localStorage.removeItem("codigo");
   localStorage.removeItem("nombres");
   localStorage.removeItem("apellidos");
@@ -81,12 +71,8 @@ export const clearSession = () => {
   localStorage.removeItem("salonSeleccionado");
   localStorage.removeItem("modoVisualizacion");
   localStorage.removeItem("estudianteSeleccionado");
-  
-  // Limpiar cookies (con dominio compartido)
-  Cookies.remove('normy_codigo', cookieOptions);
-  Cookies.remove('normy_nombres', cookieOptions);
-  Cookies.remove('normy_apellidos', cookieOptions);
-  Cookies.remove('normy_cargo', cookieOptions);
+
+  Cookies.remove(SESSION_COOKIE, cookieOptions);
 };
 
 export const hasValidSession = (): boolean => {
