@@ -2,7 +2,7 @@ import { useEffect, useState, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
-import { Plus, MoreVertical, Pencil, Trash2, Send, Calendar } from "lucide-react";
+import { Plus, MoreVertical, Pencil, Trash2, Send, Calendar, Download, FileSpreadsheet, Loader2 } from "lucide-react";
 import { getSession } from "@/hooks/useSession";
 import HeaderNormy from "@/components/HeaderNormy";
 import {
@@ -33,6 +33,9 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "@/hooks/use-toast";
 import { toast as sonnerToast } from "sonner";
+import html2canvas from "html2canvas";
+import jsPDF from "jspdf";
+import * as XLSX from "xlsx";
 import NotaCelda from "@/components/notas/NotaCelda";
 import FinalPeriodoCelda from "@/components/notas/FinalPeriodoCelda";
 import ComentarioModal from "@/components/notas/ComentarioModal";
@@ -111,6 +114,11 @@ const TablaNotas = () => {
   const [otrosSalones, setOtrosSalones] = useState<string[]>([]);
   const [crearParaTodosSalones, setCrearParaTodosSalones] = useState(false);
   const [guardandoMultiple, setGuardandoMultiple] = useState(false);
+
+  // Estado para descargas
+  const [descargandoPDF, setDescargandoPDF] = useState(false);
+  const [descargandoExcel, setDescargandoExcel] = useState(false);
+  const tablaRef = useRef<HTMLDivElement>(null);
 
   // Modal state para confirmar eliminación
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -928,6 +936,178 @@ const TablaNotas = () => {
   const tieneAlgunaNotaEnAnio = useCallback((codigoEstudiantil: string): boolean => {
     return [1, 2, 3, 4].some(periodo => tieneAlgunaNotaEnPeriodo(codigoEstudiantil, periodo));
   }, [tieneAlgunaNotaEnPeriodo]);
+
+  // === Funciones de descarga ===
+
+  const getNombreArchivo = () => {
+    const periodoNombre = esFinalDefinitiva
+      ? "Final Definitiva"
+      : periodos[periodoActivo - 1].nombre;
+    return `${materiaSeleccionada} - ${gradoSeleccionado} ${salonSeleccionado} - ${periodoNombre}`;
+  };
+
+  const descargarExcel = () => {
+    setDescargandoExcel(true);
+    try {
+      const headers: string[] = ["Código", "Apellidos", "Nombre"];
+      const rows: (string | number | null)[][] = [];
+
+      if (esFinalDefinitiva) {
+        periodos.forEach(p => headers.push(p.nombre));
+        headers.push("Final Definitiva");
+
+        estudiantes.forEach(est => {
+          const fila: (string | number | null)[] = [
+            est.codigo_estudiantil,
+            est.apellidos_estudiante,
+            est.nombre_estudiante,
+          ];
+          periodos.forEach(p => {
+            const fp = calcularFinalPeriodo(est.codigo_estudiantil, p.numero);
+            fila.push(fp !== null ? fp : null);
+          });
+          const fd = calcularFinalDefinitiva(est.codigo_estudiantil);
+          fila.push(fd !== null ? fd : null);
+          rows.push(fila);
+        });
+      } else {
+        const actividadesPeriodo = getActividadesPorPeriodo(periodoActivo);
+        actividadesPeriodo.forEach(a => {
+          headers.push(a.porcentaje !== null ? `${a.nombre} (${a.porcentaje}%)` : a.nombre);
+        });
+        headers.push("Final Periodo");
+
+        estudiantes.forEach(est => {
+          const fila: (string | number | null)[] = [
+            est.codigo_estudiantil,
+            est.apellidos_estudiante,
+            est.nombre_estudiante,
+          ];
+          actividadesPeriodo.forEach(a => {
+            const nota = notas[est.codigo_estudiantil]?.[periodoActivo]?.[a.id];
+            fila.push(nota !== undefined ? nota : null);
+          });
+          const fp = calcularFinalPeriodo(est.codigo_estudiantil, periodoActivo);
+          fila.push(fp !== null ? fp : null);
+          rows.push(fila);
+        });
+      }
+
+      const wsData = [headers, ...rows];
+      const ws = XLSX.utils.aoa_to_sheet(wsData);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Notas");
+      XLSX.writeFile(wb, `${getNombreArchivo()}.xlsx`);
+    } catch (error) {
+      console.error("Error al generar Excel:", error);
+    } finally {
+      setDescargandoExcel(false);
+    }
+  };
+
+  const descargarPDF = async () => {
+    if (!tablaRef.current) return;
+    setDescargandoPDF(true);
+
+    try {
+      const contenidoOriginal = tablaRef.current;
+      const clon = contenidoOriginal.cloneNode(true) as HTMLElement;
+
+      clon.style.width = "1400px";
+      clon.style.position = "absolute";
+      clon.style.left = "-9999px";
+      clon.style.top = "0";
+      clon.style.backgroundColor = "white";
+      clon.style.padding = "20px";
+      clon.style.overflow = "visible";
+
+      // Ocultar botones y dropdowns
+      const botones = clon.querySelectorAll("button");
+      botones.forEach(btn => (btn as HTMLElement).style.display = "none");
+
+      // Hacer visible todo el contenido
+      const todosLosElementos = clon.querySelectorAll("*");
+      todosLosElementos.forEach(el => {
+        const elemento = el as HTMLElement;
+        elemento.style.overflow = "visible";
+        elemento.style.textOverflow = "clip";
+        elemento.style.whiteSpace = "normal";
+        // Quitar sticky para que se capture bien
+        if (elemento.style.position === "sticky" || getComputedStyle(contenidoOriginal).position === "sticky") {
+          elemento.style.position = "relative";
+        }
+      });
+      // Forzar quitar sticky en th/td con clases sticky
+      clon.querySelectorAll(".md\\:sticky, [class*='sticky']").forEach(el => {
+        (el as HTMLElement).style.position = "relative";
+      });
+
+      // Agregar título al PDF
+      const titulo = document.createElement("div");
+      titulo.style.fontSize = "18px";
+      titulo.style.fontWeight = "bold";
+      titulo.style.marginBottom = "12px";
+      titulo.style.color = "#1a1a1a";
+      titulo.textContent = getNombreArchivo();
+      clon.insertBefore(titulo, clon.firstChild);
+
+      document.body.appendChild(clon);
+
+      const canvas = await html2canvas(clon, {
+        scale: 2,
+        useCORS: true,
+        logging: false,
+        backgroundColor: "#ffffff",
+        windowWidth: 1400,
+      });
+
+      document.body.removeChild(clon);
+
+      // Landscape para tablas anchas
+      const pdf = new jsPDF("l", "mm", "a4");
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = pdf.internal.pageSize.getHeight();
+      const margin = 8;
+      const contentWidth = pdfWidth - margin * 2;
+
+      const imgWidth = canvas.width;
+      const imgHeight = canvas.height;
+      const ratio = contentWidth / imgWidth;
+      const scaledHeight = imgHeight * ratio;
+
+      const pageContentHeight = pdfHeight - margin * 2;
+      let yPosition = 0;
+      let pageNumber = 0;
+
+      while (yPosition < scaledHeight) {
+        if (pageNumber > 0) pdf.addPage();
+
+        const sourceY = yPosition / ratio;
+        const sourceHeight = Math.min(pageContentHeight / ratio, imgHeight - sourceY);
+        const destHeight = sourceHeight * ratio;
+
+        const tempCanvas = document.createElement("canvas");
+        tempCanvas.width = imgWidth;
+        tempCanvas.height = sourceHeight;
+        const tempCtx = tempCanvas.getContext("2d");
+
+        if (tempCtx) {
+          tempCtx.drawImage(canvas, 0, sourceY, imgWidth, sourceHeight, 0, 0, imgWidth, sourceHeight);
+          const tempImgData = tempCanvas.toDataURL("image/png");
+          pdf.addImage(tempImgData, "PNG", margin, margin, contentWidth, destHeight);
+        }
+
+        yPosition += pageContentHeight;
+        pageNumber++;
+      }
+
+      pdf.save(`${getNombreArchivo()}.pdf`);
+    } catch (error) {
+      console.error("Error al generar PDF:", error);
+    } finally {
+      setDescargandoPDF(false);
+    }
+  };
 
   // Guardar nota final en Supabase
   const guardarFinalPeriodo = async (codigoEstudiantil: string, periodo: number, notaFinal: number | null) => {
@@ -2247,20 +2427,42 @@ const TablaNotas = () => {
               <span className="text-muted-foreground">→</span>
               <span className="text-foreground font-medium">{salonSeleccionado}</span>
             </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => navigate("/actividades-calendario")}
-              className="gap-2"
-            >
-              <Calendar className="h-4 w-4" />
-              Ver Actividades Asignadas
-            </Button>
+            <div className="flex flex-wrap gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => navigate("/actividades-calendario")}
+                className="gap-2"
+              >
+                <Calendar className="h-4 w-4" />
+                Ver Actividades Asignadas
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={descargarExcel}
+                disabled={descargandoExcel}
+                className="gap-2"
+              >
+                {descargandoExcel ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileSpreadsheet className="h-4 w-4" />}
+                {descargandoExcel ? "Generando..." : "Descargar Excel"}
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={descargarPDF}
+                disabled={descargandoPDF}
+                className="gap-2"
+              >
+                {descargandoPDF ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+                {descargandoPDF ? "Generando..." : "Descargar PDF"}
+              </Button>
+            </div>
           </div>
         </div>
 
         {/* Pestañas de Períodos */}
-        <div className="bg-card rounded-lg shadow-soft overflow-hidden">
+        <div ref={tablaRef} className="bg-card rounded-lg shadow-soft overflow-hidden">
           {/* Tab Headers */}
           <div className="flex border-b border-border">
             {periodos.map((periodo) => {
