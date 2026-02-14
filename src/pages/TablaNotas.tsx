@@ -1182,8 +1182,10 @@ const TablaNotas = () => {
       const tableEl = measureContainer.querySelector("table")!;
       const theadEl = tableEl.querySelector("thead")!;
       const tbodyEl = tableEl.querySelector("tbody")!;
-      const titleEl = measureContainer.querySelector("h2");
-      const titleHeight = titleEl ? titleEl.offsetHeight + 16 : 0; // +margin
+      // Medir todo lo que va antes de la tabla (escudo, profesor, título)
+      const tableTop = tableEl.offsetTop;
+      const containerPadding = 48; // 24px top + 24px bottom
+      const titleHeight = tableTop; // todo el espacio antes de la tabla
       const headerHeight = theadEl.offsetHeight;
       const rowHeights: number[] = [];
       const tbodyRows = tbodyEl.querySelectorAll("tr");
@@ -1198,7 +1200,7 @@ const TablaNotas = () => {
       const margin = 10;
       const contentWidthMM = pdfWidth - margin * 2;
       const pxPerMM = anchoBase / contentWidthMM;
-      const pageContentHeightPx = (pdfHeight - margin * 2) * pxPerMM;
+      const pageContentHeightPx = (pdfHeight - margin * 2) * pxPerMM - containerPadding;
 
       const pages: { rowStart: number; rowEnd: number; isFirst: boolean }[] = [];
       let currentRow = 0;
