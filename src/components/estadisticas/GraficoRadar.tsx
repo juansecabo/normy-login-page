@@ -1,7 +1,7 @@
 import { RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, ResponsiveContainer, Legend, Tooltip } from "recharts";
 
 interface DataItem {
-  materia: string;
+  asignatura: string;
   estudiante: number;
   promedio?: number;
 }
@@ -38,20 +38,20 @@ export const GraficoRadar = ({
       <ResponsiveContainer width="100%" height={altura}>
         <RadarChart data={datos} margin={{ top: 20, right: 30, left: 30, bottom: 20 }}>
           <PolarGrid stroke="#e5e7eb" />
-          <PolarAngleAxis 
-            dataKey="materia" 
+          <PolarAngleAxis
+            dataKey="asignatura"
             tick={{ fontSize: 10, fill: '#6b7280' }}
             tickLine={false}
           />
-          <PolarRadiusAxis 
-            angle={30} 
-            domain={[0, 5]} 
+          <PolarRadiusAxis
+            angle={30}
+            domain={[0, 5]}
             tick={{ fontSize: 10 }}
             tickCount={6}
           />
-          <Tooltip 
-            contentStyle={{ 
-              backgroundColor: 'white', 
+          <Tooltip
+            contentStyle={{
+              backgroundColor: 'white',
               border: '1px solid #e5e7eb',
               borderRadius: '8px',
               fontSize: '12px'

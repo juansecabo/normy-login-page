@@ -4,13 +4,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { getSession, isProfesor } from "@/hooks/useSession";
 import HeaderNormy from "@/components/HeaderNormy";
 import { useEstadisticas, ordenGrados } from "@/hooks/useEstadisticas";
-import { AnalisisMateria } from "@/components/estadisticas/AnalisisMateria";
+import { AnalisisAsignatura } from "@/components/estadisticas/AnalisisAsignatura";
 import { AnalisisEstudiante } from "@/components/estadisticas/AnalisisEstudiante";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Loader2 } from "lucide-react";
 
 interface Asignacion {
-  materias: string[];
+  asignaturas: string[];
   grados: string[];
   salones: string[];
 }
@@ -22,7 +22,7 @@ const EstadisticasProfesor = () => {
   const [loadingAsignaciones, setLoadingAsignaciones] = useState(true);
   const [asignaciones, setAsignaciones] = useState<Asignacion[]>([]);
 
-  const [materiaSeleccionada, setMateriaSeleccionada] = useState("");
+  const [asignaturaSeleccionada, setAsignaturaSeleccionada] = useState("");
   const [periodoSeleccionado, setPeriodoSeleccionado] = useState("1");
   const [nivelAnalisis, setNivelAnalisis] = useState("grado");
   const [gradoSeleccionado, setGradoSeleccionado] = useState("");
@@ -43,12 +43,12 @@ const EstadisticasProfesor = () => {
 
         const { data: rows } = await supabase
           .from("Asignación Profesores")
-          .select('"Materia(s)", "Grado(s)", "Salon(es)"')
+          .select('"Asignatura(s)", "Grado(s)", "Salon(es)"')
           .eq("id", profesor.id);
 
         if (rows) {
           setAsignaciones(rows.map((r: any) => ({
-            materias: Array.isArray(r["Materia(s)"]) ? r["Materia(s)"] : [],
+            asignaturas: Array.isArray(r["Asignatura(s)"]) ? r["Asignatura(s)"] : [],
             grados: Array.isArray(r["Grado(s)"]) ? r["Grado(s)"] : [],
             salones: Array.isArray(r["Salon(es)"]) ? r["Salon(es)"] : [],
           })));
@@ -62,19 +62,19 @@ const EstadisticasProfesor = () => {
     fetchAsignaciones();
   }, [navigate]);
 
-  // Expandir asignaciones a tríos (materia, grado, salon)
+  // Expandir asignaciones a tríos (asignatura, grado, salon)
   const trios = useMemo(() => {
-    const result: { materia: string; grado: string; salon: string }[] = [];
+    const result: { asignatura: string; grado: string; salon: string }[] = [];
     asignaciones.forEach(a => {
-      if (a.grados.length === a.salones.length && a.grados.length === a.materias.length) {
-        for (let i = 0; i < a.materias.length; i++) {
-          result.push({ materia: a.materias[i], grado: a.grados[i], salon: a.salones[i] });
+      if (a.grados.length === a.salones.length && a.grados.length === a.asignaturas.length) {
+        for (let i = 0; i < a.asignaturas.length; i++) {
+          result.push({ asignatura: a.asignaturas[i], grado: a.grados[i], salon: a.salones[i] });
         }
       } else {
-        for (const mat of a.materias)
+        for (const mat of a.asignaturas)
           for (const grad of a.grados)
             for (const sal of a.salones)
-              result.push({ materia: mat, grado: grad, salon: sal });
+              result.push({ asignatura: mat, grado: grad, salon: sal });
       }
     });
     return result.filter(t =>
@@ -82,33 +82,33 @@ const EstadisticasProfesor = () => {
     );
   }, [asignaciones, todosLosSalones]);
 
-  // Materias del profesor
-  const materiasProfesor = useMemo(() => {
-    return [...new Set(trios.map(t => t.materia))].sort((a, b) => a.localeCompare(b, "es"));
+  // Asignaturas del profesor
+  const asignaturasProfesor = useMemo(() => {
+    return [...new Set(trios.map(t => t.asignatura))].sort((a, b) => a.localeCompare(b, "es"));
   }, [trios]);
 
-  // Default: primera materia
+  // Default: primera asignatura
   useEffect(() => {
-    if (materiasProfesor.length > 0 && !materiaSeleccionada) {
-      setMateriaSeleccionada(materiasProfesor[0]);
+    if (asignaturasProfesor.length > 0 && !asignaturaSeleccionada) {
+      setAsignaturaSeleccionada(asignaturasProfesor[0]);
     }
-  }, [materiasProfesor, materiaSeleccionada]);
+  }, [asignaturasProfesor, asignaturaSeleccionada]);
 
-  // Grados donde el profesor da la materia seleccionada
-  const gradosParaMateria = useMemo(() => {
-    if (!materiaSeleccionada) return [];
-    const gs = [...new Set(trios.filter(t => t.materia === materiaSeleccionada).map(t => t.grado))];
+  // Grados donde el profesor da la asignatura seleccionada
+  const gradosParaAsignatura = useMemo(() => {
+    if (!asignaturaSeleccionada) return [];
+    const gs = [...new Set(trios.filter(t => t.asignatura === asignaturaSeleccionada).map(t => t.grado))];
     return gs.sort((a, b) => ordenGrados.indexOf(a) - ordenGrados.indexOf(b));
-  }, [trios, materiaSeleccionada]);
+  }, [trios, asignaturaSeleccionada]);
 
-  // Salones para materia + grado (excluye "all")
+  // Salones para asignatura + grado (excluye "all")
   const salonesParaGrado = useMemo(() => {
-    if (!materiaSeleccionada || !gradoSeleccionado || gradoSeleccionado === "all") return [];
+    if (!asignaturaSeleccionada || !gradoSeleccionado || gradoSeleccionado === "all") return [];
     const ss = [...new Set(
-      trios.filter(t => t.materia === materiaSeleccionada && t.grado === gradoSeleccionado).map(t => t.salon)
+      trios.filter(t => t.asignatura === asignaturaSeleccionada && t.grado === gradoSeleccionado).map(t => t.salon)
     )];
     return ss.sort((a, b) => (parseInt(a) || 0) - (parseInt(b) || 0));
-  }, [trios, materiaSeleccionada, gradoSeleccionado]);
+  }, [trios, asignaturaSeleccionada, gradoSeleccionado]);
 
   // Estudiantes del salón (solo cuando grado y salon son específicos)
   const estudiantesDelSalon = useMemo(() => {
@@ -133,7 +133,7 @@ const EstadisticasProfesor = () => {
       const est = estudiantesDelSalon.find(e => e.codigo === estudianteSeleccionado);
       return `${est?.nombre || "Estudiante"} - ${periodoTexto}`;
     }
-    const partes = [materiaSeleccionada || "Materia"];
+    const partes = [asignaturaSeleccionada || "Asignatura"];
     if (gradoEfectivo) {
       partes.push(salonEfectivo ? `${gradoEfectivo} ${salonEfectivo}` : gradoEfectivo);
     } else if (gradoSeleccionado === "all") {
@@ -169,18 +169,18 @@ const EstadisticasProfesor = () => {
             <div className="bg-card rounded-lg shadow-soft p-4 mb-6">
               <h3 className="font-semibold text-foreground mb-4">Filtros de análisis</h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4">
-                {/* 1. Materia */}
+                {/* 1. Asignatura */}
                 <div>
-                  <label className="text-sm text-muted-foreground mb-1.5 block">Materia</label>
-                  <Select value={materiaSeleccionada} onValueChange={(val) => {
-                    setMateriaSeleccionada(val);
+                  <label className="text-sm text-muted-foreground mb-1.5 block">Asignatura</label>
+                  <Select value={asignaturaSeleccionada} onValueChange={(val) => {
+                    setAsignaturaSeleccionada(val);
                     setGradoSeleccionado("");
                     setSalonSeleccionado("");
                     setEstudianteSeleccionado("");
                   }}>
-                    <SelectTrigger><SelectValue placeholder="Seleccionar materia" /></SelectTrigger>
+                    <SelectTrigger><SelectValue placeholder="Seleccionar asignatura" /></SelectTrigger>
                     <SelectContent>
-                      {materiasProfesor.map(m => (
+                      {asignaturasProfesor.map(m => (
                         <SelectItem key={m} value={m}>{m}</SelectItem>
                       ))}
                     </SelectContent>
@@ -234,7 +234,7 @@ const EstadisticasProfesor = () => {
                         {nivelAnalisis === "grado" && (
                           <SelectItem value="all">Todos los grados</SelectItem>
                         )}
-                        {gradosParaMateria.map(g => (
+                        {gradosParaAsignatura.map(g => (
                           <SelectItem key={g} value={g}>{g}</SelectItem>
                         ))}
                       </SelectContent>
@@ -282,8 +282,8 @@ const EstadisticasProfesor = () => {
 
             {/* Resultados */}
             {nivelAnalisis === "grado" && gradoSeleccionado && (
-              <AnalisisMateria
-                materia={materiaSeleccionada}
+              <AnalisisAsignatura
+                asignatura={asignaturaSeleccionada}
                 periodo={periodoNumerico}
                 grado={gradoEfectivo}
                 salon=""
@@ -291,8 +291,8 @@ const EstadisticasProfesor = () => {
               />
             )}
             {nivelAnalisis === "salon" && gradoSeleccionado && (gradoSeleccionado === "all" || salonSeleccionado) && (
-              <AnalisisMateria
-                materia={materiaSeleccionada}
+              <AnalisisAsignatura
+                asignatura={asignaturaSeleccionada}
                 periodo={periodoNumerico}
                 grado={gradoEfectivo}
                 salon={salonEfectivo}

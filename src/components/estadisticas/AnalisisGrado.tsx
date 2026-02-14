@@ -21,7 +21,7 @@ export const AnalisisGrado = ({ grado, periodo, titulo }: AnalisisGradoProps) =>
   const contenidoRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
   const {
-    getPromediosEstudiantes, getPromediosSalones, getPromediosMaterias,
+    getPromediosEstudiantes, getPromediosSalones, getPromediosAsignaturas,
     getDistribucionDesempeno, getTopEstudiantes, getEvolucionPeriodos,
     getPromedioInstitucional, tieneDatosSuficientesParaRiesgo, getEstudiantesEnRiesgo
   } = useEstadisticas();
@@ -39,11 +39,11 @@ export const AnalisisGrado = ({ grado, periodo, titulo }: AnalisisGradoProps) =>
   const topEstudiantes = getTopEstudiantes(10, periodo, grado);
   const peoresEstudiantes = [...getPromediosEstudiantes(periodo, grado)].sort((a, b) => a.promedio - b.promedio || a.nombre_completo.localeCompare(b.nombre_completo)).slice(0, 10);
   const salones = getPromediosSalones(periodo, grado).sort((a, b) => b.promedio - a.promedio);
-  const materias = getPromediosMaterias(periodo, grado);
-  
+  const asignaturas = getPromediosAsignaturas(periodo, grado);
+
   // Verificar completitud con el nuevo hook
   const { completo, detalles, resumen, resumenCompleto } = verificarCompletitud("grado", periodo, grado);
-  
+
   // Filtrar evolución hasta el período seleccionado
   const periodoHasta = periodo === "anual" ? 4 : periodo;
   const evolucionPeriodos = getEvolucionPeriodos("grado", grado).filter(e => {
@@ -87,12 +87,12 @@ export const AnalisisGrado = ({ grado, periodo, titulo }: AnalisisGradoProps) =>
           <span>Estadísticas basadas únicamente en estudiantes con notas registradas.</span>
         </div>
         <div className="flex items-center gap-2">
-          <IndicadorCompletitud 
-            completo={completo} 
-            detalles={detalles} 
+          <IndicadorCompletitud
+            completo={completo}
+            detalles={detalles}
             resumen={resumen}
             resumenCompleto={resumenCompleto}
-            nivel={grado} 
+            nivel={grado}
             periodo={periodoTexto}
           />
           <BotonDescarga contenidoRef={contenidoRef} nombreArchivo={titulo || `${grado} - ${periodoTexto}`} />
@@ -112,7 +112,7 @@ export const AnalisisGrado = ({ grado, periodo, titulo }: AnalisisGradoProps) =>
         <TarjetaResumen titulo="Estudiantes con notas" valor={estudiantesGrado.length} subtitulo={`En ${salonesUnicos.length} salones`} icono={Users} color="primary" />
         <TarjetaResumen titulo="Mejor Estudiante" valor={topEstudiantes[0]?.promedio.toFixed(2) || "—"} subtitulo={topEstudiantes[0]?.nombre_completo || ""} icono={Award} color={topEstudiantes[0]?.promedio >= 4.5 ? "success" : topEstudiantes[0]?.promedio >= 4 ? "blue" : topEstudiantes[0]?.promedio >= 3 ? "warning" : "danger"} />
         {mostrarRiesgo ? (
-          <div 
+          <div
             onClick={estudiantesEnRiesgo.length > 0 ? handleVerRiesgo : undefined}
             className={estudiantesEnRiesgo.length > 0 ? "cursor-pointer hover:scale-[1.02] transition-transform" : ""}
           >
@@ -130,7 +130,7 @@ export const AnalisisGrado = ({ grado, periodo, titulo }: AnalisisGradoProps) =>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <ListaComparativa titulo={`Rendimiento por Salón - ${grado}`} items={salones.map(s => ({ nombre: `${grado} ${s.salon}`, valor: s.promedio, extra: `${s.cantidadEstudiantes} estudiantes` }))} mostrarPosicion />
-        <ListaComparativa titulo={`Rendimiento por Materia - ${grado}`} items={materias.map(m => ({ nombre: m.materia, valor: m.promedio }))} mostrarPosicion />
+        <ListaComparativa titulo={`Rendimiento por Asignatura - ${grado}`} items={asignaturas.map(m => ({ nombre: m.asignatura, valor: m.promedio }))} mostrarPosicion />
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

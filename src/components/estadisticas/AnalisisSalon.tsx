@@ -11,9 +11,9 @@ import { IndicadorCompletitud } from "./IndicadorCompletitud";
 import BotonDescarga from "./BotonDescarga";
 import { Home, Users, TrendingUp, AlertTriangle, Award } from "lucide-react";
 
-interface AnalisisSalonProps { 
-  grado: string; 
-  salon: string; 
+interface AnalisisSalonProps {
+  grado: string;
+  salon: string;
   periodo: number | "anual";
   titulo?: string;
 }
@@ -21,10 +21,10 @@ interface AnalisisSalonProps {
 export const AnalisisSalon = ({ grado, salon, periodo, titulo }: AnalisisSalonProps) => {
   const contenidoRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
-  const { 
-    getPromediosEstudiantes, getPromediosSalones, getPromediosMaterias, 
-    getDistribucionDesempeno, getTopEstudiantes, getEvolucionPeriodos, 
-    getPromedioInstitucional, tieneDatosSuficientesParaRiesgo, getEstudiantesEnRiesgo 
+  const {
+    getPromediosEstudiantes, getPromediosSalones, getPromediosAsignaturas,
+    getDistribucionDesempeno, getTopEstudiantes, getEvolucionPeriodos,
+    getPromedioInstitucional, tieneDatosSuficientesParaRiesgo, getEstudiantesEnRiesgo
   } = useEstadisticas();
 
   const { verificarCompletitud } = useCompletitud();
@@ -40,18 +40,18 @@ export const AnalisisSalon = ({ grado, salon, periodo, titulo }: AnalisisSalonPr
   const posicionEnGrado = salonesGrado.findIndex(s => s.salon === salon) + 1;
   const distribucion = getDistribucionDesempeno(periodo, grado, salon);
   const topEstudiantes = getTopEstudiantes(5, periodo, grado, salon);
-  const materias = getPromediosMaterias(periodo, grado, salon);
-  
+  const asignaturas = getPromediosAsignaturas(periodo, grado, salon);
+
   // Verificar completitud con el nuevo hook
   const { completo, detalles, resumen, resumenCompleto } = verificarCompletitud("salon", periodo, grado, salon);
-  
+
   // Filtrar evolución hasta el período seleccionado
   const periodoHasta = periodo === "anual" ? 4 : periodo;
   const evolucionPeriodos = getEvolucionPeriodos("salon", grado, salon).filter(e => {
     const numPeriodo = parseInt(e.periodo.replace("Período ", ""));
     return numPeriodo <= periodoHasta;
   });
-  
+
   const mostrarRiesgo = tieneDatosSuficientesParaRiesgo(periodo, grado, salon);
   const estudiantesEnRiesgo = mostrarRiesgo ? getEstudiantesEnRiesgo(periodo, grado, salon) : [];
   const estudiantesGrado = getPromediosEstudiantes(periodo, grado);
@@ -91,12 +91,12 @@ export const AnalisisSalon = ({ grado, salon, periodo, titulo }: AnalisisSalonPr
           <span>Estadísticas basadas únicamente en estudiantes con notas registradas.</span>
         </div>
         <div className="flex items-center gap-2">
-          <IndicadorCompletitud 
-            completo={completo} 
-            detalles={detalles} 
+          <IndicadorCompletitud
+            completo={completo}
+            detalles={detalles}
             resumen={resumen}
             resumenCompleto={resumenCompleto}
-            nivel={`${grado} ${salon}`} 
+            nivel={`${grado} ${salon}`}
             periodo={periodoTexto}
           />
           <BotonDescarga contenidoRef={contenidoRef} nombreArchivo={titulo || `${grado} ${salon} - ${periodoTexto}`} />
@@ -115,12 +115,12 @@ export const AnalisisSalon = ({ grado, salon, periodo, titulo }: AnalisisSalonPr
           <TarjetaResumen titulo={`Promedio ${grado} ${salon}`} valor={promedioSalon.toFixed(2)} subtitulo={`#${posicionEnGrado} de ${salonesGrado.length} en ${grado}`} icono={Home} color={promedioSalon >= 4.5 ? "success" : promedioSalon >= 4 ? "blue" : promedioSalon >= 3 ? "warning" : "danger"} />
           <TarjetaResumen titulo="Estudiantes con notas" valor={estudiantesSalon.length} subtitulo="En este salón" icono={Users} color="primary" />
           <TarjetaResumen titulo="Mejor Estudiante" valor={topEstudiantes[0]?.promedio.toFixed(2) || "—"} subtitulo={topEstudiantes[0]?.nombre_completo || ""} icono={Award} color={topEstudiantes[0]?.promedio >= 4.5 ? "success" : topEstudiantes[0]?.promedio >= 4 ? "blue" : topEstudiantes[0]?.promedio >= 3 ? "warning" : "danger"} />
-        <TarjetaResumen 
-          titulo="En Riesgo Académico" 
-          valor={mostrarRiesgo ? estudiantesEnRiesgo.length : "—"} 
-          subtitulo={mostrarRiesgo ? (estudiantesEnRiesgo.length > 0 ? "Click para ver detalles" : "Promedio menor a 3.0") : "Se necesitan más datos"} 
-          icono={AlertTriangle} 
-          color={estudiantesEnRiesgo.length > 0 ? "danger" : "success"} 
+        <TarjetaResumen
+          titulo="En Riesgo Académico"
+          valor={mostrarRiesgo ? estudiantesEnRiesgo.length : "—"}
+          subtitulo={mostrarRiesgo ? (estudiantesEnRiesgo.length > 0 ? "Click para ver detalles" : "Promedio menor a 3.0") : "Se necesitan más datos"}
+          icono={AlertTriangle}
+          color={estudiantesEnRiesgo.length > 0 ? "danger" : "success"}
           onClick={mostrarRiesgo && estudiantesEnRiesgo.length > 0 ? handleVerRiesgo : undefined}
         />
       </div>
@@ -131,14 +131,14 @@ export const AnalisisSalon = ({ grado, salon, periodo, titulo }: AnalisisSalonPr
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <TablaRanking 
-          titulo={`Ranking de Estudiantes - ${grado} ${salon}`} 
-          datos={estudiantesSalon.sort((a, b) => b.promedio - a.promedio || a.nombre_completo.localeCompare(b.nombre_completo))} 
-          tipo="estudiante" 
+        <TablaRanking
+          titulo={`Ranking de Estudiantes - ${grado} ${salon}`}
+          datos={estudiantesSalon.sort((a, b) => b.promedio - a.promedio || a.nombre_completo.localeCompare(b.nombre_completo))}
+          tipo="estudiante"
           mostrarTodosSinLimite={true}
           ocultarIconosDespuesDe={3}
         />
-        <ListaComparativa titulo={`Rendimiento por Materia - ${grado} ${salon}`} items={materias.map(m => ({ nombre: m.materia, valor: m.promedio }))} mostrarPosicion />
+        <ListaComparativa titulo={`Rendimiento por Asignatura - ${grado} ${salon}`} items={asignaturas.map(m => ({ nombre: m.asignatura, valor: m.promedio }))} mostrarPosicion />
       </div>
 
       {/* Comparativa con promedios de referencia */}

@@ -8,20 +8,20 @@ import { AnalisisInstitucional } from "@/components/estadisticas/AnalisisInstitu
 import { AnalisisGrado } from "@/components/estadisticas/AnalisisGrado";
 import { AnalisisSalon } from "@/components/estadisticas/AnalisisSalon";
 import { AnalisisEstudiante } from "@/components/estadisticas/AnalisisEstudiante";
-import { AnalisisMateria } from "@/components/estadisticas/AnalisisMateria";
+import { AnalisisAsignatura } from "@/components/estadisticas/AnalisisAsignatura";
 import { Loader2 } from "lucide-react";
 
 const EstadisticasDashboard = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { loading, grados, salones, materias, getMateriasFiltradas, getPromediosEstudiantes } = useEstadisticas();
+  const { loading, grados, salones, asignaturas, getAsignaturasFiltradas, getPromediosEstudiantes } = useEstadisticas();
   
   // Leer filtros desde URL params (para restaurar estado al volver)
   const [nivelAnalisis, setNivelAnalisis] = useState(() => searchParams.get("nivel") || "institucion");
   const [periodoSeleccionado, setPeriodoSeleccionado] = useState(() => searchParams.get("periodo") || "1");
   const [gradoSeleccionado, setGradoSeleccionado] = useState(() => searchParams.get("grado") || "");
   const [salonSeleccionado, setSalonSeleccionado] = useState(() => searchParams.get("salon") || "");
-  const [materiaSeleccionada, setMateriaSeleccionada] = useState(() => searchParams.get("materia") || "");
+  const [asignaturaSeleccionada, setAsignaturaSeleccionada] = useState(() => searchParams.get("asignatura") || "");
   const [estudianteSeleccionado, setEstudianteSeleccionado] = useState(() => searchParams.get("estudiante") || "");
 
   useEffect(() => {
@@ -36,19 +36,19 @@ const EstadisticasDashboard = () => {
     }
   }, [navigate]);
 
-  // Obtener materias filtradas según grado y salón seleccionados
-  const materiasFiltradas = useMemo(() => {
-    // Si no hay grado seleccionado o es "all", mostrar todas las materias
+  // Obtener asignaturas filtradas según grado y salón seleccionados
+  const asignaturasFiltradas = useMemo(() => {
+    // Si no hay grado seleccionado o es "all", mostrar todas las asignaturas
     if (!gradoSeleccionado || gradoSeleccionado === "all") {
-      return materias;
+      return asignaturas;
     }
     // Si hay grado pero no salón o es "all", filtrar solo por grado
     if (!salonSeleccionado || salonSeleccionado === "all") {
-      return getMateriasFiltradas(gradoSeleccionado);
+      return getAsignaturasFiltradas(gradoSeleccionado);
     }
     // Si hay grado y salón, filtrar por ambos
-    return getMateriasFiltradas(gradoSeleccionado, salonSeleccionado);
-  }, [gradoSeleccionado, salonSeleccionado, materias, getMateriasFiltradas]);
+    return getAsignaturasFiltradas(gradoSeleccionado, salonSeleccionado);
+  }, [gradoSeleccionado, salonSeleccionado, asignaturas, getAsignaturasFiltradas]);
 
   // Obtener lista de estudiantes del salón seleccionado
   const estudiantesDelSalon = useMemo(() => {
@@ -70,7 +70,7 @@ const EstadisticasDashboard = () => {
     if (nivelAnalisis === "grado") return gradoSeleccionado && gradoSeleccionado !== "";
     if (nivelAnalisis === "salon") return gradoSeleccionado && salonSeleccionado && salonSeleccionado !== "";
     if (nivelAnalisis === "estudiante") return gradoSeleccionado && salonSeleccionado && estudianteSeleccionado;
-    if (nivelAnalisis === "materia") return materiaSeleccionada && materiaSeleccionada !== "";
+    if (nivelAnalisis === "asignatura") return asignaturaSeleccionada && asignaturaSeleccionada !== "";
     return false;
   };
 
@@ -106,9 +106,9 @@ const EstadisticasDashboard = () => {
       return `${nombreEstudiante} - ${periodoTexto}`;
     }
     
-    if (nivelAnalisis === "materia") {
-      const nombreMateria = materiaSeleccionada || "Materia";
-      const partes = [nombreMateria];
+    if (nivelAnalisis === "asignatura") {
+      const nombreAsignatura = asignaturaSeleccionada || "Asignatura";
+      const partes = [nombreAsignatura];
       
       if (gradoSeleccionado && gradoSeleccionado !== "all") {
         if (salonSeleccionado && salonSeleccionado !== "all") {
@@ -155,13 +155,13 @@ const EstadisticasDashboard = () => {
               setGradoSeleccionado={setGradoSeleccionado}
               salonSeleccionado={salonSeleccionado}
               setSalonSeleccionado={setSalonSeleccionado}
-              materiaSeleccionada={materiaSeleccionada}
-              setMateriaSeleccionada={setMateriaSeleccionada}
+              asignaturaSeleccionada={asignaturaSeleccionada}
+              setAsignaturaSeleccionada={setAsignaturaSeleccionada}
               estudianteSeleccionado={estudianteSeleccionado}
               setEstudianteSeleccionado={setEstudianteSeleccionado}
               grados={grados}
               salones={salones}
-              materias={materiasFiltradas}
+              asignaturas={asignaturasFiltradas}
               estudiantes={estudiantesDelSalon}
             />
 
@@ -181,9 +181,9 @@ const EstadisticasDashboard = () => {
                 titulo={getTituloDinamico()}
               />
             )}
-            {nivelAnalisis === "materia" && materiaSeleccionada && (
-              <AnalisisMateria 
-                materia={materiaSeleccionada} 
+            {nivelAnalisis === "asignatura" && asignaturaSeleccionada && (
+              <AnalisisAsignatura
+                asignatura={asignaturaSeleccionada}
                 periodo={periodoNumerico}
                 grado={gradoSeleccionado}
                 salon={salonSeleccionado}
@@ -205,9 +205,9 @@ const EstadisticasDashboard = () => {
                 Selecciona un estudiante para ver el análisis
               </div>
             )}
-            {nivelAnalisis === "materia" && !materiaSeleccionada && (
+            {nivelAnalisis === "asignatura" && !asignaturaSeleccionada && (
               <div className="bg-card rounded-lg shadow-soft p-8 text-center text-muted-foreground">
-                Selecciona una materia para ver su análisis
+                Selecciona una asignatura para ver su análisis
               </div>
             )}
           </>

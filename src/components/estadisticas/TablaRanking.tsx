@@ -1,12 +1,12 @@
-import { PromedioEstudiante, PromedioSalon, PromedioGrado, PromedioMateria } from "@/hooks/useEstadisticas";
+import { PromedioEstudiante, PromedioSalon, PromedioGrado, PromedioAsignatura } from "@/hooks/useEstadisticas";
 import { Trophy, Medal, Award } from "lucide-react";
 
-type RankingItem = PromedioEstudiante | PromedioSalon | PromedioGrado | PromedioMateria;
+type RankingItem = PromedioEstudiante | PromedioSalon | PromedioGrado | PromedioAsignatura;
 
 interface TablaRankingProps {
   titulo: string;
   datos: RankingItem[];
-  tipo: "estudiante" | "salon" | "grado" | "materia";
+  tipo: "estudiante" | "salon" | "grado" | "asignatura";
   limite?: number;
   mostrarTodosSinLimite?: boolean;
   ocultarIconosDespuesDe?: number;
@@ -51,7 +51,7 @@ export const TablaRanking = ({
     if (tipo === "estudiante") return (item as PromedioEstudiante).nombre_completo;
     if (tipo === "salon") return `${(item as PromedioSalon).grado} ${(item as PromedioSalon).salon}`;
     if (tipo === "grado") return (item as PromedioGrado).grado;
-    return (item as PromedioMateria).materia;
+    return (item as PromedioAsignatura).asignatura;
   };
 
   const getSubtitulo = (item: RankingItem): string | null => {
@@ -65,7 +65,7 @@ export const TablaRanking = ({
     if (tipo === "grado") {
       return `${(item as PromedioGrado).cantidadEstudiantes} estudiantes`;
     }
-    return `${(item as PromedioMateria).cantidadNotas} calificaciones`;
+    return `${(item as PromedioAsignatura).cantidadNotas} calificaciones`;
   };
 
   return (
@@ -73,7 +73,7 @@ export const TablaRanking = ({
       <h4 className="font-semibold text-foreground mb-4">{titulo}</h4>
       <div className="space-y-2">
         {datosLimitados.map((item, index) => (
-          <div 
+          <div
             key={index}
             className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50 transition-colors"
           >

@@ -10,9 +10,9 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const [nombres, setNombres] = useState("");
   const [apellidos, setApellidos] = useState("");
-  const [materias, setMaterias] = useState<string[]>([]);
-  const [selectedMateria, setSelectedMateria] = useState<string | null>(null);
-  const [loadingMaterias, setLoadingMaterias] = useState(true);
+  const [asignaturas, setAsignaturas] = useState<string[]>([]);
+  const [selectedAsignatura, setSelectedAsignatura] = useState<string | null>(null);
+  const [loadingAsignaturas, setLoadingAsignaturas] = useState(true);
 
   useEffect(() => {
     const session = getSession();
@@ -25,8 +25,8 @@ const Dashboard = () => {
     setNombres(session.nombres || "");
     setApellidos(session.apellidos || "");
 
-    // Fetch materias del profesor
-    const fetchMaterias = async () => {
+    // Fetch asignaturas del profesor
+    const fetchAsignaturas = async () => {
       try {
         // Primero obtener el id del profesor desde Internos
         const { data: profesor, error: profesorError } = await supabase
@@ -36,37 +36,37 @@ const Dashboard = () => {
           .single();
 
         if (profesorError || !profesor) {
-          setLoadingMaterias(false);
+          setLoadingAsignaturas(false);
           return;
         }
 
-        // Luego buscar las materias en Asignación Profesores (puede tener múltiples registros)
+        // Luego buscar las asignaturas en Asignación Profesores (puede tener múltiples registros)
         const { data: asignaciones, error: asignacionError } = await supabase
           .from('Asignación Profesores')
-          .select('"Materia(s)", "Grado(s)"')
+          .select('"Asignatura(s)", "Grado(s)"')
           .eq('id', profesor.id);
 
         if (asignacionError || !asignaciones) {
-          setLoadingMaterias(false);
+          setLoadingAsignaturas(false);
           return;
         }
 
-        // Combinar todas las materias de todos los registros sin duplicados
-        console.log("Materias antes de aplanar:", asignaciones?.map(a => a['Materia(s)']));
+        // Combinar todas las asignaturas de todos los registros sin duplicados
+        console.log("Asignaturas antes de aplanar:", asignaciones?.map(a => a['Asignatura(s)']));
         
-        const todasMaterias = asignaciones
-          ?.flatMap(a => a['Materia(s)'] || [])
+        const todasAsignaturas = asignaciones
+          ?.flatMap(a => a['Asignatura(s)'] || [])
           .flat() || [];
-        const materiasUnicas = [...new Set(todasMaterias)].sort((a, b) => a.localeCompare(b, 'es'));
-        setMaterias(materiasUnicas);
+        const asignaturasUnicas = [...new Set(todasAsignaturas)].sort((a, b) => a.localeCompare(b, 'es'));
+        setAsignaturas(asignaturasUnicas);
       } catch (error) {
         console.error('Error:', error);
       } finally {
-        setLoadingMaterias(false);
+        setLoadingAsignaturas(false);
       }
     };
 
-    fetchMaterias();
+    fetchAsignaturas();
   }, [navigate]);
 
   return (
@@ -87,31 +87,31 @@ const Dashboard = () => {
           </p>
         </div>
 
-        {/* Sección de Materias */}
+        {/* Sección de Asignaturas */}
         <div className="bg-card rounded-lg shadow-soft p-8 max-w-4xl mx-auto mt-8">
           <h3 className="text-xl font-bold text-foreground mb-6 text-center">
-            Elige tu materia:
+            Elige tu asignatura:
           </h3>
           
-          {loadingMaterias ? (
+          {loadingAsignaturas ? (
             <div className="text-center text-muted-foreground">
-              Cargando materias...
+              Cargando asignaturas...
             </div>
-          ) : materias.length === 0 ? (
+          ) : asignaturas.length === 0 ? (
             <div className="text-center text-muted-foreground">
-              No tienes materias asignadas
+              No tienes asignaturas asignadas
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {materias.map((materia, index) => {
-                const isSelected = selectedMateria === materia;
-                
+              {asignaturas.map((asignatura, index) => {
+                const isSelected = selectedAsignatura === asignatura;
+
                 return (
                   <button
                     key={index}
                     onClick={() => {
-                      setSelectedMateria(materia);
-                      localStorage.setItem("materiaSeleccionada", materia);
+                      setSelectedAsignatura(asignatura);
+                      localStorage.setItem("asignaturaSeleccionada", asignatura);
                       navigate("/seleccionar-grado");
                     }}
                     className={`
@@ -123,7 +123,7 @@ const Dashboard = () => {
                       }
                     `}
                   >
-                    <span className="font-medium text-foreground">{materia}</span>
+                    <span className="font-medium text-foreground">{asignatura}</span>
                   </button>
                 );
               })}

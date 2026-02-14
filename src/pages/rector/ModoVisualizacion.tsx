@@ -12,7 +12,7 @@ const ModoVisualizacion = () => {
 
   useEffect(() => {
     const session = getSession();
-    
+
     if (!session.codigo) {
       navigate("/");
       return;
@@ -41,10 +41,10 @@ const ModoVisualizacion = () => {
     setLoading(false);
   }, [navigate]);
 
-  const handleSelectModo = (modo: "materia" | "estudiante") => {
+  const handleSelectModo = (modo: "asignatura" | "estudiante") => {
     localStorage.setItem("modoVisualizacion", modo);
-    if (modo === "materia") {
-      navigate("/rector/lista-materias");
+    if (modo === "asignatura") {
+      navigate("/rector/lista-asignaturas");
     } else {
       navigate("/rector/lista-estudiantes");
     }
@@ -67,21 +67,21 @@ const ModoVisualizacion = () => {
         {/* Breadcrumb */}
         <div className="bg-card rounded-lg shadow-soft p-4 mb-6">
           <div className="flex flex-wrap items-center gap-2 text-sm">
-            <button 
+            <button
               onClick={() => navigate("/dashboard-rector")}
               className="text-primary hover:underline"
             >
               Inicio
             </button>
             <span className="text-muted-foreground">→</span>
-            <button 
+            <button
               onClick={() => navigate("/rector/seleccionar-grado")}
               className="text-primary hover:underline"
             >
               Notas
             </button>
             <span className="text-muted-foreground">→</span>
-            <button 
+            <button
               onClick={() => navigate("/rector/seleccionar-salon")}
               className="text-primary hover:underline"
             >
@@ -97,19 +97,19 @@ const ModoVisualizacion = () => {
           <h3 className="text-xl font-bold text-foreground mb-6 text-center">
             ¿Cómo deseas ver las notas?
           </h3>
-          
+
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-xl mx-auto">
             <button
-              onClick={() => handleSelectModo("materia")}
+              onClick={() => handleSelectModo("asignatura")}
               className="flex flex-col items-center justify-center gap-4 p-8 rounded-lg border-2 border-border bg-background transition-all duration-200 hover:shadow-md hover:border-primary hover:bg-primary/10"
             >
               <BookOpen className="w-16 h-16 text-primary" />
-              <span className="font-semibold text-lg text-foreground">Por Materia</span>
+              <span className="font-semibold text-lg text-foreground">Por Asignatura</span>
               <span className="text-sm text-muted-foreground text-center">
-                Ver todas las materias y seleccionar una
+                Ver todas las asignaturas y seleccionar una
               </span>
             </button>
-            
+
             <button
               onClick={() => handleSelectModo("estudiante")}
               className="flex flex-col items-center justify-center gap-4 p-8 rounded-lg border-2 border-border bg-background transition-all duration-200 hover:shadow-md hover:border-primary hover:bg-primary/10"

@@ -23,7 +23,7 @@ const EstudiantesEnRiesgo = () => {
   const gradoParam = searchParams.get("grado");
   const salonParam = searchParams.get("salon");
   const nivelParam = searchParams.get("nivel");
-  const materiaParam = searchParams.get("materia");
+  const asignaturaParam = searchParams.get("asignatura");
 
   const periodo = periodoParam === "anual" ? "anual" : parseInt(periodoParam || "1");
 
@@ -34,7 +34,7 @@ const EstudiantesEnRiesgo = () => {
     if (periodoParam) params.set("periodo", periodoParam);
     if (gradoParam) params.set("grado", gradoParam);
     if (salonParam) params.set("salon", salonParam);
-    if (materiaParam) params.set("materia", materiaParam);
+    if (asignaturaParam) params.set("asignatura", asignaturaParam);
     return `/rector/estadisticas?${params.toString()}`;
   };
 
@@ -50,12 +50,12 @@ const EstudiantesEnRiesgo = () => {
     }
   }, [navigate]);
 
-  // Pasar materia al cálculo de riesgo si está presente
+  // Pasar asignatura al cálculo de riesgo si está presente
   const estudiantesEnRiesgo = getEstudiantesEnRiesgo(
     periodo,
     gradoParam || undefined,
     salonParam || undefined,
-    materiaParam || undefined
+    asignaturaParam || undefined
   );
 
   // Construir label del filtro
@@ -115,8 +115,8 @@ const EstudiantesEnRiesgo = () => {
           <div className="mt-4 flex flex-wrap gap-2">
             <span className="px-3 py-1 bg-muted rounded-full text-sm">{filtroLabel}</span>
             <span className="px-3 py-1 bg-muted rounded-full text-sm">{periodoLabel}</span>
-            {materiaParam && (
-              <span className="px-3 py-1 bg-primary/10 text-primary rounded-full text-sm font-medium">{materiaParam}</span>
+            {asignaturaParam && (
+              <span className="px-3 py-1 bg-primary/10 text-primary rounded-full text-sm font-medium">{asignaturaParam}</span>
             )}
           </div>
         </div>

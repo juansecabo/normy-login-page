@@ -6,7 +6,7 @@ import HeaderNormy from "@/components/HeaderNormy";
 
 const SeleccionarSalon = () => {
   const navigate = useNavigate();
-  const [materiaSeleccionada, setMateriaSeleccionada] = useState("");
+  const [asignaturaSeleccionada, setAsignaturaSeleccionada] = useState("");
   const [gradoSeleccionado, setGradoSeleccionado] = useState("");
   const [salones, setSalones] = useState<string[]>([]);
   const [selectedSalon, setSelectedSalon] = useState<string | null>(null);
@@ -14,7 +14,7 @@ const SeleccionarSalon = () => {
 
   useEffect(() => {
     const session = getSession();
-    const storedMateria = localStorage.getItem("materiaSeleccionada");
+    const storedAsignatura = localStorage.getItem("asignaturaSeleccionada");
     const storedGrado = localStorage.getItem("gradoSeleccionado");
 
     if (!session.codigo) {
@@ -22,7 +22,7 @@ const SeleccionarSalon = () => {
       return;
     }
 
-    if (!storedMateria) {
+    if (!storedAsignatura) {
       navigate("/dashboard");
       return;
     }
@@ -32,7 +32,7 @@ const SeleccionarSalon = () => {
       return;
     }
 
-    setMateriaSeleccionada(storedMateria);
+    setAsignaturaSeleccionada(storedAsignatura);
     setGradoSeleccionado(storedGrado);
 
     const fetchSalones = async () => {
@@ -49,10 +49,10 @@ const SeleccionarSalon = () => {
           return;
         }
 
-        // Buscar asignaciones que contengan la materia y grado seleccionados
+        // Buscar asignaciones que contengan la asignatura y grado seleccionados
         const { data: asignaciones, error: asignacionError } = await supabase
           .from('Asignación Profesores')
-          .select('"Materia(s)", "Grado(s)", "Salon(es)"')
+          .select('"Asignatura(s)", "Grado(s)", "Salon(es)"')
           .eq('id', profesor.id);
 
         if (asignacionError || !asignaciones) {
@@ -60,11 +60,11 @@ const SeleccionarSalon = () => {
           return;
         }
 
-        // Filtrar solo las asignaciones que contienen la materia y grado seleccionados
+        // Filtrar solo las asignaciones que contienen la asignatura y grado seleccionados
         const asignacionesFiltradas = asignaciones.filter(a => {
-          const materias = (a['Materia(s)'] || []).flat();
+          const asignaturas = (a['Asignatura(s)'] || []).flat();
           const grados = (a['Grado(s)'] || []).flat();
-          return materias.includes(storedMateria) && grados.includes(storedGrado);
+          return asignaturas.includes(storedAsignatura) && grados.includes(storedGrado);
         });
 
         console.log("Salones antes de aplanar:", asignacionesFiltradas?.map(a => a['Salon(es)']));
@@ -94,18 +94,18 @@ const SeleccionarSalon = () => {
         {/* Breadcrumb */}
         <div className="bg-card rounded-lg shadow-soft p-4 max-w-4xl mx-auto mb-6">
           <div className="flex flex-wrap items-center gap-2 text-sm">
-            <button 
+            <button
               onClick={() => navigate("/dashboard")}
               className="text-primary hover:underline"
             >
-              Materias
+              Asignaturas
             </button>
             <span className="text-muted-foreground">→</span>
-            <button 
+            <button
               onClick={() => navigate("/seleccionar-grado")}
               className="text-primary hover:underline"
             >
-              {materiaSeleccionada}
+              {asignaturaSeleccionada}
             </button>
             <span className="text-muted-foreground">→</span>
             <span className="text-foreground font-medium">{gradoSeleccionado}</span>

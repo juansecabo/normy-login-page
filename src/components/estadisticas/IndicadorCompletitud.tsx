@@ -18,10 +18,10 @@ interface IndicadorCompletitudProps {
   periodo: string;
 }
 
-// Agrupar detalles por profesor -> materias -> grados/salones
+// Agrupar detalles por profesor -> asignaturas -> grados/salones
 interface PendienteProfesor {
   nombreProfesor: string;
-  materias: Map<string, {
+  asignaturas: Map<string, {
     grados: Set<string>;
     salones: Set<string>;
   }>;
@@ -32,42 +32,42 @@ const agruparPorProfesor = (detalles: DetalleIncompleto[]): PendienteProfesor[] 
 
   detalles.forEach(d => {
     const nombreProfesor = d.profesor || "Profesor desconocido";
-    
+
     if (!profesoresMap.has(nombreProfesor)) {
       profesoresMap.set(nombreProfesor, {
         nombreProfesor,
-        materias: new Map()
+        asignaturas: new Map()
       });
     }
-    
+
     const prof = profesoresMap.get(nombreProfesor)!;
-    const materia = d.materia || "Sin materia";
-    
-    if (!prof.materias.has(materia)) {
-      prof.materias.set(materia, {
+    const asignatura = d.asignatura || "Sin asignatura";
+
+    if (!prof.asignaturas.has(asignatura)) {
+      prof.asignaturas.set(asignatura, {
         grados: new Set(),
         salones: new Set()
       });
     }
-    
-    const mat = prof.materias.get(materia)!;
+
+    const mat = prof.asignaturas.get(asignatura)!;
     if (d.grado) mat.grados.add(d.grado);
     if (d.salon) mat.salones.add(d.salon);
   });
 
   // Convertir a array y ordenar por nombre
-  return Array.from(profesoresMap.values()).sort((a, b) => 
+  return Array.from(profesoresMap.values()).sort((a, b) =>
     a.nombreProfesor.localeCompare(b.nombreProfesor)
   );
 };
 
-export const IndicadorCompletitud = ({ 
-  completo, 
-  detalles, 
-  resumen, 
+export const IndicadorCompletitud = ({
+  completo,
+  detalles,
+  resumen,
   resumenCompleto,
-  nivel, 
-  periodo 
+  nivel,
+  periodo
 }: IndicadorCompletitudProps) => {
   const [open, setOpen] = useState(false);
 
@@ -142,17 +142,17 @@ export const IndicadorCompletitud = ({
                 </div>
               </div>
 
-              {/* Materias verificadas */}
-              {resumenCompleto && resumenCompleto.materiasPorSalon.size > 0 && (
+              {/* Asignaturas verificadas */}
+              {resumenCompleto && resumenCompleto.asignaturasPorSalon.size > 0 && (
                 <div className="border rounded-lg p-4 space-y-2">
                   <h4 className="font-semibold text-sm flex items-center gap-2">
-                    📝 MATERIAS VERIFICADAS
+                    📝 ASIGNATURAS VERIFICADAS
                   </h4>
                   <div className="grid grid-cols-2 gap-2 text-sm">
-                    {Array.from(resumenCompleto.materiasPorSalon.entries()).map(([materia, cantidad]) => (
-                      <div key={materia} className="flex items-center gap-2">
+                    {Array.from(resumenCompleto.asignaturasPorSalon.entries()).map(([asignatura, cantidad]) => (
+                      <div key={asignatura} className="flex items-center gap-2">
                         <CheckCircle className="w-3.5 h-3.5 text-green-500" />
-                        <span>{materia} - {cantidad} salones ✓</span>
+                        <span>{asignatura} - {cantidad} salones ✓</span>
                       </div>
                     ))}
                   </div>

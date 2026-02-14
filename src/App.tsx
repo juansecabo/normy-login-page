@@ -17,7 +17,7 @@ import NotFound from "./pages/NotFound";
 import SeleccionarGradoRector from "./pages/rector/SeleccionarGradoRector";
 import SeleccionarSalonRector from "./pages/rector/SeleccionarSalonRector";
 import ModoVisualizacion from "./pages/rector/ModoVisualizacion";
-import ListaMaterias from "./pages/rector/ListaMaterias";
+import ListaAsignaturas from "./pages/rector/ListaAsignaturas";
 import ListaEstudiantes from "./pages/rector/ListaEstudiantes";
 import TablaNotasReadOnly from "./pages/rector/TablaNotasReadOnly";
 import EstudianteConsolidado from "./pages/rector/EstudianteConsolidado";
@@ -49,7 +49,7 @@ const App = () => (
           <Route path="/rector/seleccionar-grado" element={<SeleccionarGradoRector />} />
           <Route path="/rector/seleccionar-salon" element={<SeleccionarSalonRector />} />
           <Route path="/rector/modo-visualizacion" element={<ModoVisualizacion />} />
-          <Route path="/rector/lista-materias" element={<ListaMaterias />} />
+          <Route path="/rector/lista-asignaturas" element={<ListaAsignaturas />} />
           <Route path="/rector/lista-estudiantes" element={<ListaEstudiantes />} />
           <Route path="/rector/tabla-notas" element={<TablaNotasReadOnly />} />
           <Route path="/rector/estudiante-consolidado" element={<EstudianteConsolidado />} />

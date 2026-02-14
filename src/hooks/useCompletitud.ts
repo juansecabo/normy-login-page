@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 export interface DetalleIncompleto {
   tipo: "nota_faltante" | "porcentaje_incompleto" | "sin_actividades";
   descripcion: string;
-  materia?: string;
+  asignatura?: string;
   profesor?: string;
   grado?: string;
   salon?: string;
@@ -15,7 +15,7 @@ export interface DetalleIncompleto {
 }
 
 export interface ResumenIncompletitud {
-  materiasIncompletas: number;
+  asignaturasIncompletas: number;
   profesoresPendientes: string[];
   gradosAfectados: string[];
   salonesAfectados: string[];
@@ -26,7 +26,7 @@ export interface ResumenCompleto {
   totalAsignacionesVerificadas: number;
   totalSalones: number;
   totalProfesores: number;
-  materiasPorSalon: Map<string, number>;
+  asignaturasPorSalon: Map<string, number>;
 }
 
 export interface ResultadoCompletitud {
@@ -45,7 +45,7 @@ interface InternoProfesor {
 }
 
 interface AsignacionExpandida {
-  materia: string;
+  asignatura: string;
   grado: string;
   salon: string;
   codigoProfesor: string; // Internos.codigo
@@ -53,7 +53,7 @@ interface AsignacionExpandida {
 }
 
 interface ActividadRegistrada {
-  materia: string;
+  asignatura: string;
   grado: string;
   salon: string;
   periodo: number;
@@ -64,7 +64,7 @@ interface ActividadRegistrada {
 
 interface NotaRegistrada {
   codigo_estudiantil: string;
-  materia: string;
+  asignatura: string;
   grado: string;
   salon: string;
   periodo: number;
@@ -144,19 +144,19 @@ export const useCompletitud = () => {
 
         for (const asig of asignacionesData || []) {
           // Parsear arrays
-          let materias: string[] = [];
+          let asignaturas: string[] = [];
           let grados: string[] = [];
           let salones: string[] = [];
 
           try {
-            const rawMaterias = asig["Materia(s)"];
+            const rawAsignaturas = asig["Asignatura(s)"];
             const rawGrados = asig["Grado(s)"];
             const rawSalones = asig["Salon(es)"];
 
-            materias = Array.isArray(rawMaterias)
-              ? rawMaterias
-              : typeof rawMaterias === "string"
-                ? JSON.parse(rawMaterias)
+            asignaturas = Array.isArray(rawAsignaturas)
+              ? rawAsignaturas
+              : typeof rawAsignaturas === "string"
+                ? JSON.parse(rawAsignaturas)
                 : [];
 
             grados = Array.isArray(rawGrados) ? rawGrados : typeof rawGrados === "string" ? JSON.parse(rawGrados) : [];
@@ -171,7 +171,7 @@ export const useCompletitud = () => {
             continue;
           }
 
-          if (!materias.length || !grados.length || !salones.length) continue;
+          if (!asignaturas.length || !grados.length || !salones.length) continue;
           asignacionesValidas++;
 
           // Encontrar profesor: por id si existe, sino por nombre
@@ -196,19 +196,19 @@ export const useCompletitud = () => {
           const nombreCompleto = `${prof.apellidos} ${prof.nombres}`.trim();
           const codigoProfesor = prof.codigo;
 
-          const materiasTrim = materias.map((x) => String(x).trim());
+          const asignaturasTrim = asignaturas.map((x) => String(x).trim());
           const gradosTrim = grados.map((x) => String(x).trim());
           const salonesTrim = salones.map((x) => String(x).trim());
 
           // ZIP vs cartesiano
           if (
-            materiasTrim.length === gradosTrim.length &&
+            asignaturasTrim.length === gradosTrim.length &&
             gradosTrim.length === salonesTrim.length &&
-            materiasTrim.length > 0
+            asignaturasTrim.length > 0
           ) {
-            for (let i = 0; i < materiasTrim.length; i++) {
+            for (let i = 0; i < asignaturasTrim.length; i++) {
               combinaciones.push({
-                materia: materiasTrim[i],
+                asignatura: asignaturasTrim[i],
                 grado: gradosTrim[i],
                 salon: salonesTrim[i],
                 codigoProfesor,
@@ -216,11 +216,11 @@ export const useCompletitud = () => {
               });
             }
           } else {
-            for (const m of materiasTrim) {
+            for (const m of asignaturasTrim) {
               for (const g of gradosTrim) {
                 for (const s of salonesTrim) {
                   combinaciones.push({
-                    materia: m,
+                    asignatura: m,
                     grado: g,
                     salon: s,
                     codigoProfesor,
@@ -241,12 +241,12 @@ export const useCompletitud = () => {
         // 3) Actividades (nombre_actividad real)
         const { data: actividadesData, error: errorAct } = await supabase
           .from("Nombre de Actividades")
-          .select("materia, grado, salon, periodo, nombre_actividad, porcentaje, codigo_profesor");
+          .select("asignatura, grado, salon, periodo, nombre_actividad, porcentaje, codigo_profesor");
 
         if (errorAct) console.error("❌ Error obteniendo actividades:", errorAct);
 
         const actividadesProcesadas: ActividadRegistrada[] = (actividadesData || []).map((a: any) => ({
-          materia: String(a.materia || "").trim(),
+          asignatura: String(a.asignatura || "").trim(),
           grado: String(a.grado || "").trim(),
           salon: String(a.salon || "").trim(),
           periodo: Number(a.periodo),
@@ -261,14 +261,14 @@ export const useCompletitud = () => {
         // 4) Notas
         const { data: notasData, error: errorNotas } = await supabase
           .from("Notas")
-          .select("codigo_estudiantil, materia, grado, salon, periodo, nombre_actividad, nota")
+          .select("codigo_estudiantil, asignatura, grado, salon, periodo, nombre_actividad, nota")
           .not("nombre_actividad", "in", '("Final Periodo","Final Definitiva")');
 
         if (errorNotas) console.error("❌ Error obteniendo notas:", errorNotas);
 
         const notasProcesadas: NotaRegistrada[] = (notasData || []).map((n: any) => ({
           codigo_estudiantil: String(n.codigo_estudiantil || "").trim(),
-          materia: String(n.materia || "").trim(),
+          asignatura: String(n.asignatura || "").trim(),
           grado: String(n.grado || "").trim(),
           salon: String(n.salon || "").trim(),
           periodo: Number(n.periodo),
@@ -308,18 +308,18 @@ export const useCompletitud = () => {
   }, []);
 
   const verificarCompletitud = (
-    nivel: "institucion" | "grado" | "salon" | "materia" | "estudiante",
+    nivel: "institucion" | "grado" | "salon" | "asignatura" | "estudiante",
     periodo: number | "anual",
     grado?: string,
     salon?: string,
-    materia?: string,
+    asignatura?: string,
     codigoEstudiante?: string,
   ): ResultadoCompletitud => {
     const detalles: DetalleIncompleto[] = [];
     const profesoresPendientes = new Set<string>();
     const gradosAfectados = new Set<string>();
     const salonesAfectados = new Set<string>();
-    const materiasIncompletas = new Set<string>();
+    const asignaturasIncompletas = new Set<string>();
 
     const periodosAVerificar = periodo === "anual" ? [1, 2, 3, 4] : [periodo as number];
 
@@ -331,16 +331,16 @@ export const useCompletitud = () => {
           {
             tipo: "sin_actividades",
             descripcion: "Cargando datos... espera un momento y vuelve a abrir el modal.",
-            materia: "Cargando",
+            asignatura: "Cargando",
           },
         ],
-        resumen: { materiasIncompletas: 0, profesoresPendientes: [], gradosAfectados: [], salonesAfectados: [] },
+        resumen: { asignaturasIncompletas: 0, profesoresPendientes: [], gradosAfectados: [], salonesAfectados: [] },
       };
     }
 
     console.log("=== VERIFICACIÓN COMPLETITUD ===");
     console.log("Período:", periodo, "→ Verificar:", periodosAVerificar);
-    console.log("Nivel:", nivel, "| Grado:", grado, "| Salón:", salon, "| Materia:", materia);
+    console.log("Nivel:", nivel, "| Grado:", grado, "| Salón:", salon, "| Asignatura:", asignatura);
 
     // Filtrar combinaciones por nivel
     let combinacionesFiltradas = [...combinacionesExpandidas];
@@ -353,11 +353,11 @@ export const useCompletitud = () => {
         (c) => normalize(c.grado) === normalize(grado) && normalize(c.salon) === normalize(salon),
       );
     }
-    if (nivel === "materia" && materia) {
-      // Filtrar por materia, y opcionalmente por grado/salón si están definidos
+    if (nivel === "asignatura" && asignatura) {
+      // Filtrar por asignatura, y opcionalmente por grado/salón si están definidos
       combinacionesFiltradas = combinacionesFiltradas.filter((c) => {
-        const matchMateria = normalize(c.materia) === normalize(materia);
-        if (!matchMateria) return false;
+        const matchAsignatura = normalize(c.asignatura) === normalize(asignatura);
+        if (!matchAsignatura) return false;
         
         // Si hay grado específico, filtrar por grado
         if (grado && grado !== "all" && normalize(c.grado) !== normalize(grado)) return false;
@@ -381,21 +381,21 @@ export const useCompletitud = () => {
 
     const actividadesIndex = new Map<string, ActividadRegistrada[]>();
     for (const a of actividades) {
-      const key = `${a.codigo_profesor}|${normalize(a.materia)}|${normalize(a.grado)}|${normalize(a.salon)}|${a.periodo}`;
+      const key = `${a.codigo_profesor}|${normalize(a.asignatura)}|${normalize(a.grado)}|${normalize(a.salon)}|${a.periodo}`;
       if (!actividadesIndex.has(key)) actividadesIndex.set(key, []);
       actividadesIndex.get(key)!.push(a);
     }
 
     const notasIndex = new Map<string, NotaRegistrada>();
     for (const n of notas) {
-      const key = `${n.codigo_estudiantil}|${normalize(n.materia)}|${normalize(n.grado)}|${normalize(n.salon)}|${n.periodo}|${normalize(n.nombre_actividad)}`;
+      const key = `${n.codigo_estudiantil}|${normalize(n.asignatura)}|${normalize(n.grado)}|${normalize(n.salon)}|${n.periodo}|${normalize(n.nombre_actividad)}`;
       notasIndex.set(key, n);
     }
 
     // Para resumen
     const salonesVerificados = new Set<string>();
     const profesoresVerificados = new Set<string>();
-    const materiasPorSalon = new Map<string, number>();
+    const asignaturasPorSalon = new Map<string, number>();
     let asignacionesVerificadas = 0;
 
     // Verificación completa SIN CORTAR por límite de detalles
@@ -412,7 +412,7 @@ export const useCompletitud = () => {
       asignacionesVerificadas++;
       salonesVerificados.add(`${combo.grado}-${combo.salon}`);
       profesoresVerificados.add(combo.nombreCompleto);
-      materiasPorSalon.set(combo.materia, (materiasPorSalon.get(combo.materia) || 0) + 1);
+      asignaturasPorSalon.set(combo.asignatura, (asignaturasPorSalon.get(combo.asignatura) || 0) + 1);
 
       // Si el profe ya está pendiente, no hace falta seguir revisando más combos de él
       // (Esto acelera y evita explotar detalles)
@@ -421,7 +421,7 @@ export const useCompletitud = () => {
       let profPendiente = false;
 
       for (const per of periodosAVerificar) {
-        const actKey = `${combo.codigoProfesor}|${normalize(combo.materia)}|${normalize(combo.grado)}|${normalize(combo.salon)}|${per}`;
+        const actKey = `${combo.codigoProfesor}|${normalize(combo.asignatura)}|${normalize(combo.grado)}|${normalize(combo.salon)}|${per}`;
         const actsAll = actividadesIndex.get(actKey) || [];
 
         // Actividades con peso
@@ -433,8 +433,8 @@ export const useCompletitud = () => {
           if (detalles.length < DETALLE_LIMIT) {
             detalles.push({
               tipo: "sin_actividades",
-              descripcion: `${combo.materia} (${combo.grado}-${combo.salon}) P${per}: Sin actividades`,
-              materia: combo.materia,
+              descripcion: `${combo.asignatura} (${combo.grado}-${combo.salon}) P${per}: Sin actividades`,
+              asignatura: combo.asignatura,
               profesor: combo.nombreCompleto,
               grado: combo.grado,
               salon: combo.salon,
@@ -453,8 +453,8 @@ export const useCompletitud = () => {
           if (detalles.length < DETALLE_LIMIT) {
             detalles.push({
               tipo: "porcentaje_incompleto",
-              descripcion: `${combo.materia} (${combo.grado}-${combo.salon}) P${per}: ${Math.round(suma)}%`,
-              materia: combo.materia,
+              descripcion: `${combo.asignatura} (${combo.grado}-${combo.salon}) P${per}: ${Math.round(suma)}%`,
+              asignatura: combo.asignatura,
               profesor: combo.nombreCompleto,
               grado: combo.grado,
               salon: combo.salon,
@@ -468,7 +468,7 @@ export const useCompletitud = () => {
         // 3) Notas: debe existir y no ser null
         for (const est of estudiantesDelSalon) {
           for (const act of actividadesConPeso) {
-            const nKey = `${est.codigo_estudiantil}|${normalize(combo.materia)}|${normalize(combo.grado)}|${normalize(combo.salon)}|${per}|${normalize(act.nombre_actividad)}`;
+            const nKey = `${est.codigo_estudiantil}|${normalize(combo.asignatura)}|${normalize(combo.grado)}|${normalize(combo.salon)}|${per}|${normalize(act.nombre_actividad)}`;
             const n = notasIndex.get(nKey);
 
             if (!n || n.nota == null) {
@@ -477,7 +477,7 @@ export const useCompletitud = () => {
                 detalles.push({
                   tipo: "nota_faltante",
                   descripcion: "Nota faltante",
-                  materia: combo.materia,
+                  asignatura: combo.asignatura,
                   profesor: combo.nombreCompleto,
                   grado: combo.grado,
                   salon: combo.salon,
@@ -499,7 +499,7 @@ export const useCompletitud = () => {
         profesoresPendientes.add(combo.nombreCompleto);
         gradosAfectados.add(combo.grado);
         salonesAfectados.add(combo.salon);
-        materiasIncompletas.add(combo.materia);
+        asignaturasIncompletas.add(combo.asignatura);
       }
     }
 
@@ -527,7 +527,7 @@ export const useCompletitud = () => {
       totalAsignacionesVerificadas: asignacionesVerificadas,
       totalSalones: salonesVerificados.size,
       totalProfesores: profesoresVerificados.size,
-      materiasPorSalon,
+      asignaturasPorSalon,
     };
 
     const profesoresPendientesOrdenados = Array.from(profesoresPendientes).sort((a, b) =>
@@ -547,7 +547,7 @@ export const useCompletitud = () => {
         detalles.push({
           tipo: "sin_actividades",
           descripcion: "No hay asignaciones configuradas para este nivel",
-          materia: "Sin asignaciones",
+          asignatura: "Sin asignaciones",
         });
       }
     } else if (asignacionesVerificadas === 0) {
@@ -555,7 +555,7 @@ export const useCompletitud = () => {
         detalles.push({
           tipo: "sin_actividades",
           descripcion: "No hay estudiantes registrados en las asignaciones verificadas",
-          materia: "Sin estudiantes",
+          asignatura: "Sin estudiantes",
         });
       }
     }
@@ -564,7 +564,7 @@ export const useCompletitud = () => {
       completo: estaCompleto,
       detalles: detalles.slice(0, DETALLE_LIMIT),
       resumen: {
-        materiasIncompletas: materiasIncompletas.size,
+        asignaturasIncompletas: asignaturasIncompletas.size,
         profesoresPendientes: profesoresPendientesOrdenados,
         gradosAfectados: Array.from(gradosAfectados),
         salonesAfectados: Array.from(salonesAfectados),

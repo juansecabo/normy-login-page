@@ -15,24 +15,24 @@ interface Actividad {
   periodo: number;
   nombre: string;
   porcentaje: number | null;
-  materia: string;
+  asignatura: string;
 }
 
 type NotasEstudiante = {
-  [materia: string]: {
+  [asignatura: string]: {
     [periodo: number]: {
       [actividadId: string]: number;
     };
   };
 };
 
-type ActividadesPorMateria = {
-  [materia: string]: Actividad[];
+type ActividadesPorAsignatura = {
+  [asignatura: string]: Actividad[];
 };
 
-// Estado de periodo activo por materia
+// Estado de periodo activo por asignatura
 type PeriodosActivos = {
-  [materia: string]: number;
+  [asignatura: string]: number;
 };
 
 const EstudianteConsolidado = () => {
@@ -40,8 +40,8 @@ const EstudianteConsolidado = () => {
   const [gradoSeleccionado, setGradoSeleccionado] = useState("");
   const [salonSeleccionado, setSalonSeleccionado] = useState("");
   const [estudiante, setEstudiante] = useState<Estudiante | null>(null);
-  const [materias, setMaterias] = useState<string[]>([]);
-  const [actividadesPorMateria, setActividadesPorMateria] = useState<ActividadesPorMateria>({});
+  const [asignaturas, setAsignaturas] = useState<string[]>([]);
+  const [actividadesPorAsignatura, setActividadesPorAsignatura] = useState<ActividadesPorAsignatura>({});
   const [notas, setNotas] = useState<NotasEstudiante>({});
   const [periodosActivos, setPeriodosActivos] = useState<PeriodosActivos>({});
   const [loading, setLoading] = useState(true);
@@ -56,7 +56,7 @@ const EstudianteConsolidado = () => {
   useEffect(() => {
     const inicializar = async () => {
       const session = getSession();
-      
+
       if (!session.codigo) {
         navigate('/');
         return;
@@ -87,10 +87,10 @@ const EstudianteConsolidado = () => {
       setEstudiante(estudianteData);
 
       try {
-        // Obtener materias del grado/salón
+        // Obtener asignaturas del grado/salón
         const { data: asignaciones, error: asignacionesError } = await supabase
           .from('Asignación Profesores')
-          .select('"Materia(s)", "Grado(s)", "Salon(es)"');
+          .select('"Asignatura(s)", "Grado(s)", "Salon(es)"');
 
         if (asignacionesError) {
           console.error('Error fetching asignaciones:', asignacionesError);
@@ -98,58 +98,58 @@ const EstudianteConsolidado = () => {
           return;
         }
 
-        // Filtrar materias para este grado y salón
-        const materiasDelGrado: string[] = [];
+        // Filtrar asignaturas para este grado y salón
+        const asignaturasDelGrado: string[] = [];
         asignaciones?.forEach((asignacion) => {
           const grados = asignacion['Grado(s)'] || [];
           const salones = asignacion['Salon(es)'] || [];
-          const materiasAsig = asignacion['Materia(s)'] || [];
+          const asignaturasAsig = asignacion['Asignatura(s)'] || [];
 
           if (grados.includes(storedGrado) && salones.includes(storedSalon)) {
-            materiasAsig.forEach((materia: string) => {
-              if (!materiasDelGrado.includes(materia)) {
-                materiasDelGrado.push(materia);
+            asignaturasAsig.forEach((asignatura: string) => {
+              if (!asignaturasDelGrado.includes(asignatura)) {
+                asignaturasDelGrado.push(asignatura);
               }
             });
           }
         });
 
-        materiasDelGrado.sort((a, b) => a.localeCompare(b, 'es'));
-        setMaterias(materiasDelGrado);
+        asignaturasDelGrado.sort((a, b) => a.localeCompare(b, 'es'));
+        setAsignaturas(asignaturasDelGrado);
 
         // Inicializar periodos activos (todos en periodo 1)
         const periodosIniciales: PeriodosActivos = {};
-        materiasDelGrado.forEach(materia => {
-          periodosIniciales[materia] = 1;
+        asignaturasDelGrado.forEach(asignatura => {
+          periodosIniciales[asignatura] = 1;
         });
         setPeriodosActivos(periodosIniciales);
 
-        // Obtener actividades de todas las materias
+        // Obtener actividades de todas las asignaturas
         const { data: actividadesData, error: actividadesError } = await supabase
           .from('Nombre de Actividades')
           .select('*')
           .eq('grado', storedGrado)
           .eq('salon', storedSalon)
-          .in('materia', materiasDelGrado)
+          .in('asignatura', asignaturasDelGrado)
           .order('fecha_creacion', { ascending: true });
 
         if (!actividadesError && actividadesData) {
-          const actividadesPorMat: ActividadesPorMateria = {};
-          
+          const actividadesPorAsig: ActividadesPorAsignatura = {};
+
           actividadesData.forEach((act) => {
-            if (!actividadesPorMat[act.materia]) {
-              actividadesPorMat[act.materia] = [];
+            if (!actividadesPorAsig[act.asignatura]) {
+              actividadesPorAsig[act.asignatura] = [];
             }
-            actividadesPorMat[act.materia].push({
+            actividadesPorAsig[act.asignatura].push({
               id: `${act.periodo}-${act.nombre_actividad}`,
               periodo: act.periodo,
               nombre: act.nombre_actividad,
               porcentaje: act.porcentaje,
-              materia: act.materia,
+              asignatura: act.asignatura,
             });
           });
 
-          setActividadesPorMateria(actividadesPorMat);
+          setActividadesPorAsignatura(actividadesPorAsig);
         }
 
         // Obtener notas del estudiante
@@ -159,13 +159,13 @@ const EstudianteConsolidado = () => {
           .eq('codigo_estudiantil', estudianteData.codigo_estudiantil)
           .eq('grado', storedGrado)
           .eq('salon', storedSalon)
-          .in('materia', materiasDelGrado);
+          .in('asignatura', asignaturasDelGrado);
 
         if (!notasError && notasData) {
           const notasFormateadas: NotasEstudiante = {};
 
           notasData.forEach((nota) => {
-            const { materia, periodo, nombre_actividad, nota: valorNota } = nota;
+            const { asignatura, periodo, nombre_actividad, nota: valorNota } = nota;
 
             if (nombre_actividad === "Final Definitiva" || nombre_actividad === "Final Periodo") {
               return;
@@ -173,13 +173,13 @@ const EstudianteConsolidado = () => {
 
             const actividadId = `${periodo}-${nombre_actividad}`;
 
-            if (!notasFormateadas[materia]) {
-              notasFormateadas[materia] = {};
+            if (!notasFormateadas[asignatura]) {
+              notasFormateadas[asignatura] = {};
             }
-            if (!notasFormateadas[materia][periodo]) {
-              notasFormateadas[materia][periodo] = {};
+            if (!notasFormateadas[asignatura][periodo]) {
+              notasFormateadas[asignatura][periodo] = {};
             }
-            notasFormateadas[materia][periodo][actividadId] = valorNota;
+            notasFormateadas[asignatura][periodo][actividadId] = valorNota;
           });
 
           setNotas(notasFormateadas);
@@ -194,44 +194,44 @@ const EstudianteConsolidado = () => {
     inicializar();
   }, [navigate]);
 
-  const getActividadesPorPeriodo = (materia: string, periodo: number) => {
-    return (actividadesPorMateria[materia] || []).filter(a => a.periodo === periodo);
+  const getActividadesPorPeriodo = (asignatura: string, periodo: number) => {
+    return (actividadesPorAsignatura[asignatura] || []).filter(a => a.periodo === periodo);
   };
 
-  const getPorcentajeUsado = (materia: string, periodo: number) => {
-    return (actividadesPorMateria[materia] || [])
+  const getPorcentajeUsado = (asignatura: string, periodo: number) => {
+    return (actividadesPorAsignatura[asignatura] || [])
       .filter(a => a.periodo === periodo && a.porcentaje !== null)
       .reduce((sum, a) => sum + (a.porcentaje || 0), 0);
   };
 
-  const calcularFinalPeriodo = (materia: string, periodo: number): number | null => {
-    const actividadesDelPeriodo = getActividadesPorPeriodo(materia, periodo);
+  const calcularFinalPeriodo = (asignatura: string, periodo: number): number | null => {
+    const actividadesDelPeriodo = getActividadesPorPeriodo(asignatura, periodo);
     const actividadesConPorcentaje = actividadesDelPeriodo.filter(a => a.porcentaje !== null && a.porcentaje > 0);
-    
+
     if (actividadesConPorcentaje.length === 0) return null;
-    
+
     let suma = 0;
     let tieneAlgunaNota = false;
-    
+
     actividadesConPorcentaje.forEach((actividad) => {
-      const nota = notas[materia]?.[periodo]?.[actividad.id];
+      const nota = notas[asignatura]?.[periodo]?.[actividad.id];
       if (nota !== undefined) {
         suma += nota * ((actividad.porcentaje || 0) / 100);
         tieneAlgunaNota = true;
       }
     });
-    
+
     if (!tieneAlgunaNota) return null;
-    
+
     return Math.round(suma * 100) / 100;
   };
 
-  const calcularFinalDefinitiva = (materia: string): number | null => {
+  const calcularFinalDefinitiva = (asignatura: string): number | null => {
     let suma = 0;
     let tieneAlgunaNota = false;
 
     for (let periodo = 1; periodo <= 4; periodo++) {
-      const finalPeriodo = calcularFinalPeriodo(materia, periodo);
+      const finalPeriodo = calcularFinalPeriodo(asignatura, periodo);
       if (finalPeriodo !== null) {
         suma += finalPeriodo;
         tieneAlgunaNota = true;
@@ -243,10 +243,10 @@ const EstudianteConsolidado = () => {
     return Math.round((suma / 4) * 100) / 100;
   };
 
-  const handleChangePeriodo = (materia: string, periodo: number) => {
+  const handleChangePeriodo = (asignatura: string, periodo: number) => {
     setPeriodosActivos(prev => ({
       ...prev,
-      [materia]: periodo,
+      [asignatura]: periodo,
     }));
   };
 
@@ -267,35 +267,35 @@ const EstudianteConsolidado = () => {
         {/* Breadcrumb */}
         <div className="bg-card rounded-lg shadow-soft p-4 mb-6">
           <div className="flex flex-wrap items-center gap-2 text-sm">
-            <button 
+            <button
               onClick={() => navigate("/dashboard-rector")}
               className="text-primary hover:underline"
             >
               Inicio
             </button>
             <span className="text-muted-foreground">→</span>
-            <button 
+            <button
               onClick={() => navigate("/rector/seleccionar-grado")}
               className="text-primary hover:underline"
             >
               Notas
             </button>
             <span className="text-muted-foreground">→</span>
-            <button 
+            <button
               onClick={() => navigate("/rector/seleccionar-salon")}
               className="text-primary hover:underline"
             >
               {gradoSeleccionado}
             </button>
             <span className="text-muted-foreground">→</span>
-            <button 
+            <button
               onClick={() => navigate("/rector/modo-visualizacion")}
               className="text-primary hover:underline"
             >
               {salonSeleccionado}
             </button>
             <span className="text-muted-foreground">→</span>
-            <button 
+            <button
               onClick={() => navigate("/rector/lista-estudiantes")}
               className="text-primary hover:underline"
             >
@@ -320,18 +320,18 @@ const EstudianteConsolidado = () => {
           </div>
         </div>
 
-        {/* Tabla por cada materia */}
+        {/* Tabla por cada asignatura */}
         <div className="space-y-6">
-          {materias.map((materia) => {
-            const periodoActivo = periodosActivos[materia] || 1;
-            const actividadesDelPeriodo = getActividadesPorPeriodo(materia, periodoActivo);
-            const finalDefinitiva = calcularFinalDefinitiva(materia);
+          {asignaturas.map((asignatura) => {
+            const periodoActivo = periodosActivos[asignatura] || 1;
+            const actividadesDelPeriodo = getActividadesPorPeriodo(asignatura, periodoActivo);
+            const finalDefinitiva = calcularFinalDefinitiva(asignatura);
 
             return (
-              <div key={materia} className="bg-card rounded-lg shadow-soft overflow-hidden">
-                {/* Header de la materia */}
+              <div key={asignatura} className="bg-card rounded-lg shadow-soft overflow-hidden">
+                {/* Header de la asignatura */}
                 <div className="bg-primary/10 p-4 border-b border-border flex flex-wrap items-center justify-between gap-2">
-                  <h3 className="text-lg font-bold text-foreground">{materia}</h3>
+                  <h3 className="text-lg font-bold text-foreground">{asignatura}</h3>
                   <div className="flex items-center gap-2">
                     <span className="text-sm text-muted-foreground">Final Definitiva:</span>
                     <span className={`font-bold ${finalDefinitiva !== null && finalDefinitiva >= 3 ? 'text-green-600' : finalDefinitiva !== null ? 'text-red-600' : 'text-muted-foreground'}`}>
@@ -344,14 +344,14 @@ const EstudianteConsolidado = () => {
                 <div className="flex border-b border-border">
                   {periodos.map((periodo) => {
                     const isActive = periodoActivo === periodo.numero;
-                    const porcentaje = getPorcentajeUsado(materia, periodo.numero);
+                    const porcentaje = getPorcentajeUsado(asignatura, periodo.numero);
                     return (
                       <button
                         key={periodo.numero}
-                        onClick={() => handleChangePeriodo(materia, periodo.numero)}
+                        onClick={() => handleChangePeriodo(asignatura, periodo.numero)}
                         className={`flex-1 px-2 py-2 text-xs font-medium transition-colors relative
-                          ${isActive 
-                            ? 'bg-primary text-primary-foreground' 
+                          ${isActive
+                            ? 'bg-primary text-primary-foreground'
                             : 'bg-muted/30 text-muted-foreground hover:bg-muted hover:text-foreground'
                           }`}
                       >
@@ -375,7 +375,7 @@ const EstudianteConsolidado = () => {
                       <thead>
                         <tr className="bg-muted/50">
                           {actividadesDelPeriodo.map((actividad) => (
-                            <th 
+                            <th
                               key={actividad.id}
                               className="p-2 text-center text-xs font-medium border-r border-b border-border min-w-[100px]"
                             >
@@ -397,9 +397,9 @@ const EstudianteConsolidado = () => {
                       <tbody>
                         <tr>
                           {actividadesDelPeriodo.map((actividad) => {
-                            const nota = notas[materia]?.[periodoActivo]?.[actividad.id];
+                            const nota = notas[asignatura]?.[periodoActivo]?.[actividad.id];
                             return (
-                              <td 
+                              <td
                                 key={actividad.id}
                                 className="p-2 text-center text-sm border-r border-b border-border"
                               >
@@ -408,7 +408,7 @@ const EstudianteConsolidado = () => {
                             );
                           })}
                           <td className="p-2 text-center text-sm font-semibold border-b border-border bg-primary/5">
-                            {calcularFinalPeriodo(materia, periodoActivo)?.toFixed(2) || '—'}
+                            {calcularFinalPeriodo(asignatura, periodoActivo)?.toFixed(2) || '—'}
                           </td>
                         </tr>
                       </tbody>
@@ -419,9 +419,9 @@ const EstudianteConsolidado = () => {
             );
           })}
 
-          {materias.length === 0 && (
+          {asignaturas.length === 0 && (
             <div className="bg-card rounded-lg shadow-soft p-8 text-center text-muted-foreground">
-              No hay materias asignadas para este grado y salón
+              No hay asignaturas asignadas para este grado y salón
             </div>
           )}
         </div>

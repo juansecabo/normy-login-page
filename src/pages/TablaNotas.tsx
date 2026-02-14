@@ -89,7 +89,7 @@ interface ComentarioEditando {
 
 const TablaNotas = () => {
   const navigate = useNavigate();
-  const [materiaSeleccionada, setMateriaSeleccionada] = useState("");
+  const [asignaturaSeleccionada, setAsignaturaSeleccionada] = useState("");
   const [gradoSeleccionado, setGradoSeleccionado] = useState("");
   const [salonSeleccionado, setSalonSeleccionado] = useState("");
   const [estudiantes, setEstudiantes] = useState<Estudiante[]>([]);
@@ -161,11 +161,11 @@ const TablaNotas = () => {
       console.log('✅ Sesión válida');
       
       // 2. Verificar datos de navegación
-      const storedMateria = localStorage.getItem("materiaSeleccionada");
+      const storedAsignatura = localStorage.getItem("asignaturaSeleccionada");
       const storedGrado = localStorage.getItem("gradoSeleccionado");
       const storedSalon = localStorage.getItem("salonSeleccionado");
 
-      if (!storedMateria) {
+      if (!storedAsignatura) {
         navigate("/dashboard");
         return;
       }
@@ -180,7 +180,7 @@ const TablaNotas = () => {
         return;
       }
 
-      setMateriaSeleccionada(storedMateria);
+      setAsignaturaSeleccionada(storedAsignatura);
       setGradoSeleccionado(storedGrado);
       setSalonSeleccionado(storedSalon);
 
@@ -217,7 +217,7 @@ const TablaNotas = () => {
           .from('Nombre de Actividades')
           .select('*')
           .eq('codigo_profesor', codigoProfesor)
-          .eq('materia', storedMateria)
+          .eq('asignatura', storedAsignatura)
           .eq('grado', storedGrado)
           .eq('salon', storedSalon)
           .order('fecha_creacion', { ascending: true });
@@ -241,7 +241,7 @@ const TablaNotas = () => {
         const { data: notasData, error: notasError } = await supabase
           .from('Notas')
           .select('*')
-          .eq('materia', storedMateria)
+          .eq('asignatura', storedAsignatura)
           .eq('grado', storedGrado)
           .eq('salon', storedSalon);
 
@@ -334,14 +334,14 @@ const TablaNotas = () => {
         if (profesor) {
           const { data: asignaciones } = await supabase
             .from('Asignación Profesores')
-            .select('"Materia(s)", "Grado(s)", "Salon(es)"')
+            .select('"Asignatura(s)", "Grado(s)", "Salon(es)"')
             .eq('id', profesor.id);
 
           if (asignaciones) {
             const asignacionesFiltradas = asignaciones.filter(a => {
-              const materias = (a['Materia(s)'] || []).flat();
+              const asignaturas = (a['Asignatura(s)'] || []).flat();
               const grados = (a['Grado(s)'] || []).flat();
-              return materias.includes(storedMateria) && grados.includes(storedGrado);
+              return asignaturas.includes(storedAsignatura) && grados.includes(storedGrado);
             });
 
             const todosSalones = asignacionesFiltradas
@@ -499,7 +499,7 @@ const TablaNotas = () => {
             porcentaje: porcentaje 
           })
           .eq('codigo_profesor', session.codigo)
-          .eq('materia', materiaSeleccionada)
+          .eq('asignatura', asignaturaSeleccionada)
           .eq('grado', gradoSeleccionado)
           .eq('salon', salonSeleccionado)
           .eq('periodo', actividadEditando.periodo)
@@ -532,7 +532,7 @@ const TablaNotas = () => {
             .from('Notas')
             .update({ porcentaje: porcentaje })
             .eq('nombre_actividad', nombreNuevo)
-            .eq('materia', materiaSeleccionada)
+            .eq('asignatura', asignaturaSeleccionada)
             .eq('grado', gradoSeleccionado)
             .eq('salon', salonSeleccionado)
             .eq('periodo', actividadEditando.periodo);
@@ -595,7 +595,7 @@ const TablaNotas = () => {
             .from('Nombre de Actividades')
             .select('salon, porcentaje')
             .eq('codigo_profesor', session.codigo)
-            .eq('materia', materiaSeleccionada)
+            .eq('asignatura', asignaturaSeleccionada)
             .eq('grado', gradoSeleccionado)
             .in('salon', otrosSalones)
             .eq('periodo', periodoActual)
@@ -639,7 +639,7 @@ const TablaNotas = () => {
       // Construir filas para insertar
       const filasParaInsertar = salonesParaCrear.map(salon => ({
         codigo_profesor: session.codigo,
-        materia: materiaSeleccionada,
+        asignatura: asignaturaSeleccionada,
         grado: gradoSeleccionado,
         salon: salon,
         periodo: periodoActual,
@@ -716,7 +716,7 @@ const TablaNotas = () => {
         .from('Nombre de Actividades')
         .delete()
         .eq('codigo_profesor', session.codigo)
-        .eq('materia', materiaSeleccionada)
+        .eq('asignatura', asignaturaSeleccionada)
         .eq('grado', gradoSeleccionado)
         .eq('salon', salonSeleccionado)
         .eq('periodo', actividadAEliminar.periodo)
@@ -733,7 +733,7 @@ const TablaNotas = () => {
         .from('Notas')
         .delete()
         .eq('nombre_actividad', actividadAEliminar.nombre)
-        .eq('materia', materiaSeleccionada)
+        .eq('asignatura', asignaturaSeleccionada)
         .eq('grado', gradoSeleccionado)
         .eq('salon', salonSeleccionado)
         .eq('periodo', actividadAEliminar.periodo);
@@ -939,7 +939,7 @@ const TablaNotas = () => {
     const periodoNombre = esFinalDefinitiva
       ? "Final Definitiva"
       : periodos[periodoActivo - 1].nombre;
-    return `${materiaSeleccionada} - ${gradoSeleccionado} ${salonSeleccionado} - ${periodoNombre}`;
+    return `${asignaturaSeleccionada} - ${gradoSeleccionado} ${salonSeleccionado} - ${periodoNombre}`;
   };
 
   const descargarExcel = async () => {
@@ -1130,7 +1130,7 @@ const TablaNotas = () => {
             container.appendChild(profDiv);
           }
 
-          // Título de la tabla (materia - grado - periodo)
+          // Título de la tabla (asignatura - grado - periodo)
           const titulo = document.createElement("div");
           titulo.style.cssText = "margin:0 0 12px 0;font-size:15px;color:#333;font-weight:600;";
           titulo.textContent = getNombreArchivo();
@@ -1272,7 +1272,7 @@ const TablaNotas = () => {
       .from('Notas')
       .select('id')
       .eq('codigo_estudiantil', codigoEstudiantil)
-      .eq('materia', materiaSeleccionada)
+      .eq('asignatura', asignaturaSeleccionada)
       .eq('grado', gradoSeleccionado)
       .eq('salon', salonSeleccionado)
       .eq('periodo', periodo)
@@ -1287,7 +1287,7 @@ const TablaNotas = () => {
         .from('Notas')
         .delete()
         .eq('codigo_estudiantil', codigoEstudiantil)
-        .eq('materia', materiaSeleccionada)
+        .eq('asignatura', asignaturaSeleccionada)
         .eq('grado', gradoSeleccionado)
         .eq('salon', salonSeleccionado)
         .eq('periodo', periodo)
@@ -1300,7 +1300,7 @@ const TablaNotas = () => {
         .from('Notas')
         .select('comentario')
         .eq('codigo_estudiantil', codigoEstudiantil)
-        .eq('materia', materiaSeleccionada)
+        .eq('asignatura', asignaturaSeleccionada)
         .eq('grado', gradoSeleccionado)
         .eq('salon', salonSeleccionado)
         .eq('periodo', periodo)
@@ -1313,7 +1313,7 @@ const TablaNotas = () => {
         .from('Notas')
         .upsert({
           codigo_estudiantil: codigoEstudiantil,
-          materia: materiaSeleccionada,
+          asignatura: asignaturaSeleccionada,
           grado: gradoSeleccionado,
           salon: salonSeleccionado,
           periodo,
@@ -1323,7 +1323,7 @@ const TablaNotas = () => {
           comentario: comentarioExistente,
           notificado: false,
         }, {
-          onConflict: 'codigo_estudiantil,materia,grado,salon,periodo,nombre_actividad'
+          onConflict: 'codigo_estudiantil,asignatura,grado,salon,periodo,nombre_actividad'
         })
         .select();
       
@@ -1338,14 +1338,14 @@ const TablaNotas = () => {
   // Guardar Final Definitiva en Supabase (preservando comentario existente)
   const guardarFinalDefinitiva = async (codigoEstudiantil: string, notaFinal: number | null) => {
     console.log('=== INICIANDO guardarFinalDefinitiva ===');
-    console.log('Parámetros:', { codigoEstudiantil, notaFinal, materia: materiaSeleccionada, grado: gradoSeleccionado, salon: salonSeleccionado });
+    console.log('Parámetros:', { codigoEstudiantil, notaFinal, asignatura: asignaturaSeleccionada, grado: gradoSeleccionado, salon: salonSeleccionado });
     
     // Verificar si existe algún Final Periodo para este estudiante
     const { data: finalesPeriodo } = await supabase
       .from('Notas')
       .select('id')
       .eq('codigo_estudiantil', codigoEstudiantil)
-      .eq('materia', materiaSeleccionada)
+      .eq('asignatura', asignaturaSeleccionada)
       .eq('grado', gradoSeleccionado)
       .eq('salon', salonSeleccionado)
       .eq('nombre_actividad', 'Final Periodo')
@@ -1359,7 +1359,7 @@ const TablaNotas = () => {
         .from('Notas')
         .delete()
         .eq('codigo_estudiantil', codigoEstudiantil)
-        .eq('materia', materiaSeleccionada)
+        .eq('asignatura', asignaturaSeleccionada)
         .eq('grado', gradoSeleccionado)
         .eq('salon', salonSeleccionado)
         .eq('periodo', 0)
@@ -1371,7 +1371,7 @@ const TablaNotas = () => {
         .from('Notas')
         .select('comentario')
         .eq('codigo_estudiantil', codigoEstudiantil)
-        .eq('materia', materiaSeleccionada)
+        .eq('asignatura', asignaturaSeleccionada)
         .eq('grado', gradoSeleccionado)
         .eq('salon', salonSeleccionado)
         .eq('periodo', 0)
@@ -1384,7 +1384,7 @@ const TablaNotas = () => {
       
       const datosUpsert = {
         codigo_estudiantil: codigoEstudiantil,
-        materia: materiaSeleccionada,
+        asignatura: asignaturaSeleccionada,
         grado: gradoSeleccionado,
         salon: salonSeleccionado,
         periodo: 0,
@@ -1400,7 +1400,7 @@ const TablaNotas = () => {
       const { data, error } = await supabase
         .from('Notas')
         .upsert(datosUpsert, {
-          onConflict: 'codigo_estudiantil,materia,grado,salon,periodo,nombre_actividad'
+          onConflict: 'codigo_estudiantil,asignatura,grado,salon,periodo,nombre_actividad'
         })
         .select();
       
@@ -1450,7 +1450,7 @@ const TablaNotas = () => {
           .from('Notas')
           .select('id, nota')
           .eq('codigo_estudiantil', codigoEstudiantil)
-          .eq('materia', materiaSeleccionada)
+          .eq('asignatura', asignaturaSeleccionada)
           .eq('grado', gradoSeleccionado)
           .eq('salon', salonSeleccionado)
           .eq('periodo', 0)
@@ -1468,7 +1468,7 @@ const TablaNotas = () => {
             .from('Notas')
             .insert({
               codigo_estudiantil: codigoEstudiantil,
-              materia: materiaSeleccionada,
+              asignatura: asignaturaSeleccionada,
               grado: gradoSeleccionado,
               salon: salonSeleccionado,
               periodo: 0,
@@ -1497,7 +1497,7 @@ const TablaNotas = () => {
             .from('Notas')
             .update({ comentario: nuevoComentario })
             .eq('codigo_estudiantil', codigoEstudiantil)
-            .eq('materia', materiaSeleccionada)
+            .eq('asignatura', asignaturaSeleccionada)
             .eq('grado', gradoSeleccionado)
             .eq('salon', salonSeleccionado)
             .eq('periodo', 0)
@@ -1522,7 +1522,7 @@ const TablaNotas = () => {
           .from('Notas')
           .update({ comentario: nuevoComentario })
           .eq('codigo_estudiantil', codigoEstudiantil)
-          .eq('materia', materiaSeleccionada)
+          .eq('asignatura', asignaturaSeleccionada)
           .eq('grado', gradoSeleccionado)
           .eq('salon', salonSeleccionado)
           .eq('periodo', periodo)
@@ -1577,7 +1577,7 @@ const TablaNotas = () => {
         .from('Notas')
         .update({ comentario: null })
         .eq('codigo_estudiantil', codigoEstudiantil)
-        .eq('materia', materiaSeleccionada)
+        .eq('asignatura', asignaturaSeleccionada)
         .eq('grado', gradoSeleccionado)
         .eq('salon', salonSeleccionado)
         .eq('periodo', periodo)
@@ -2174,7 +2174,7 @@ const TablaNotas = () => {
         apellidos: session.apellidos,
       },
       contexto: {
-        materia: materiaSeleccionada,
+        asignatura: asignaturaSeleccionada,
         grado: gradoSeleccionado,
         salon: salonSeleccionado,
         periodo: periodoReal
@@ -2223,7 +2223,7 @@ const TablaNotas = () => {
             .from('Notas')
             .update({ notificado: true })
             .eq('codigo_estudiantil', dato.estudiante.codigo)
-            .eq('materia', materiaSeleccionada)
+            .eq('asignatura', asignaturaSeleccionada)
             .eq('grado', gradoSeleccionado)
             .eq('salon', salonSeleccionado)
             .eq('periodo', periodoReal)
@@ -2320,7 +2320,7 @@ const TablaNotas = () => {
           .from('Notas')
           .delete()
           .eq('codigo_estudiantil', codigoEstudiantil)
-          .eq('materia', materiaSeleccionada)
+          .eq('asignatura', asignaturaSeleccionada)
           .eq('grado', gradoSeleccionado)
           .eq('salon', salonSeleccionado)
           .eq('periodo', periodo)
@@ -2426,7 +2426,7 @@ const TablaNotas = () => {
         console.log("=== GUARDANDO NOTA ===");
         console.log("Datos:", {
           codigo_estudiantil: codigoEstudiantil,
-          materia: materiaSeleccionada,
+          asignatura: asignaturaSeleccionada,
           grado: gradoSeleccionado,
           salon: salonSeleccionado,
           periodo,
@@ -2439,7 +2439,7 @@ const TablaNotas = () => {
           .from('Notas')
           .upsert({
             codigo_estudiantil: codigoEstudiantil,
-            materia: materiaSeleccionada,
+            asignatura: asignaturaSeleccionada,
             grado: gradoSeleccionado,
             salon: salonSeleccionado,
             periodo,
@@ -2449,7 +2449,7 @@ const TablaNotas = () => {
             comentario: comentarios[codigoEstudiantil]?.[periodo]?.[actividadId] || null,
             notificado: false,
           }, {
-            onConflict: 'codigo_estudiantil,materia,grado,salon,periodo,nombre_actividad'
+            onConflict: 'codigo_estudiantil,asignatura,grado,salon,periodo,nombre_actividad'
           });
 
         if (error) {
@@ -2561,14 +2561,14 @@ const TablaNotas = () => {
                 onClick={() => navigate("/dashboard")}
                 className="text-primary hover:underline"
               >
-                Materias
+                Asignaturas
               </button>
               <span className="text-muted-foreground">→</span>
               <button 
                 onClick={() => navigate("/seleccionar-grado")}
                 className="text-primary hover:underline"
               >
-                {materiaSeleccionada}
+                {asignaturaSeleccionada}
               </button>
               <span className="text-muted-foreground">→</span>
               <button 

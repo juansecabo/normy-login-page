@@ -37,7 +37,7 @@ type ComentariosEstudiantes = {
 
 const TablaNotasReadOnly = () => {
   const navigate = useNavigate();
-  const [materiaSeleccionada, setMateriaSeleccionada] = useState("");
+  const [asignaturaSeleccionada, setAsignaturaSeleccionada] = useState("");
   const [gradoSeleccionado, setGradoSeleccionado] = useState("");
   const [salonSeleccionado, setSalonSeleccionado] = useState("");
   const [estudiantes, setEstudiantes] = useState<Estudiante[]>([]);
@@ -47,7 +47,7 @@ const TablaNotasReadOnly = () => {
   const [comentarios, setComentarios] = useState<ComentariosEstudiantes>({});
   const [periodoActivo, setPeriodoActivo] = useState<number>(1);
   const [nombreProfesor, setNombreProfesor] = useState<string>("");
-  
+
   // Modal de comentarios
   const [comentarioModalOpen, setComentarioModalOpen] = useState(false);
   const [comentarioModalData, setComentarioModalData] = useState<{
@@ -60,7 +60,7 @@ const TablaNotasReadOnly = () => {
   useEffect(() => {
     const inicializar = async () => {
       const session = getSession();
-      
+
       if (!session.codigo) {
         navigate('/');
         return;
@@ -71,33 +71,33 @@ const TablaNotasReadOnly = () => {
         return;
       }
 
-      const storedMateria = localStorage.getItem("materiaSeleccionada");
+      const storedAsignatura = localStorage.getItem("asignaturaSeleccionada");
       const storedGrado = localStorage.getItem("gradoSeleccionado");
       const storedSalon = localStorage.getItem("salonSeleccionado");
 
-      if (!storedMateria || !storedGrado || !storedSalon) {
+      if (!storedAsignatura || !storedGrado || !storedSalon) {
         navigate("/rector/seleccionar-grado");
         return;
       }
 
-      setMateriaSeleccionada(storedMateria);
+      setAsignaturaSeleccionada(storedAsignatura);
       setGradoSeleccionado(storedGrado);
       setSalonSeleccionado(storedSalon);
 
       try {
-        // Buscar el profesor que da esta materia en este grado/salón
+        // Buscar el profesor que da esta asignatura en este grado/salón
         const { data: asignaciones } = await supabase
           .from('Asignación Profesores')
-          .select('id, "Materia(s)", "Grado(s)", "Salon(es)"');
+          .select('id, "Asignatura(s)", "Grado(s)", "Salon(es)"');
 
         if (asignaciones) {
           // Encontrar la asignación que coincide
           const asignacionCorrecta = asignaciones.find((asig) => {
-            const materias = asig['Materia(s)'] || [];
+            const asignaturas = asig['Asignatura(s)'] || [];
             const grados = asig['Grado(s)'] || [];
             const salones = asig['Salon(es)'] || [];
-            return materias.includes(storedMateria) && 
-                   grados.includes(storedGrado) && 
+            return asignaturas.includes(storedAsignatura) &&
+                   grados.includes(storedGrado) &&
                    salones.includes(storedSalon);
           });
 
@@ -136,7 +136,7 @@ const TablaNotasReadOnly = () => {
         const { data: actividadesData, error: actividadesError } = await supabase
           .from('Nombre de Actividades')
           .select('*')
-          .eq('materia', storedMateria)
+          .eq('asignatura', storedAsignatura)
           .eq('grado', storedGrado)
           .eq('salon', storedSalon)
           .order('fecha_creacion', { ascending: true });
@@ -155,23 +155,23 @@ const TablaNotasReadOnly = () => {
         const { data: notasData, error: notasError } = await supabase
           .from('Notas')
           .select('*')
-          .eq('materia', storedMateria)
+          .eq('asignatura', storedAsignatura)
           .eq('grado', storedGrado)
           .eq('salon', storedSalon);
 
         if (!notasError && notasData) {
           const notasFormateadas: NotasEstudiantes = {};
           const comentariosFormateados: ComentariosEstudiantes = {};
-          
+
           notasData.forEach((nota) => {
             const { codigo_estudiantil, periodo, nombre_actividad, nota: valorNota, comentario } = nota;
-            
+
             if (nombre_actividad === "Final Definitiva" || nombre_actividad === "Final Periodo") {
               return;
             }
-            
+
             const actividadId = `${periodo}-${nombre_actividad}`;
-            
+
             // Notas
             if (!notasFormateadas[codigo_estudiantil]) {
               notasFormateadas[codigo_estudiantil] = {};
@@ -180,7 +180,7 @@ const TablaNotasReadOnly = () => {
               notasFormateadas[codigo_estudiantil][periodo] = {};
             }
             notasFormateadas[codigo_estudiantil][periodo][actividadId] = valorNota;
-            
+
             // Comentarios
             if (comentario) {
               if (!comentariosFormateados[codigo_estudiantil]) {
@@ -192,7 +192,7 @@ const TablaNotasReadOnly = () => {
               comentariosFormateados[codigo_estudiantil][periodo][actividadId] = comentario;
             }
           });
-          
+
           setNotas(notasFormateadas);
           setComentarios(comentariosFormateados);
         }
@@ -235,12 +235,12 @@ const TablaNotasReadOnly = () => {
   const calcularFinalPeriodo = (codigoEstudiantil: string, periodo: number): number | null => {
     const actividadesDelPeriodo = getActividadesPorPeriodo(periodo);
     const actividadesConPorcentaje = actividadesDelPeriodo.filter(a => a.porcentaje !== null && a.porcentaje > 0);
-    
+
     if (actividadesConPorcentaje.length === 0) return null;
-    
+
     let suma = 0;
     let tieneAlgunaNota = false;
-    
+
     actividadesConPorcentaje.forEach((actividad) => {
       const nota = notas[codigoEstudiantil]?.[periodo]?.[actividad.id];
       if (nota !== undefined) {
@@ -248,9 +248,9 @@ const TablaNotasReadOnly = () => {
         tieneAlgunaNota = true;
       }
     });
-    
+
     if (!tieneAlgunaNota) return null;
-    
+
     return Math.round(suma * 100) / 100;
   };
 
@@ -280,42 +280,42 @@ const TablaNotasReadOnly = () => {
         {/* Breadcrumb */}
         <div className="bg-card rounded-lg shadow-soft p-4 mb-6">
           <div className="flex flex-wrap items-center gap-2 text-sm">
-            <button 
+            <button
               onClick={() => navigate("/dashboard-rector")}
               className="text-primary hover:underline"
             >
               Inicio
             </button>
             <span className="text-muted-foreground">→</span>
-            <button 
+            <button
               onClick={() => navigate("/rector/seleccionar-grado")}
               className="text-primary hover:underline"
             >
               Notas
             </button>
             <span className="text-muted-foreground">→</span>
-            <button 
+            <button
               onClick={() => navigate("/rector/seleccionar-salon")}
               className="text-primary hover:underline"
             >
               {gradoSeleccionado}
             </button>
             <span className="text-muted-foreground">→</span>
-            <button 
+            <button
               onClick={() => navigate("/rector/modo-visualizacion")}
               className="text-primary hover:underline"
             >
               {salonSeleccionado}
             </button>
             <span className="text-muted-foreground">→</span>
-            <button 
-              onClick={() => navigate("/rector/lista-materias")}
+            <button
+              onClick={() => navigate("/rector/lista-asignaturas")}
               className="text-primary hover:underline"
             >
-              Por Materia
+              Por Asignatura
             </button>
             <span className="text-muted-foreground">→</span>
-            <span className="text-foreground font-medium">{materiaSeleccionada}</span>
+            <span className="text-foreground font-medium">{asignaturaSeleccionada}</span>
           </div>
         </div>
 
@@ -339,8 +339,8 @@ const TablaNotasReadOnly = () => {
                   key={periodo.numero}
                   onClick={() => setPeriodoActivo(periodo.numero)}
                   className={`flex-1 px-2 md:px-4 py-2 md:py-3 text-xs md:text-sm font-medium transition-colors relative
-                    ${isActive 
-                      ? 'bg-primary text-primary-foreground' 
+                    ${isActive
+                      ? 'bg-primary text-primary-foreground'
                       : 'bg-muted/30 text-muted-foreground hover:bg-muted hover:text-foreground'
                     }`}
                 >
@@ -367,8 +367,8 @@ const TablaNotasReadOnly = () => {
                 <button
                   onClick={() => setPeriodoActivo(0)}
                   className={`flex-1 px-2 md:px-4 py-2 md:py-3 text-xs md:text-sm font-medium transition-colors relative
-                    ${esFinalDefinitiva 
-                      ? 'bg-primary text-primary-foreground' 
+                    ${esFinalDefinitiva
+                      ? 'bg-primary text-primary-foreground'
                       : 'bg-muted/30 text-muted-foreground hover:bg-muted hover:text-foreground'
                     }`}
                 >
@@ -377,7 +377,7 @@ const TablaNotasReadOnly = () => {
                     {estaCompleto && <span>✓</span>}
                   </span>
                   <span className="hidden md:flex items-center justify-center gap-1">
-                    Final Definitiva 
+                    Final Definitiva
                     <span className={estaCompleto ? 'text-green-300' : ''}>
                       ({porcentajePromedio}/100%)
                     </span>
@@ -414,11 +414,11 @@ const TablaNotasReadOnly = () => {
                     <th className="md:sticky md:left-[280px] z-20 bg-primary border-r border-b border-border/30 w-[100px] md:w-[150px] min-w-[100px] md:min-w-[150px] p-2 md:p-3 text-left font-semibold text-xs md:text-sm">
                       Nombre
                     </th>
-                    
+
                     {esFinalDefinitiva ? (
                       <>
                         {periodos.map((periodo) => (
-                          <th 
+                          <th
                             key={periodo.numero}
                             className="border-r border-b border-border/30 p-2 text-center text-xs font-medium min-w-[120px] bg-primary/80"
                           >
@@ -432,7 +432,7 @@ const TablaNotasReadOnly = () => {
                     ) : (
                       <>
                         {getActividadesPorPeriodo(periodoActivo).map((actividad) => (
-                          <th 
+                          <th
                             key={actividad.id}
                             className="border-r border-b border-border/30 p-2 text-center text-xs font-medium min-w-[120px] bg-primary/90"
                           >
@@ -463,7 +463,7 @@ const TablaNotasReadOnly = () => {
                 <tbody>
                   {estudiantes.map((estudiante, studentIndex) => {
                     const rowBg = studentIndex % 2 === 0 ? 'bg-background' : 'bg-muted/30';
-                    
+
                     return (
                       <tr key={estudiante.codigo_estudiantil} className={rowBg}>
                         <td className={`md:sticky md:left-0 z-10 border-r border-b border-border p-2 md:p-3 text-xs md:text-sm ${studentIndex % 2 === 0 ? 'bg-background' : 'bg-muted'}`}>
@@ -475,13 +475,13 @@ const TablaNotasReadOnly = () => {
                         <td className={`md:sticky md:left-[280px] z-10 border-r border-b border-border p-2 md:p-3 text-xs md:text-sm ${studentIndex % 2 === 0 ? 'bg-background' : 'bg-muted'}`}>
                           {estudiante.nombre_estudiante}
                         </td>
-                        
+
                         {esFinalDefinitiva ? (
                           <>
                             {periodos.map((periodo) => {
                               const finalPeriodo = calcularFinalPeriodo(estudiante.codigo_estudiantil, periodo.numero);
                               return (
-                                <td 
+                                <td
                                   key={periodo.numero}
                                   className="border-r border-b border-border p-2 text-center text-sm"
                                 >
@@ -499,9 +499,9 @@ const TablaNotasReadOnly = () => {
                               const nota = notas[estudiante.codigo_estudiantil]?.[periodoActivo]?.[actividad.id];
                               const comentario = comentarios[estudiante.codigo_estudiantil]?.[periodoActivo]?.[actividad.id];
                               const tieneComentario = !!comentario;
-                              
+
                               return (
-                                <td 
+                                <td
                                   key={actividad.id}
                                   className="border-r border-b border-border p-2 text-center text-sm relative"
                                 >
@@ -542,7 +542,7 @@ const TablaNotasReadOnly = () => {
           )}
         </div>
       </main>
-      
+
       {/* Modal para ver comentarios */}
       {comentarioModalData && (
         <ComentarioModalReadOnly

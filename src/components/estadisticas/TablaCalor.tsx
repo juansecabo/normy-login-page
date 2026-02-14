@@ -2,13 +2,13 @@ import { useMemo } from "react";
 
 interface DatoCalor {
   estudiante: string;
-  [materia: string]: string | number;
+  [asignatura: string]: string | number;
 }
 
 interface TablaCalorProps {
   titulo: string;
   datos: DatoCalor[];
-  materias: string[];
+  asignaturas: string[];
   altura?: number;
 }
 
@@ -23,19 +23,19 @@ const getColorPorNota = (nota: number): string => {
 export const TablaCalor = ({
   titulo,
   datos,
-  materias,
+  asignaturas,
   altura = 400
 }: TablaCalorProps) => {
-  const materiasCortas = useMemo(() => {
-    return materias.map(m => {
+  const asignaturasCortas = useMemo(() => {
+    return asignaturas.map(m => {
       if (m.length > 12) {
         return m.substring(0, 10) + "...";
       }
       return m;
     });
-  }, [materias]);
+  }, [asignaturas]);
 
-  if (datos.length === 0 || materias.length === 0) {
+  if (datos.length === 0 || asignaturas.length === 0) {
     return (
       <div className="bg-card rounded-lg shadow-soft p-4 border border-border">
         <h4 className="font-semibold text-foreground mb-4">{titulo}</h4>
@@ -49,7 +49,7 @@ export const TablaCalor = ({
   return (
     <div className="bg-card rounded-lg shadow-soft p-4 border border-border">
       <h4 className="font-semibold text-foreground mb-4">{titulo}</h4>
-      
+
       {/* Leyenda */}
       <div className="flex flex-wrap gap-2 mb-4 text-xs">
         <span className="flex items-center gap-1">
@@ -77,11 +77,11 @@ export const TablaCalor = ({
               <th className="text-left p-1 font-medium text-muted-foreground border-b min-w-[120px]">
                 Estudiante
               </th>
-              {materiasCortas.map((mat, idx) => (
-                <th 
-                  key={idx} 
+              {asignaturasCortas.map((mat, idx) => (
+                <th
+                  key={idx}
                   className="text-center p-1 font-medium text-muted-foreground border-b min-w-[50px]"
-                  title={materias[idx]}
+                  title={asignaturas[idx]}
                 >
                   {mat}
                 </th>
@@ -94,11 +94,11 @@ export const TablaCalor = ({
                 <td className="p-1 font-medium text-foreground border-b truncate max-w-[150px]" title={fila.estudiante}>
                   {fila.estudiante}
                 </td>
-                {materias.map((mat, matIdx) => {
+                {asignaturas.map((mat, matIdx) => {
                   const nota = typeof fila[mat] === "number" ? fila[mat] as number : 0;
                   return (
-                    <td 
-                      key={matIdx} 
+                    <td
+                      key={matIdx}
                       className={`text-center p-1 border-b font-medium ${getColorPorNota(nota)}`}
                     >
                       {nota > 0 ? nota.toFixed(1) : "—"}

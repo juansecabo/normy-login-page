@@ -66,7 +66,7 @@ export const clearSession = () => {
   localStorage.removeItem("nombres");
   localStorage.removeItem("apellidos");
   localStorage.removeItem("cargo");
-  localStorage.removeItem("materiaSeleccionada");
+  localStorage.removeItem("asignaturaSeleccionada");
   localStorage.removeItem("gradoSeleccionado");
   localStorage.removeItem("salonSeleccionado");
   localStorage.removeItem("modoVisualizacion");

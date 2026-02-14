@@ -19,7 +19,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 
 interface Asignacion {
-  "Materia(s)": string[];
+  "Asignatura(s)": string[];
   "Grado(s)": string[];
   "Salon(es)": string[];
 }
@@ -33,7 +33,7 @@ const NormyExaminadora = () => {
   
   // Form state
   const [tipoActividad, setTipoActividad] = useState<string>("");
-  const [materiaSeleccionada, setMateriaSeleccionada] = useState<string>("");
+  const [asignaturaSeleccionada, setAsignaturaSeleccionada] = useState<string>("");
   const [gradoSeleccionado, setGradoSeleccionado] = useState<string>("");
   const [salonSeleccionado, setSalonSeleccionado] = useState<string>("");
   const [tema, setTema] = useState("");
@@ -43,7 +43,7 @@ const NormyExaminadora = () => {
   
   // Data from DB
   const [asignaciones, setAsignaciones] = useState<Asignacion[]>([]);
-  const [materias, setMaterias] = useState<string[]>([]);
+  const [asignaturas, setAsignaturas] = useState<string[]>([]);
   const [grados, setGrados] = useState<string[]>([]);
   const [salones, setSalones] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
@@ -78,7 +78,7 @@ const NormyExaminadora = () => {
 
         const { data: asignacionesData, error: asignacionError } = await supabase
           .from('Asignación Profesores')
-          .select('"Materia(s)", "Grado(s)", "Salon(es)"')
+          .select('"Asignatura(s)", "Grado(s)", "Salon(es)"')
           .eq('id', profesor.id);
 
         if (asignacionError || !asignacionesData) {
@@ -88,12 +88,12 @@ const NormyExaminadora = () => {
 
         setAsignaciones(asignacionesData as Asignacion[]);
         
-        // Extract unique materias
-        const todasMaterias = asignacionesData
-          ?.flatMap(a => a['Materia(s)'] || [])
+        // Extract unique asignaturas
+        const todasAsignaturas = asignacionesData
+          ?.flatMap(a => a['Asignatura(s)'] || [])
           .flat() || [];
-        const materiasUnicas = [...new Set(todasMaterias)].sort((a, b) => a.localeCompare(b, 'es'));
-        setMaterias(materiasUnicas);
+        const asignaturasUnicas = [...new Set(todasAsignaturas)].sort((a, b) => a.localeCompare(b, 'es'));
+        setAsignaturas(asignaturasUnicas);
       } catch (error) {
         console.error('Error:', error);
       } finally {
@@ -104,28 +104,28 @@ const NormyExaminadora = () => {
     fetchAsignaciones();
   }, [navigate]);
 
-  // Update grados when materia changes
+  // Update grados when asignatura changes
   useEffect(() => {
-    if (!materiaSeleccionada) {
+    if (!asignaturaSeleccionada) {
       setGrados([]);
       setGradoSeleccionado("");
       return;
     }
 
-    const gradosParaMateria = asignaciones
-      .filter(a => a['Materia(s)']?.includes(materiaSeleccionada))
+    const gradosParaAsignatura = asignaciones
+      .filter(a => a['Asignatura(s)']?.includes(asignaturaSeleccionada))
       .flatMap(a => a['Grado(s)'] || [])
       .flat();
     
-    const gradosUnicos = [...new Set(gradosParaMateria)].sort((a, b) => a.localeCompare(b, 'es'));
+    const gradosUnicos = [...new Set(gradosParaAsignatura)].sort((a, b) => a.localeCompare(b, 'es'));
     setGrados(gradosUnicos);
     setGradoSeleccionado("");
     setSalonSeleccionado("");
-  }, [materiaSeleccionada, asignaciones]);
+  }, [asignaturaSeleccionada, asignaciones]);
 
   // Update salones when grado changes
   useEffect(() => {
-    if (!gradoSeleccionado || !materiaSeleccionada) {
+    if (!gradoSeleccionado || !asignaturaSeleccionada) {
       setSalones([]);
       setSalonSeleccionado("");
       return;
@@ -133,7 +133,7 @@ const NormyExaminadora = () => {
 
     const salonesParaGrado = asignaciones
       .filter(a => 
-        a['Materia(s)']?.includes(materiaSeleccionada) && 
+        a['Asignatura(s)']?.includes(asignaturaSeleccionada) && 
         a['Grado(s)']?.includes(gradoSeleccionado)
       )
       .flatMap(a => a['Salon(es)'] || [])
@@ -142,7 +142,7 @@ const NormyExaminadora = () => {
     const salonesUnicos = [...new Set(salonesParaGrado)].sort((a, b) => a.localeCompare(b, 'es'));
     setSalones(salonesUnicos);
     setSalonSeleccionado("");
-  }, [gradoSeleccionado, materiaSeleccionada, asignaciones]);
+  }, [gradoSeleccionado, asignaturaSeleccionada, asignaciones]);
 
   // Get display label for tipoActividad (capitalized)
   const getTipoActividadLabel = (tipo: string): string => {
@@ -165,7 +165,7 @@ const NormyExaminadora = () => {
         nombre: nombres,
         apellidos: apellidos,
         tipoActividad,
-        materiaSeleccionada,
+        asignaturaSeleccionada,
         gradoSeleccionado,
       };
 
@@ -214,14 +214,14 @@ const NormyExaminadora = () => {
         const link = document.createElement("a");
         link.href = url;
         
-        // Build filename: TipoActividad_Materia_Grado_Salon.docx
+        // Build filename: TipoActividad_Asignatura_Grado_Salon.docx
         const tipoLabel = getTipoActividadLabel(tipoActividad).toUpperCase();
-        const materiaLabel = materiaSeleccionada.toUpperCase().replace(/ /g, "_");
+        const asignaturaLabel = asignaturaSeleccionada.toUpperCase().replace(/ /g, "_");
         const gradoLabel = gradoSeleccionado;
         const salonLabel = salonSeleccionado || "";
         const fileName = salonLabel 
-          ? `${tipoLabel}_${materiaLabel}_${gradoLabel}_${salonLabel}.docx`
-          : `${tipoLabel}_${materiaLabel}_${gradoLabel}.docx`;
+          ? `${tipoLabel}_${asignaturaLabel}_${gradoLabel}_${salonLabel}.docx`
+          : `${tipoLabel}_${asignaturaLabel}_${gradoLabel}.docx`;
         
         link.download = fileName;
         document.body.appendChild(link);
@@ -314,17 +314,17 @@ const NormyExaminadora = () => {
                 </Select>
               </div>
 
-              {/* 2. Materia */}
+              {/* 2. Asignatura */}
               <div className="space-y-2">
-                <Label className="text-base font-semibold">2. Materia:</Label>
-                <Select value={materiaSeleccionada} onValueChange={setMateriaSeleccionada}>
+                <Label className="text-base font-semibold">2. Asignatura:</Label>
+                <Select value={asignaturaSeleccionada} onValueChange={setAsignaturaSeleccionada}>
                   <SelectTrigger className="w-full bg-background">
-                    <SelectValue placeholder="Selecciona la materia" />
+                    <SelectValue placeholder="Selecciona la asignatura" />
                   </SelectTrigger>
                   <SelectContent className="bg-background z-50">
-                    {materias.map((materia) => (
-                      <SelectItem key={materia} value={materia}>
-                        {materia}
+                    {asignaturas.map((asignatura) => (
+                      <SelectItem key={asignatura} value={asignatura}>
+                        {asignatura}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -337,10 +337,10 @@ const NormyExaminadora = () => {
                 <Select 
                   value={gradoSeleccionado} 
                   onValueChange={setGradoSeleccionado}
-                  disabled={!materiaSeleccionada}
+                  disabled={!asignaturaSeleccionada}
                 >
                   <SelectTrigger className="w-full bg-background">
-                    <SelectValue placeholder={materiaSeleccionada ? "Selecciona el grado" : "Primero selecciona una materia"} />
+                    <SelectValue placeholder={asignaturaSeleccionada ? "Selecciona el grado" : "Primero selecciona una asignatura"} />
                   </SelectTrigger>
                   <SelectContent className="bg-background z-50">
                     {grados.map((grado) => (
@@ -513,7 +513,7 @@ const NormyExaminadora = () => {
               <Button
                 onClick={handleCrear}
                 className="w-full bg-gradient-to-r from-primary to-green-600 hover:from-green-600 hover:to-primary text-white font-semibold py-6 text-lg"
-                disabled={!tipoActividad || !materiaSeleccionada || !gradoSeleccionado || !tema || enviando}
+                disabled={!tipoActividad || !asignaturaSeleccionada || !gradoSeleccionado || !tema || enviando}
               >
                 {enviando ? (
                   <>

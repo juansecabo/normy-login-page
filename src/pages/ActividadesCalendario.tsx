@@ -40,7 +40,7 @@ interface ActividadCalendario {
   id_profesor: string;
   Nombres: string;
   Apellidos: string;
-  Materia: string;
+  Asignatura: string;
   Grado: string;
   Salon: string;
   Descripción: string;
@@ -67,7 +67,7 @@ const parsearFecha = (fechaStr: string): Date | null => {
 
 const ActividadesCalendario = () => {
   const navigate = useNavigate();
-  const [materiaSeleccionada, setMateriaSeleccionada] = useState("");
+  const [asignaturaSeleccionada, setAsignaturaSeleccionada] = useState("");
   const [gradoSeleccionado, setGradoSeleccionado] = useState("");
   const [salonSeleccionado, setSalonSeleccionado] = useState("");
   const [profesorCodigo, setProfesorCodigo] = useState("");
@@ -122,20 +122,20 @@ const ActividadesCalendario = () => {
       const idProfesor = profesorData.id;
       setProfesorIdReal(idProfesor);
 
-      const storedMateria = localStorage.getItem("materiaSeleccionada");
+      const storedAsignatura = localStorage.getItem("asignaturaSeleccionada");
       const storedGrado = localStorage.getItem("gradoSeleccionado");
       const storedSalon = localStorage.getItem("salonSeleccionado");
 
-      if (!storedMateria || !storedGrado || !storedSalon) {
+      if (!storedAsignatura || !storedGrado || !storedSalon) {
         navigate('/dashboard');
         return;
       }
 
-      setMateriaSeleccionada(storedMateria);
+      setAsignaturaSeleccionada(storedAsignatura);
       setGradoSeleccionado(storedGrado);
       setSalonSeleccionado(storedSalon);
 
-      await cargarActividades(idProfesor, storedMateria, storedGrado, storedSalon);
+      await cargarActividades(idProfesor, storedAsignatura, storedGrado, storedSalon);
     };
 
     inicializar();
@@ -143,7 +143,7 @@ const ActividadesCalendario = () => {
 
   const cargarActividades = async (
     profIdReal: string,
-    materia: string,
+    asignatura: string,
     grado: string,
     salon: string
   ) => {
@@ -153,7 +153,7 @@ const ActividadesCalendario = () => {
         .from('Calendario Actividades')
         .select('*')
         .eq('id_profesor', profIdReal)
-        .eq('Materia', materia)
+        .eq('Asignatura', asignatura)
         .eq('Grado', grado)
         .eq('Salon', salon)
         .order('fecha_de_presentacion', { ascending: true });
@@ -263,7 +263,7 @@ const ActividadesCalendario = () => {
             id_profesor: profesorIdReal,
             Nombres: profesorNombres,
             Apellidos: profesorApellidos,
-            Materia: materiaSeleccionada,
+            Asignatura: asignaturaSeleccionada,
             Grado: gradoSeleccionado,
             Salon: salonSeleccionado,
             Descripción: descripcion.trim(),
@@ -287,7 +287,7 @@ const ActividadesCalendario = () => {
       }
 
       setModalOpen(false);
-      await cargarActividades(profesorIdReal, materiaSeleccionada, gradoSeleccionado, salonSeleccionado);
+      await cargarActividades(profesorIdReal, asignaturaSeleccionada, gradoSeleccionado, salonSeleccionado);
     } catch (error) {
       console.error('Error:', error);
       toast({
@@ -329,7 +329,7 @@ const ActividadesCalendario = () => {
 
       setDeleteDialogOpen(false);
       setActividadAEliminar(null);
-      await cargarActividades(profesorIdReal, materiaSeleccionada, gradoSeleccionado, salonSeleccionado);
+      await cargarActividades(profesorIdReal, asignaturaSeleccionada, gradoSeleccionado, salonSeleccionado);
     } catch (error) {
       console.error('Error:', error);
       toast({
@@ -355,7 +355,7 @@ const ActividadesCalendario = () => {
                 Actividades Asignadas
               </h2>
               <p className="text-sm md:text-base text-muted-foreground mt-1">
-                {materiaSeleccionada} - {gradoSeleccionado} {salonSeleccionado}
+                {asignaturaSeleccionada} - {gradoSeleccionado} {salonSeleccionado}
               </p>
             </div>
             <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
