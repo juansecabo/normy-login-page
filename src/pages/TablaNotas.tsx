@@ -34,10 +34,6 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "@/hooks/use-toast";
 import { toast as sonnerToast } from "sonner";
 import escudoImg from "@/assets/escudo.png";
-import html2canvas from "html2canvas";
-import jsPDF from "jspdf";
-import ExcelJS from "exceljs";
-import { saveAs } from "file-saver";
 import NotaCelda from "@/components/notas/NotaCelda";
 import FinalPeriodoCelda from "@/components/notas/FinalPeriodoCelda";
 import ComentarioModal from "@/components/notas/ComentarioModal";
@@ -188,38 +184,6 @@ const TablaNotas = () => {
       setGradoSeleccionado(storedGrado);
       setSalonSeleccionado(storedSalon);
 
-      // 2.5. Obtener otros salones del mismo grado+materia
-      try {
-        const { data: profesor } = await supabase
-          .from('Internos')
-          .select('id')
-          .eq('codigo', parseInt(session.codigo!))
-          .maybeSingle();
-
-        if (profesor) {
-          const { data: asignaciones } = await supabase
-            .from('Asignación Profesores')
-            .select('"Materia(s)", "Grado(s)", "Salon(es)"')
-            .eq('id', profesor.id);
-
-          if (asignaciones) {
-            const asignacionesFiltradas = asignaciones.filter(a => {
-              const materias = (a['Materia(s)'] || []).flat();
-              const grados = (a['Grado(s)'] || []).flat();
-              return materias.includes(storedMateria) && grados.includes(storedGrado);
-            });
-
-            const todosSalones = asignacionesFiltradas
-              .flatMap(a => a['Salon(es)'] || [])
-              .flat();
-            const salonesUnicos = [...new Set(todosSalones)].filter(s => s !== storedSalon);
-            setOtrosSalones(salonesUnicos);
-          }
-        }
-      } catch (error) {
-        console.error('Error obteniendo otros salones:', error);
-      }
-
       // 3. Cargar datos
       const codigoProfesor = session.codigo;
       
@@ -357,6 +321,38 @@ const TablaNotas = () => {
         console.error('Error:', error);
       } finally {
         setLoading(false);
+      }
+
+      // Cargar otros salones en background (no bloquea la UI)
+      try {
+        const { data: profesor } = await supabase
+          .from('Internos')
+          .select('id')
+          .eq('codigo', parseInt(session.codigo!))
+          .maybeSingle();
+
+        if (profesor) {
+          const { data: asignaciones } = await supabase
+            .from('Asignación Profesores')
+            .select('"Materia(s)", "Grado(s)", "Salon(es)"')
+            .eq('id', profesor.id);
+
+          if (asignaciones) {
+            const asignacionesFiltradas = asignaciones.filter(a => {
+              const materias = (a['Materia(s)'] || []).flat();
+              const grados = (a['Grado(s)'] || []).flat();
+              return materias.includes(storedMateria) && grados.includes(storedGrado);
+            });
+
+            const todosSalones = asignacionesFiltradas
+              .flatMap(a => a['Salon(es)'] || [])
+              .flat();
+            const salonesUnicos = [...new Set(todosSalones)].filter(s => s !== storedSalon);
+            setOtrosSalones(salonesUnicos);
+          }
+        }
+      } catch (error) {
+        console.error('Error obteniendo otros salones:', error);
       }
     };
 
@@ -949,6 +945,9 @@ const TablaNotas = () => {
   const descargarExcel = async () => {
     setDescargandoExcel(true);
     try {
+      const ExcelJS = (await import("exceljs")).default;
+      const { saveAs } = await import("file-saver");
+
       const wb = new ExcelJS.Workbook();
       const ws = wb.addWorksheet("Notas");
 
@@ -1050,6 +1049,9 @@ const TablaNotas = () => {
     setDescargandoPDF(true);
 
     try {
+      const html2canvas = (await import("html2canvas")).default;
+      const jsPDF = (await import("jspdf")).default;
+
       // Construir datos
       const headers: string[] = ["Código", "Apellidos", "Nombre"];
       const rows: string[][] = [];
