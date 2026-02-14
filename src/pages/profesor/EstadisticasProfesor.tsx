@@ -22,11 +22,11 @@ const EstadisticasProfesor = () => {
   const [loadingAsignaciones, setLoadingAsignaciones] = useState(true);
   const [asignaciones, setAsignaciones] = useState<Asignacion[]>([]);
 
-  const [periodoSeleccionado, setPeriodoSeleccionado] = useState("1");
   const [materiaSeleccionada, setMateriaSeleccionada] = useState("");
+  const [periodoSeleccionado, setPeriodoSeleccionado] = useState("1");
+  const [nivelAnalisis, setNivelAnalisis] = useState("grado");
   const [gradoSeleccionado, setGradoSeleccionado] = useState("");
   const [salonSeleccionado, setSalonSeleccionado] = useState("");
-  const [nivelAnalisis, setNivelAnalisis] = useState("salon");
   const [estudianteSeleccionado, setEstudianteSeleccionado] = useState("");
 
   useEffect(() => {
@@ -67,37 +67,41 @@ const EstadisticasProfesor = () => {
     const result: { materia: string; grado: string; salon: string }[] = [];
     asignaciones.forEach(a => {
       if (a.grados.length === a.salones.length && a.grados.length === a.materias.length) {
-        // ZIP
         for (let i = 0; i < a.materias.length; i++) {
           result.push({ materia: a.materias[i], grado: a.grados[i], salon: a.salones[i] });
         }
       } else {
-        // Producto cartesiano
         for (const mat of a.materias)
           for (const grad of a.grados)
             for (const sal of a.salones)
               result.push({ materia: mat, grado: grad, salon: sal });
       }
     });
-    // Filtrar solo los que existen en la BD
     return result.filter(t =>
       todosLosSalones.some(ts => ts.grado === t.grado && ts.salon === t.salon)
     );
   }, [asignaciones, todosLosSalones]);
 
-  // 1. Materias del profesor
+  // Materias del profesor
   const materiasProfesor = useMemo(() => {
     return [...new Set(trios.map(t => t.materia))].sort((a, b) => a.localeCompare(b, "es"));
   }, [trios]);
 
-  // 2. Grados para la materia seleccionada
+  // Default: primera materia
+  useEffect(() => {
+    if (materiasProfesor.length > 0 && !materiaSeleccionada) {
+      setMateriaSeleccionada(materiasProfesor[0]);
+    }
+  }, [materiasProfesor, materiaSeleccionada]);
+
+  // Grados donde el profesor da la materia seleccionada
   const gradosParaMateria = useMemo(() => {
     if (!materiaSeleccionada) return [];
     const gs = [...new Set(trios.filter(t => t.materia === materiaSeleccionada).map(t => t.grado))];
     return gs.sort((a, b) => ordenGrados.indexOf(a) - ordenGrados.indexOf(b));
   }, [trios, materiaSeleccionada]);
 
-  // 3. Salones para materia + grado
+  // Salones para materia + grado
   const salonesParaGrado = useMemo(() => {
     if (!materiaSeleccionada || !gradoSeleccionado) return [];
     const ss = [...new Set(
@@ -106,7 +110,7 @@ const EstadisticasProfesor = () => {
     return ss.sort((a, b) => (parseInt(a) || 0) - (parseInt(b) || 0));
   }, [trios, materiaSeleccionada, gradoSeleccionado]);
 
-  // 4. Estudiantes del salón
+  // Estudiantes del salón
   const estudiantesDelSalon = useMemo(() => {
     if (!gradoSeleccionado || !salonSeleccionado) return [];
     return getPromediosEstudiantes("anual", gradoSeleccionado, salonSeleccionado)
@@ -134,7 +138,6 @@ const EstadisticasProfesor = () => {
   };
 
   const isLoading = loading || loadingAsignaciones;
-  const filtrosCompletos = materiaSeleccionada && gradoSeleccionado && salonSeleccionado;
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -157,26 +160,10 @@ const EstadisticasProfesor = () => {
           </div>
         ) : (
           <>
-            {/* Filtros propios del profesor */}
             <div className="bg-card rounded-lg shadow-soft p-4 mb-6">
               <h3 className="font-semibold text-foreground mb-4">Filtros de análisis</h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4">
-                {/* Período */}
-                <div>
-                  <label className="text-sm text-muted-foreground mb-1.5 block">Período</label>
-                  <Select value={periodoSeleccionado} onValueChange={setPeriodoSeleccionado}>
-                    <SelectTrigger><SelectValue placeholder="Período" /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="1">Período 1</SelectItem>
-                      <SelectItem value="2">Período 2</SelectItem>
-                      <SelectItem value="3">Período 3</SelectItem>
-                      <SelectItem value="4">Período 4</SelectItem>
-                      <SelectItem value="anual">Acumulado Anual</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {/* Materia */}
+                {/* 1. Materia */}
                 <div>
                   <label className="text-sm text-muted-foreground mb-1.5 block">Materia</label>
                   <Select value={materiaSeleccionada} onValueChange={(val) => {
@@ -194,8 +181,41 @@ const EstadisticasProfesor = () => {
                   </Select>
                 </div>
 
-                {/* Grado - visible tras elegir materia */}
-                {materiaSeleccionada && (
+                {/* 2. Período */}
+                <div>
+                  <label className="text-sm text-muted-foreground mb-1.5 block">Período</label>
+                  <Select value={periodoSeleccionado} onValueChange={setPeriodoSeleccionado}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="1">Período 1</SelectItem>
+                      <SelectItem value="2">Período 2</SelectItem>
+                      <SelectItem value="3">Período 3</SelectItem>
+                      <SelectItem value="4">Período 4</SelectItem>
+                      <SelectItem value="anual">Acumulado Anual</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* 3. Nivel de Análisis */}
+                <div>
+                  <label className="text-sm text-muted-foreground mb-1.5 block">Nivel de Análisis</label>
+                  <Select value={nivelAnalisis} onValueChange={(val) => {
+                    setNivelAnalisis(val);
+                    setGradoSeleccionado("");
+                    setSalonSeleccionado("");
+                    setEstudianteSeleccionado("");
+                  }}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="grado">Por Grado</SelectItem>
+                      <SelectItem value="salon">Por Salón</SelectItem>
+                      <SelectItem value="estudiante">Por Estudiante</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* 4. Grado - visible para grado, salon, estudiante */}
+                {(nivelAnalisis === "grado" || nivelAnalisis === "salon" || nivelAnalisis === "estudiante") && (
                   <div>
                     <label className="text-sm text-muted-foreground mb-1.5 block">Grado</label>
                     <Select value={gradoSeleccionado} onValueChange={(val) => {
@@ -213,8 +233,8 @@ const EstadisticasProfesor = () => {
                   </div>
                 )}
 
-                {/* Salón - visible tras elegir grado */}
-                {materiaSeleccionada && gradoSeleccionado && (
+                {/* 5. Salón - visible para salon, estudiante */}
+                {(nivelAnalisis === "salon" || nivelAnalisis === "estudiante") && gradoSeleccionado && (
                   <div>
                     <label className="text-sm text-muted-foreground mb-1.5 block">Salón</label>
                     <Select value={salonSeleccionado} onValueChange={(val) => {
@@ -231,25 +251,8 @@ const EstadisticasProfesor = () => {
                   </div>
                 )}
 
-                {/* Nivel - visible tras elegir salón */}
-                {filtrosCompletos && (
-                  <div>
-                    <label className="text-sm text-muted-foreground mb-1.5 block">Ver por</label>
-                    <Select value={nivelAnalisis} onValueChange={(val) => {
-                      setNivelAnalisis(val);
-                      setEstudianteSeleccionado("");
-                    }}>
-                      <SelectTrigger><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="salon">Por Salón</SelectItem>
-                        <SelectItem value="estudiante">Por Estudiante</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                )}
-
-                {/* Estudiante - visible si nivel = estudiante */}
-                {filtrosCompletos && nivelAnalisis === "estudiante" && (
+                {/* 6. Estudiante - visible para estudiante */}
+                {nivelAnalisis === "estudiante" && gradoSeleccionado && salonSeleccionado && (
                   <div>
                     <label className="text-sm text-muted-foreground mb-1.5 block">Estudiante</label>
                     <Select value={estudianteSeleccionado} onValueChange={setEstudianteSeleccionado}>
@@ -266,7 +269,16 @@ const EstadisticasProfesor = () => {
             </div>
 
             {/* Resultados */}
-            {filtrosCompletos && nivelAnalisis === "salon" && (
+            {nivelAnalisis === "grado" && gradoSeleccionado && (
+              <AnalisisMateria
+                materia={materiaSeleccionada}
+                periodo={periodoNumerico}
+                grado={gradoSeleccionado}
+                salon=""
+                titulo={getTitulo()}
+              />
+            )}
+            {nivelAnalisis === "salon" && gradoSeleccionado && salonSeleccionado && (
               <AnalisisMateria
                 materia={materiaSeleccionada}
                 periodo={periodoNumerico}
@@ -275,7 +287,7 @@ const EstadisticasProfesor = () => {
                 titulo={getTitulo()}
               />
             )}
-            {filtrosCompletos && nivelAnalisis === "estudiante" && estudianteSeleccionado && (
+            {nivelAnalisis === "estudiante" && estudianteSeleccionado && (
               <AnalisisEstudiante
                 codigoEstudiante={estudianteSeleccionado}
                 periodo={periodoNumerico}
@@ -284,24 +296,19 @@ const EstadisticasProfesor = () => {
             )}
 
             {/* Mensajes guía */}
-            {!materiaSeleccionada && (
+            {(nivelAnalisis === "grado" || nivelAnalisis === "salon" || nivelAnalisis === "estudiante") && !gradoSeleccionado && (
               <div className="bg-card rounded-lg shadow-soft p-8 text-center text-muted-foreground">
-                Selecciona una materia para comenzar
+                Selecciona un grado para ver el análisis
               </div>
             )}
-            {materiaSeleccionada && !gradoSeleccionado && (
+            {(nivelAnalisis === "salon" || nivelAnalisis === "estudiante") && gradoSeleccionado && !salonSeleccionado && (
               <div className="bg-card rounded-lg shadow-soft p-8 text-center text-muted-foreground">
-                Selecciona un grado
+                Selecciona un salón para ver el análisis
               </div>
             )}
-            {materiaSeleccionada && gradoSeleccionado && !salonSeleccionado && (
+            {nivelAnalisis === "estudiante" && gradoSeleccionado && salonSeleccionado && !estudianteSeleccionado && (
               <div className="bg-card rounded-lg shadow-soft p-8 text-center text-muted-foreground">
-                Selecciona un salón
-              </div>
-            )}
-            {filtrosCompletos && nivelAnalisis === "estudiante" && !estudianteSeleccionado && (
-              <div className="bg-card rounded-lg shadow-soft p-8 text-center text-muted-foreground">
-                Selecciona un estudiante para ver su análisis
+                Selecciona un estudiante para ver el análisis
               </div>
             )}
           </>
