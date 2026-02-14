@@ -118,8 +118,6 @@ const TablaNotas = () => {
   // Estado para descargas
   const [descargandoPDF, setDescargandoPDF] = useState(false);
   const [descargandoExcel, setDescargandoExcel] = useState(false);
-  const tablaRef = useRef<HTMLDivElement>(null);
-
   // Modal state para confirmar eliminación
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [actividadAEliminar, setActividadAEliminar] = useState<Actividad | null>(null);
@@ -1006,62 +1004,119 @@ const TablaNotas = () => {
   };
 
   const descargarPDF = async () => {
-    if (!tablaRef.current) return;
     setDescargandoPDF(true);
 
     try {
-      const contenidoOriginal = tablaRef.current;
-      const clon = contenidoOriginal.cloneNode(true) as HTMLElement;
+      // Construir tabla limpia desde los datos
+      const headers: string[] = ["Código", "Apellidos", "Nombre"];
+      const rows: string[][] = [];
 
-      clon.style.width = "1400px";
-      clon.style.position = "absolute";
-      clon.style.left = "-9999px";
-      clon.style.top = "0";
-      clon.style.backgroundColor = "white";
-      clon.style.padding = "20px";
-      clon.style.overflow = "visible";
+      if (esFinalDefinitiva) {
+        periodos.forEach(p => headers.push(p.nombre));
+        headers.push("Final Definitiva");
 
-      // Ocultar botones y dropdowns
-      const botones = clon.querySelectorAll("button");
-      botones.forEach(btn => (btn as HTMLElement).style.display = "none");
+        estudiantes.forEach(est => {
+          const fila: string[] = [
+            est.codigo_estudiantil,
+            est.apellidos_estudiante,
+            est.nombre_estudiante,
+          ];
+          periodos.forEach(p => {
+            const fp = calcularFinalPeriodo(est.codigo_estudiantil, p.numero);
+            fila.push(fp !== null ? fp.toString() : "—");
+          });
+          const fd = calcularFinalDefinitiva(est.codigo_estudiantil);
+          fila.push(fd !== null ? fd.toString() : "—");
+          rows.push(fila);
+        });
+      } else {
+        const actividadesPeriodo = getActividadesPorPeriodo(periodoActivo);
+        actividadesPeriodo.forEach(a => {
+          headers.push(a.porcentaje !== null ? `${a.nombre} (${a.porcentaje}%)` : a.nombre);
+        });
+        headers.push("Final Periodo");
 
-      // Hacer visible todo el contenido
-      const todosLosElementos = clon.querySelectorAll("*");
-      todosLosElementos.forEach(el => {
-        const elemento = el as HTMLElement;
-        elemento.style.overflow = "visible";
-        elemento.style.textOverflow = "clip";
-        elemento.style.whiteSpace = "normal";
-        // Quitar sticky para que se capture bien
-        if (elemento.style.position === "sticky" || getComputedStyle(contenidoOriginal).position === "sticky") {
-          elemento.style.position = "relative";
-        }
-      });
-      // Forzar quitar sticky en th/td con clases sticky
-      clon.querySelectorAll(".md\\:sticky, [class*='sticky']").forEach(el => {
-        (el as HTMLElement).style.position = "relative";
-      });
+        estudiantes.forEach(est => {
+          const fila: string[] = [
+            est.codigo_estudiantil,
+            est.apellidos_estudiante,
+            est.nombre_estudiante,
+          ];
+          actividadesPeriodo.forEach(a => {
+            const nota = notas[est.codigo_estudiantil]?.[periodoActivo]?.[a.id];
+            fila.push(nota !== undefined ? nota.toString() : "—");
+          });
+          const fp = calcularFinalPeriodo(est.codigo_estudiantil, periodoActivo);
+          fila.push(fp !== null ? fp.toString() : "—");
+          rows.push(fila);
+        });
+      }
 
-      // Agregar título al PDF
-      const titulo = document.createElement("div");
-      titulo.style.fontSize = "18px";
-      titulo.style.fontWeight = "bold";
-      titulo.style.marginBottom = "12px";
-      titulo.style.color = "#1a1a1a";
+      // Construir HTML limpio
+      const container = document.createElement("div");
+      container.style.cssText = "position:absolute;left:-9999px;top:0;background:white;padding:24px;font-family:Arial,sans-serif;";
+
+      // Título
+      const titulo = document.createElement("h2");
+      titulo.style.cssText = "margin:0 0 16px 0;font-size:18px;color:#1a1a1a;";
       titulo.textContent = getNombreArchivo();
-      clon.insertBefore(titulo, clon.firstChild);
+      container.appendChild(titulo);
 
-      document.body.appendChild(clon);
+      // Tabla
+      const table = document.createElement("table");
+      table.style.cssText = "border-collapse:collapse;width:100%;font-size:11px;";
 
-      const canvas = await html2canvas(clon, {
+      const thead = document.createElement("thead");
+      const headerRow = document.createElement("tr");
+      headers.forEach(h => {
+        const th = document.createElement("th");
+        th.style.cssText = "background:#16a34a;color:white;padding:8px 6px;border:1px solid #ccc;text-align:center;font-weight:600;white-space:nowrap;";
+        if (h === "Código" || h === "Apellidos" || h === "Nombre") {
+          th.style.textAlign = "left";
+        }
+        th.textContent = h;
+        headerRow.appendChild(th);
+      });
+      thead.appendChild(headerRow);
+      table.appendChild(thead);
+
+      const tbody = document.createElement("tbody");
+      rows.forEach((row, rowIdx) => {
+        const tr = document.createElement("tr");
+        tr.style.backgroundColor = rowIdx % 2 === 0 ? "#ffffff" : "#f0fdf4";
+        row.forEach((cell, colIdx) => {
+          const td = document.createElement("td");
+          td.style.cssText = "padding:6px;border:1px solid #ddd;white-space:nowrap;";
+          if (colIdx >= 3) {
+            td.style.textAlign = "center";
+          }
+          // Última columna (Final) en negrita
+          if (colIdx === row.length - 1 && cell !== "—") {
+            td.style.fontWeight = "600";
+          }
+          td.textContent = cell;
+          tr.appendChild(td);
+        });
+        tbody.appendChild(tr);
+      });
+      table.appendChild(tbody);
+      container.appendChild(table);
+
+      // Ajustar ancho según columnas
+      const anchoBase = Math.max(headers.length * 110, 900);
+      container.style.width = `${anchoBase}px`;
+
+      document.body.appendChild(container);
+
+      const canvas = await html2canvas(container, {
         scale: 2,
         useCORS: true,
         logging: false,
         backgroundColor: "#ffffff",
-        windowWidth: 1400,
+        windowWidth: anchoBase,
       });
 
-      document.body.removeChild(clon);
+      document.body.removeChild(container);
 
       // Landscape para tablas anchas
       const pdf = new jsPDF("l", "mm", "a4");
@@ -2462,7 +2517,7 @@ const TablaNotas = () => {
         </div>
 
         {/* Pestañas de Períodos */}
-        <div ref={tablaRef} className="bg-card rounded-lg shadow-soft overflow-hidden">
+        <div className="bg-card rounded-lg shadow-soft overflow-hidden">
           {/* Tab Headers */}
           <div className="flex border-b border-border">
             {periodos.map((periodo) => {
