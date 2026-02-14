@@ -1,10 +1,10 @@
 import { useEffect, useState, useRef, useCallback } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
-import escudoImg from "@/assets/escudo.webp";
 import { Plus, MoreVertical, Pencil, Trash2, Send, Calendar } from "lucide-react";
-import { getSession, clearSession } from "@/hooks/useSession";
+import { getSession } from "@/hooks/useSession";
+import HeaderNormy from "@/components/HeaderNormy";
 import {
   Dialog,
   DialogContent,
@@ -316,11 +316,6 @@ const TablaNotas = () => {
 
     inicializar();
   }, [navigate]);
-
-  const handleLogout = () => {
-    clearSession();
-    navigate("/");
-  };
 
   const periodos = [
     { numero: 1, nombre: "1er Periodo" },
@@ -2116,26 +2111,7 @@ const TablaNotas = () => {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      {/* Header */}
-      <header className="bg-primary text-primary-foreground py-2 md:py-3 px-3 md:px-4 shadow-md">
-        <div className="container mx-auto flex items-center justify-between">
-          <Link to="/dashboard" className="flex items-center gap-2 md:gap-3 hover:opacity-80 transition-opacity cursor-pointer">
-            <img
-              src={escudoImg}
-              alt="Escudo"
-              className="w-10 h-10 md:w-16 md:h-16 object-contain -my-1 md:-my-2"
-            />
-            <h1 className="text-base md:text-xl font-bold">Notas Normy</h1>
-          </Link>
-          <Button
-            variant="secondary"
-            onClick={handleLogout}
-            className="font-medium text-xs md:text-sm px-2 md:px-4 py-1 md:py-2"
-          >
-            Cerrar sesión
-          </Button>
-        </div>
-      </header>
+      <HeaderNormy backLink="/dashboard" />
 
       {/* Main Content */}
       <main className="flex-1 container mx-auto p-4 md:p-8">
