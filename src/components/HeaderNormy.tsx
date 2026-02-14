@@ -30,19 +30,18 @@ const HeaderNormy = ({ backLink }: HeaderNormyProps) => {
             />
             <h1 className="text-base md:text-xl font-bold">Notas Normy</h1>
           </Link>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
+          <div className="flex items-center gap-1 sm:gap-2">
+            <button
               onClick={() => setShowCambiarContrasena(true)}
-              className="font-medium text-xs md:text-sm px-2 md:px-4 py-1 md:py-2 bg-transparent border-primary-foreground/30 text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground"
+              className="px-2 sm:px-3 py-1.5 sm:py-2 bg-primary-foreground/20 hover:bg-primary-foreground/30 text-primary-foreground font-medium rounded-lg transition-all duration-200 text-[10px] sm:text-sm whitespace-nowrap"
             >
               <span className="hidden sm:inline">Cambiar contraseña</span>
               <span className="sm:hidden">Contraseña</span>
-            </Button>
+            </button>
             <Button
               variant="secondary"
               onClick={handleLogout}
-              className="font-medium text-xs md:text-sm px-2 md:px-4 py-1 md:py-2"
+              className="font-medium text-[10px] sm:text-sm px-2 sm:px-3 py-1.5 sm:py-2"
             >
               Cerrar sesión
             </Button>
