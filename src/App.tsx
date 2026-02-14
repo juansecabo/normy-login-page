@@ -24,6 +24,9 @@ import EstudianteConsolidado from "./pages/rector/EstudianteConsolidado";
 import EstadisticasDashboard from "./pages/rector/EstadisticasDashboard";
 import EstudiantesEnRiesgo from "./pages/rector/EstudiantesEnRiesgo";
 
+// Rutas para Profesor
+import EstadisticasProfesor from "./pages/profesor/EstadisticasProfesor";
+
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -52,7 +55,10 @@ const App = () => (
           <Route path="/rector/estudiante-consolidado" element={<EstudianteConsolidado />} />
           <Route path="/rector/estadisticas" element={<EstadisticasDashboard />} />
           <Route path="/rector/estudiantes-riesgo" element={<EstudiantesEnRiesgo />} />
-          
+
+          {/* Rutas para Profesor */}
+          <Route path="/profesor/estadisticas" element={<EstadisticasProfesor />} />
+
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

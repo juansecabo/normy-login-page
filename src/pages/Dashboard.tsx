@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import normyExaminadoraImg from "@/assets/normy-examinadora.webp";
 import { getSession } from "@/hooks/useSession";
+import { BarChart3 } from "lucide-react";
 import HeaderNormy from "@/components/HeaderNormy";
 
 const Dashboard = () => {
@@ -130,8 +131,8 @@ const Dashboard = () => {
           )}
         </div>
 
-        {/* Botón Normy Examinadora */}
-        <div className="flex justify-center mt-8">
+        {/* Botones Normy Examinadora y Estadísticas */}
+        <div className="flex flex-wrap justify-center gap-4 mt-8">
           <button
             onClick={() => navigate("/normy-examinadora")}
             className="relative overflow-hidden p-6 rounded-lg bg-gradient-to-r from-green-400 to-green-500 text-white font-bold text-lg transition-all duration-200 hover:shadow-md hover:scale-[1.02] hover:from-green-500 hover:to-green-400 min-w-[240px]"
@@ -142,6 +143,13 @@ const Dashboard = () => {
               alt="Normy Examinadora"
               className="absolute right-0 bottom-0 h-full w-auto object-contain opacity-40"
             />
+          </button>
+          <button
+            onClick={() => navigate("/profesor/estadisticas")}
+            className="flex items-center gap-3 p-6 rounded-lg bg-gradient-to-r from-blue-500 to-blue-600 text-white font-bold text-lg transition-all duration-200 hover:shadow-md hover:scale-[1.02] hover:from-blue-600 hover:to-blue-500 min-w-[240px] justify-center"
+          >
+            <BarChart3 className="w-6 h-6" />
+            <span>Estadísticas</span>
           </button>
         </div>
       </main>

@@ -5,6 +5,11 @@ interface EstudianteOption {
   nombre: string;
 }
 
+interface NivelOption {
+  value: string;
+  label: string;
+}
+
 interface FiltrosEstadisticasProps {
   nivelAnalisis: string;
   setNivelAnalisis: (value: string) => void;
@@ -22,6 +27,7 @@ interface FiltrosEstadisticasProps {
   salones: { grado: string; salon: string }[];
   materias: string[];
   estudiantes?: EstudianteOption[];
+  nivelesDisponibles?: NivelOption[];
 }
 
 export const FiltrosEstadisticas = ({
@@ -40,8 +46,17 @@ export const FiltrosEstadisticas = ({
   grados,
   salones,
   materias,
-  estudiantes = []
+  estudiantes = [],
+  nivelesDisponibles
 }: FiltrosEstadisticasProps) => {
+
+  const niveles: NivelOption[] = nivelesDisponibles || [
+    { value: "institucion", label: "Institución" },
+    { value: "grado", label: "Por Grado" },
+    { value: "salon", label: "Por Salón" },
+    { value: "estudiante", label: "Por Estudiante" },
+    { value: "materia", label: "Por Materia" },
+  ];
   
   // Ordenar salones numéricamente
   const salonesDelGrado = gradoSeleccionado 
@@ -93,11 +108,9 @@ export const FiltrosEstadisticas = ({
               <SelectValue placeholder="Seleccionar nivel" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="institucion">Institución</SelectItem>
-              <SelectItem value="grado">Por Grado</SelectItem>
-              <SelectItem value="salon">Por Salón</SelectItem>
-              <SelectItem value="estudiante">Por Estudiante</SelectItem>
-              <SelectItem value="materia">Por Materia</SelectItem>
+              {niveles.map(n => (
+                <SelectItem key={n.value} value={n.value}>{n.label}</SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>
