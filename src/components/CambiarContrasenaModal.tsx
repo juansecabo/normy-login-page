@@ -45,6 +45,10 @@ const CambiarContrasenaModal = ({ open, onOpenChange }: CambiarContrasenaModalPr
       setError("Todos los campos son obligatorios");
       return;
     }
+    if (nuevaContrasena.length < 6) {
+      setError("La nueva contraseña debe tener mínimo 6 caracteres");
+      return;
+    }
     if (nuevaContrasena !== confirmarContrasena) {
       setError("Las contraseñas nuevas no coinciden");
       return;
