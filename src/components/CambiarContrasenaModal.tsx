@@ -71,13 +71,14 @@ const CambiarContrasenaModal = ({ open, onOpenChange }: CambiarContrasenaModalPr
         return;
       }
 
-      const { error: updateError } = await supabase
+      const { data: updated, error: updateError } = await supabase
         .from("Internos")
         .update({ contrasena: nuevaContrasena })
-        .eq("codigo", parseInt(session.codigo));
+        .eq("codigo", parseInt(session.codigo))
+        .select();
 
-      if (updateError) {
-        setError("No se pudo guardar la contraseña");
+      if (updateError || !updated || updated.length === 0) {
+        setError("No se pudo guardar la contraseña. Contacta al administrador.");
         setLoading(false);
         return;
       }
