@@ -27,6 +27,9 @@ import EstudiantesEnRiesgo from "./pages/rector/EstudiantesEnRiesgo";
 // Rutas para Profesor
 import EstadisticasProfesor from "./pages/profesor/EstadisticasProfesor";
 
+// Ruta compartida
+import EnviarComunicado from "./pages/EnviarComunicado";
+
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -58,6 +61,9 @@ const App = () => (
 
           {/* Rutas para Profesor */}
           <Route path="/profesor/estadisticas" element={<EstadisticasProfesor />} />
+
+          {/* Ruta compartida */}
+          <Route path="/enviar-comunicado" element={<EnviarComunicado />} />
 
           <Route path="*" element={<NotFound />} />
         </Routes>

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getSession, isRectorOrCoordinador } from "@/hooks/useSession";
-import { BookOpen, BarChart3 } from "lucide-react";
+import { BookOpen, BarChart3, Megaphone } from "lucide-react";
 import HeaderNormy from "@/components/HeaderNormy";
 
 const DashboardRector = () => {
@@ -53,7 +53,7 @@ const DashboardRector = () => {
             ¿Qué deseas consultar?
           </h3>
           
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-xl mx-auto">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 max-w-3xl mx-auto">
             <button
               onClick={() => navigate("/rector/seleccionar-grado")}
               className="flex flex-col items-center justify-center gap-4 p-8 rounded-lg border-2 border-border bg-background transition-all duration-200 hover:shadow-md hover:border-primary hover:bg-primary/10"
@@ -61,13 +61,21 @@ const DashboardRector = () => {
               <BookOpen className="w-16 h-16 text-primary" />
               <span className="font-semibold text-lg text-foreground">Notas</span>
             </button>
-            
+
             <button
               onClick={() => navigate("/rector/estadisticas")}
               className="flex flex-col items-center justify-center gap-4 p-8 rounded-lg border-2 border-border bg-background transition-all duration-200 hover:shadow-md hover:border-primary hover:bg-primary/10"
             >
               <BarChart3 className="w-16 h-16 text-primary" />
               <span className="font-semibold text-lg text-foreground">Estadísticas</span>
+            </button>
+
+            <button
+              onClick={() => navigate("/enviar-comunicado")}
+              className="flex flex-col items-center justify-center gap-4 p-8 rounded-lg border-2 border-border bg-background transition-all duration-200 hover:shadow-md hover:border-primary hover:bg-primary/10"
+            >
+              <Megaphone className="w-16 h-16 text-primary" />
+              <span className="font-semibold text-lg text-foreground">Comunicado</span>
             </button>
           </div>
         </div>
