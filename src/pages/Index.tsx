@@ -10,6 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { saveSession, getSession } from "@/hooks/useSession";
 
 const Index = () => {
+  const [identificacion, setIdentificacion] = useState("");
   const [contrasena, setContrasena] = useState("");
   const [showContrasena, setShowContrasena] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -31,63 +32,52 @@ const Index = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const input = contrasena.trim();
-    if (!input) {
-      toast({
-        title: "Error",
-        description: "Por favor ingresa tu contraseña",
-        variant: "destructive",
-      });
+    const idInput = identificacion.trim();
+    const passInput = contrasena.trim();
+
+    if (!idInput) {
+      toast({ title: "Error", description: "Por favor ingresa tu # de identidad", variant: "destructive" });
+      return;
+    }
+    if (!passInput) {
+      toast({ title: "Error", description: "Por favor ingresa tu contraseña", variant: "destructive" });
       return;
     }
 
     setLoading(true);
 
     try {
-      let data = null;
+      // 1. Buscar usuario por código de identidad
+      const { data: usuario, error } = await supabase
+        .from('Internos')
+        .select('*')
+        .eq('codigo', parseInt(idInput))
+        .maybeSingle();
 
-      // 1. Si es numérico, buscar por código (usuario sin contraseña personalizada)
-      if (/^\d+$/.test(input)) {
-        const { data: porCodigo, error } = await supabase
-          .from('Internos')
-          .select('*')
-          .eq('codigo', parseInt(input))
-          .is('contrasena', null)
-          .maybeSingle();
-
-        if (error) {
-          toast({ title: "Error", description: "Error al verificar", variant: "destructive" });
-          setLoading(false);
-          return;
-        }
-        data = porCodigo;
-      }
-
-      // 2. Si no encontró por código, buscar por contraseña personalizada
-      if (!data) {
-        const { data: porContrasena, error } = await supabase
-          .from('Internos')
-          .select('*')
-          .eq('contrasena', input)
-          .maybeSingle();
-
-        if (error) {
-          toast({ title: "Error", description: "Error al verificar", variant: "destructive" });
-          setLoading(false);
-          return;
-        }
-        data = porContrasena;
-      }
-
-      if (!data) {
-        toast({
-          title: "Error",
-          description: "Contraseña incorrecta",
-          variant: "destructive",
-        });
+      if (error) {
+        toast({ title: "Error", description: "Error al verificar", variant: "destructive" });
         setLoading(false);
         return;
       }
+
+      if (!usuario) {
+        toast({ title: "Error", description: "Identificación no encontrada", variant: "destructive" });
+        setLoading(false);
+        return;
+      }
+
+      // 2. Verificar contraseña
+      const contrasenaCorrecta = usuario.contrasena
+        ? usuario.contrasena === passInput                    // Tiene contraseña personalizada
+        : String(usuario.codigo) === passInput;               // Sin contraseña: usa el código
+
+      if (!contrasenaCorrecta) {
+        toast({ title: "Error", description: "Contraseña incorrecta", variant: "destructive" });
+        setLoading(false);
+        return;
+      }
+
+      const data = usuario;
 
       // Verificar si tiene permisos (Profesor, Rector o Coordinador)
       const cargosPermitidos = ['Profesor(a)', 'Rector', 'Coordinador(a)'];
@@ -168,6 +158,25 @@ const Index = () => {
 
           {/* Formulario */}
           <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="space-y-2">
+              <label
+                htmlFor="identificacion"
+                className="block text-sm font-medium text-foreground"
+              >
+                Digita tu # de identidad
+              </label>
+              <Input
+                id="identificacion"
+                type="text"
+                inputMode="numeric"
+                placeholder="Número de identidad"
+                value={identificacion}
+                onChange={(e) => setIdentificacion(e.target.value)}
+                className="w-full h-12 text-base border-input bg-background focus:ring-2 focus:ring-primary/20 transition-all"
+                disabled={loading}
+              />
+            </div>
+
             <div className="space-y-2">
               <label
                 htmlFor="contrasena"
