@@ -231,7 +231,7 @@ const EstadisticasProfesor = () => {
                     }}>
                       <SelectTrigger><SelectValue placeholder="Seleccionar grado" /></SelectTrigger>
                       <SelectContent>
-                        {(nivelAnalisis === "grado" || nivelAnalisis === "salon") && (
+                        {nivelAnalisis === "grado" && (
                           <SelectItem value="all">Todos los grados</SelectItem>
                         )}
                         {gradosParaMateria.map(g => (
