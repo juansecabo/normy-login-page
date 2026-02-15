@@ -23,6 +23,7 @@ import { getSession, isRectorOrCoordinador } from "@/hooks/useSession";
 import HeaderNormy from "@/components/HeaderNormy";
 import { Loader2, Send } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 const WEBHOOK_URL =
   "https://n8n.srv966880.hstgr.cloud/webhook/ae459f1c-7e94-45f4-9909-aaddc82a7552";
@@ -49,6 +50,9 @@ const EnviarComunicado = () => {
   const [nivel, setNivel] = useState("");
   const [grado, setGrado] = useState("");
   const [salon, setSalon] = useState("");
+  const [estudiante, setEstudiante] = useState("");
+  const [estudiantes, setEstudiantes] = useState<{ codigo: string; nombre: string }[]>([]);
+  const [loadingEstudiantes, setLoadingEstudiantes] = useState(false);
 
   // Mensaje
   const [mensaje, setMensaje] = useState("");
@@ -62,31 +66,78 @@ const EnviarComunicado = () => {
     setRemitente(`${session.cargo} ${session.nombres} ${session.apellidos}`);
   }, [navigate]);
 
+  // Fetch estudiantes cuando cambia grado + salón
+  useEffect(() => {
+    if (!grado || !salon || salon === "Todos") {
+      setEstudiantes([]);
+      setEstudiante("");
+      return;
+    }
+    const fetchEstudiantes = async () => {
+      setLoadingEstudiantes(true);
+      const { data } = await supabase
+        .from("Estudiantes")
+        .select("codigo_estudiantil, apellidos_estudiante, nombre_estudiante")
+        .eq("grado_estudiante", grado)
+        .eq("salon_estudiante", salon)
+        .order("apellidos_estudiante", { ascending: true })
+        .order("nombre_estudiante", { ascending: true });
+      setEstudiantes(
+        data?.map((e) => ({
+          codigo: e.codigo_estudiantil,
+          nombre: `${e.apellidos_estudiante} ${e.nombre_estudiante}`,
+        })) || []
+      );
+      setLoadingEstudiantes(false);
+    };
+    fetchEstudiantes();
+  }, [grado, salon]);
+
   // Reset dependientes al cambiar perfil
   const handlePerfilChange = (value: string) => {
     setPerfil(value);
     setNivel("");
     setGrado("");
     setSalon("");
+    setEstudiante("");
   };
 
   const handleNivelChange = (value: string) => {
     setNivel(value);
     setGrado("");
     setSalon("");
+    setEstudiante("");
   };
 
   const handleGradoChange = (value: string) => {
     setGrado(value);
     setSalon("");
+    setEstudiante("");
+  };
+
+  const handleSalonChange = (value: string) => {
+    setSalon(value);
+    setEstudiante("");
   };
 
   // Construir texto de destinatarios
   const buildDestinatarios = (): string => {
-    let texto = perfil; // "Estudiantes", "Padres de familia" o "Estudiantes y Padres de familia"
+    const estudianteNombre = estudiantes.find((e) => e.codigo === estudiante)?.nombre;
+
+    if (estudiante && estudiante !== "Todos" && estudianteNombre) {
+      // Estudiante específico
+      if (perfil === "Estudiantes") {
+        return `Estudiante ${estudianteNombre} de ${grado} ${salon}`;
+      } else if (perfil === "Padres de familia") {
+        return `Padres de familia de ${estudianteNombre} de ${grado} ${salon}`;
+      } else {
+        return `Estudiante y Padres de familia de ${estudianteNombre} de ${grado} ${salon}`;
+      }
+    }
+
+    let texto = perfil;
 
     if (!nivel || nivel === "Todos") {
-      // No se eligió nivel específico
       return texto;
     }
 
@@ -137,6 +188,7 @@ const EnviarComunicado = () => {
       setNivel("");
       setGrado("");
       setSalon("");
+      setEstudiante("");
       setMensaje("");
     } catch (error) {
       console.error("Error enviando comunicado:", error);
@@ -238,16 +290,36 @@ const EnviarComunicado = () => {
             {/* Salón - solo si se eligió grado */}
             {grado && (
               <div className="space-y-2">
-                <Label>Salón (opcional)</Label>
-                <Select value={salon} onValueChange={setSalon}>
+                <Label>Salón</Label>
+                <Select value={salon} onValueChange={handleSalonChange}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Todos los salones" />
+                    <SelectValue placeholder="Selecciona el salón" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="Todos">Todos</SelectItem>
                     {SALONES.map((s) => (
                       <SelectItem key={s} value={s}>
                         {s}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            {/* Estudiante - solo si se eligió salón específico */}
+            {salon && salon !== "Todos" && (
+              <div className="space-y-2">
+                <Label>Estudiante</Label>
+                <Select value={estudiante} onValueChange={setEstudiante}>
+                  <SelectTrigger>
+                    <SelectValue placeholder={loadingEstudiantes ? "Cargando..." : "Todos los estudiantes"} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Todos">Todos</SelectItem>
+                    {estudiantes.map((e) => (
+                      <SelectItem key={e.codigo} value={e.codigo}>
+                        {e.nombre}
                       </SelectItem>
                     ))}
                   </SelectContent>
