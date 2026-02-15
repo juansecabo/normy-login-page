@@ -132,39 +132,41 @@ const Dashboard = () => {
         </div>
 
         {/* Botones de acciones */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 mt-8 max-w-4xl mx-auto">
-          <button
-            onClick={() => navigate("/enviar-comunicado")}
-            className="flex flex-col md:flex-row items-center gap-1 md:gap-2 p-4 md:p-6 rounded-lg bg-gradient-to-r from-purple-500 to-purple-600 text-white font-bold text-sm md:text-sm transition-all duration-200 hover:shadow-md hover:scale-[1.02] hover:from-purple-600 hover:to-purple-500 justify-center text-center md:whitespace-nowrap"
-          >
-            <Megaphone className="w-5 h-5 md:w-5 md:h-5 shrink-0" />
-            <span>Enviar Comunicado</span>
-          </button>
-          <button
-            onClick={() => navigate("/enviar-documento")}
-            className="flex flex-col md:flex-row items-center gap-1 md:gap-2 p-4 md:p-6 rounded-lg bg-gradient-to-r from-orange-500 to-orange-600 text-white font-bold text-sm md:text-sm transition-all duration-200 hover:shadow-md hover:scale-[1.02] hover:from-orange-600 hover:to-orange-500 justify-center text-center md:whitespace-nowrap"
-          >
-            <FileUp className="w-5 h-5 md:w-5 md:h-5 shrink-0" />
-            <span>Enviar Documento</span>
-          </button>
-          <button
-            onClick={() => navigate("/normy-examinadora")}
-            className="relative overflow-hidden flex flex-col md:flex-row items-center gap-1 md:gap-2 p-4 md:p-6 rounded-lg bg-gradient-to-r from-green-400 to-green-500 text-white font-bold text-sm md:text-sm transition-all duration-200 hover:shadow-md hover:scale-[1.02] hover:from-green-500 hover:to-green-400 justify-center text-center md:whitespace-nowrap"
-          >
-            <span className="relative z-10">Normy Examinadora</span>
-            <img
-              src={normyExaminadoraImg}
-              alt="Normy Examinadora"
-              className="absolute right-0 bottom-0 h-full w-auto object-contain opacity-40"
-            />
-          </button>
-          <button
-            onClick={() => navigate("/profesor/estadisticas")}
-            className="flex flex-col md:flex-row items-center gap-1 md:gap-2 p-4 md:p-6 rounded-lg bg-gradient-to-r from-blue-500 to-blue-600 text-white font-bold text-sm md:text-sm transition-all duration-200 hover:shadow-md hover:scale-[1.02] hover:from-blue-600 hover:to-blue-500 justify-center text-center md:whitespace-nowrap"
-          >
-            <BarChart3 className="w-5 h-5 md:w-5 md:h-5 shrink-0" />
-            <span>Estadísticas</span>
-          </button>
+        <div className="bg-card rounded-lg shadow-soft p-4 md:p-8 max-w-4xl mx-auto mt-8">
+          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <button
+              onClick={() => navigate("/enviar-comunicado")}
+              className="flex flex-col items-center justify-center gap-2 p-6 rounded-lg bg-gradient-to-r from-purple-500 to-purple-600 text-white transition-all duration-200 hover:shadow-md hover:scale-[1.02] hover:from-purple-600 hover:to-purple-500 text-center"
+            >
+              <Megaphone className="w-6 h-6" />
+              <span className="font-medium text-sm">Enviar Comunicado</span>
+            </button>
+            <button
+              onClick={() => navigate("/enviar-documento")}
+              className="flex flex-col items-center justify-center gap-2 p-6 rounded-lg bg-gradient-to-r from-orange-500 to-orange-600 text-white transition-all duration-200 hover:shadow-md hover:scale-[1.02] hover:from-orange-600 hover:to-orange-500 text-center"
+            >
+              <FileUp className="w-6 h-6" />
+              <span className="font-medium text-sm">Enviar Documento</span>
+            </button>
+            <button
+              onClick={() => navigate("/normy-examinadora")}
+              className="relative overflow-hidden flex flex-col items-center justify-center gap-2 p-6 rounded-lg bg-gradient-to-r from-green-400 to-green-500 text-white transition-all duration-200 hover:shadow-md hover:scale-[1.02] hover:from-green-500 hover:to-green-400 text-center"
+            >
+              <span className="relative z-10 font-medium text-sm">Normy Examinadora</span>
+              <img
+                src={normyExaminadoraImg}
+                alt="Normy Examinadora"
+                className="absolute right-0 bottom-0 h-full w-auto object-contain opacity-40"
+              />
+            </button>
+            <button
+              onClick={() => navigate("/profesor/estadisticas")}
+              className="flex flex-col items-center justify-center gap-2 p-6 rounded-lg bg-gradient-to-r from-blue-500 to-blue-600 text-white transition-all duration-200 hover:shadow-md hover:scale-[1.02] hover:from-blue-600 hover:to-blue-500 text-center"
+            >
+              <BarChart3 className="w-6 h-6" />
+              <span className="font-medium text-sm">Estadísticas</span>
+            </button>
+          </div>
         </div>
       </main>
     </div>
