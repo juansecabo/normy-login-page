@@ -56,34 +56,34 @@ const DashboardRector = () => {
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 max-w-4xl mx-auto">
             <button
               onClick={() => navigate("/rector/seleccionar-grado")}
-              className="flex flex-col items-center justify-center gap-4 p-8 rounded-lg bg-emerald-600 transition-all duration-200 hover:shadow-md hover:bg-emerald-700"
+              className="flex flex-col items-center justify-center gap-4 p-8 rounded-lg bg-emerald-100 transition-all duration-200 hover:shadow-md hover:bg-emerald-200"
             >
-              <BookOpen className="w-16 h-16 text-white" />
-              <span className="font-semibold text-lg text-white">Notas</span>
+              <BookOpen className="w-16 h-16 text-green-900" />
+              <span className="font-semibold text-lg text-green-900">Notas</span>
             </button>
 
             <button
               onClick={() => navigate("/rector/estadisticas")}
-              className="flex flex-col items-center justify-center gap-4 p-8 rounded-lg bg-green-500 transition-all duration-200 hover:shadow-md hover:bg-green-600"
+              className="flex flex-col items-center justify-center gap-4 p-8 rounded-lg bg-green-100 transition-all duration-200 hover:shadow-md hover:bg-green-200"
             >
-              <BarChart3 className="w-16 h-16 text-white" />
-              <span className="font-semibold text-lg text-white">Estadísticas</span>
+              <BarChart3 className="w-16 h-16 text-green-900" />
+              <span className="font-semibold text-lg text-green-900">Estadísticas</span>
             </button>
 
             <button
               onClick={() => navigate("/enviar-comunicado")}
-              className="flex flex-col items-center justify-center gap-4 p-8 rounded-lg bg-teal-600 transition-all duration-200 hover:shadow-md hover:bg-teal-700"
+              className="flex flex-col items-center justify-center gap-4 p-8 rounded-lg bg-teal-100 transition-all duration-200 hover:shadow-md hover:bg-teal-200"
             >
-              <Megaphone className="w-16 h-16 text-white" />
-              <span className="font-semibold text-lg text-white text-center">Enviar Comunicado</span>
+              <Megaphone className="w-16 h-16 text-green-900" />
+              <span className="font-semibold text-lg text-green-900 text-center">Enviar Comunicado</span>
             </button>
 
             <button
               onClick={() => navigate("/enviar-documento")}
-              className="flex flex-col items-center justify-center gap-4 p-8 rounded-lg bg-lime-600 transition-all duration-200 hover:shadow-md hover:bg-lime-700"
+              className="flex flex-col items-center justify-center gap-4 p-8 rounded-lg bg-lime-100 transition-all duration-200 hover:shadow-md hover:bg-lime-200"
             >
-              <FileUp className="w-16 h-16 text-white" />
-              <span className="font-semibold text-lg text-white text-center">Enviar Documento</span>
+              <FileUp className="w-16 h-16 text-green-900" />
+              <span className="font-semibold text-lg text-green-900 text-center">Enviar Documento</span>
             </button>
           </div>
         </div>
