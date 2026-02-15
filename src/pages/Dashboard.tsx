@@ -131,11 +131,25 @@ const Dashboard = () => {
           )}
         </div>
 
-        {/* Botones Normy Examinadora y Estadísticas */}
-        <div className="flex flex-wrap justify-center gap-4 mt-8">
+        {/* Botones de acciones */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mt-8 max-w-4xl mx-auto">
+          <button
+            onClick={() => navigate("/enviar-comunicado")}
+            className="flex items-center gap-3 p-6 rounded-lg bg-gradient-to-r from-purple-500 to-purple-600 text-white font-bold text-lg transition-all duration-200 hover:shadow-md hover:scale-[1.02] hover:from-purple-600 hover:to-purple-500 justify-center"
+          >
+            <Megaphone className="w-6 h-6 shrink-0" />
+            <span>Enviar Comunicado</span>
+          </button>
+          <button
+            onClick={() => navigate("/enviar-documento")}
+            className="flex items-center gap-3 p-6 rounded-lg bg-gradient-to-r from-orange-500 to-orange-600 text-white font-bold text-lg transition-all duration-200 hover:shadow-md hover:scale-[1.02] hover:from-orange-600 hover:to-orange-500 justify-center"
+          >
+            <FileUp className="w-6 h-6 shrink-0" />
+            <span>Enviar Documento</span>
+          </button>
           <button
             onClick={() => navigate("/normy-examinadora")}
-            className="relative overflow-hidden p-6 rounded-lg bg-gradient-to-r from-green-400 to-green-500 text-white font-bold text-lg transition-all duration-200 hover:shadow-md hover:scale-[1.02] hover:from-green-500 hover:to-green-400 min-w-[240px]"
+            className="relative overflow-hidden p-6 rounded-lg bg-gradient-to-r from-green-400 to-green-500 text-white font-bold text-lg transition-all duration-200 hover:shadow-md hover:scale-[1.02] hover:from-green-500 hover:to-green-400 justify-center"
           >
             <span className="relative z-10">Normy Examinadora</span>
             <img
@@ -145,24 +159,10 @@ const Dashboard = () => {
             />
           </button>
           <button
-            onClick={() => navigate("/enviar-comunicado")}
-            className="flex items-center gap-3 p-6 rounded-lg bg-gradient-to-r from-purple-500 to-purple-600 text-white font-bold text-lg transition-all duration-200 hover:shadow-md hover:scale-[1.02] hover:from-purple-600 hover:to-purple-500 min-w-[240px] justify-center"
-          >
-            <Megaphone className="w-6 h-6" />
-            <span>Enviar Comunicado</span>
-          </button>
-          <button
-            onClick={() => navigate("/enviar-documento")}
-            className="flex items-center gap-3 p-6 rounded-lg bg-gradient-to-r from-orange-500 to-orange-600 text-white font-bold text-lg transition-all duration-200 hover:shadow-md hover:scale-[1.02] hover:from-orange-600 hover:to-orange-500 min-w-[240px] justify-center"
-          >
-            <FileUp className="w-6 h-6" />
-            <span>Enviar Documento</span>
-          </button>
-          <button
             onClick={() => navigate("/profesor/estadisticas")}
-            className="flex items-center gap-3 p-6 rounded-lg bg-gradient-to-r from-blue-500 to-blue-600 text-white font-bold text-lg transition-all duration-200 hover:shadow-md hover:scale-[1.02] hover:from-blue-600 hover:to-blue-500 min-w-[240px] justify-center"
+            className="flex items-center gap-3 p-6 rounded-lg bg-gradient-to-r from-blue-500 to-blue-600 text-white font-bold text-lg transition-all duration-200 hover:shadow-md hover:scale-[1.02] hover:from-blue-600 hover:to-blue-500 justify-center"
           >
-            <BarChart3 className="w-6 h-6" />
+            <BarChart3 className="w-6 h-6 shrink-0" />
             <span>Estadísticas</span>
           </button>
         </div>
