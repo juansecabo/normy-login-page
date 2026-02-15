@@ -9,21 +9,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { getSession, isRectorOrCoordinador } from "@/hooks/useSession";
 import HeaderNormy from "@/components/HeaderNormy";
-import { Loader2, Send, Clock, Trash2 } from "lucide-react";
+import { Loader2, Send, Clock, Trash2, Search } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -72,6 +63,7 @@ const EnviarComunicado = () => {
   // Historial
   const [historial, setHistorial] = useState<ComunicadoEnviado[]>([]);
   const [loadingHistorial, setLoadingHistorial] = useState(false);
+  const [busqueda, setBusqueda] = useState("");
 
   useEffect(() => {
     const session = getSession();
@@ -451,7 +443,20 @@ const EnviarComunicado = () => {
                 </p>
               ) : (
                 <div className="space-y-4">
-                  {historial.map((c) => (
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Input
+                      value={busqueda}
+                      onChange={(e) => setBusqueda(e.target.value)}
+                      placeholder="Buscar por destinatario o mensaje..."
+                      className="pl-9"
+                    />
+                  </div>
+                  {historial.filter((c) => {
+                    if (!busqueda.trim()) return true;
+                    const term = busqueda.toLowerCase();
+                    return c.destinatarios.toLowerCase().includes(term) || c.mensaje.toLowerCase().includes(term);
+                  }).map((c) => (
                     <div key={c.id} className="border rounded-lg p-4 space-y-2">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2 text-xs text-muted-foreground">
@@ -483,11 +488,11 @@ const EnviarComunicado = () => {
       </main>
 
       {/* Diálogo de confirmación */}
-      <AlertDialog open={showConfirm} onOpenChange={setShowConfirm}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Confirmar envío</AlertDialogTitle>
-            <AlertDialogDescription asChild>
+      <Dialog open={showConfirm} onOpenChange={setShowConfirm}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirmar envío</DialogTitle>
+            <DialogDescription asChild>
               <div className="space-y-3 text-sm text-muted-foreground">
                 <p>
                   <span className="font-medium text-foreground">Remitente:</span>{" "}
@@ -506,16 +511,18 @@ const EnviarComunicado = () => {
                   {mensaje}
                 </p>
               </div>
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={handleEnviar}>
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <button onClick={() => setShowConfirm(false)} className="px-4 py-2 rounded-md border text-sm font-medium hover:bg-muted">
+              Cancelar
+            </button>
+            <button onClick={handleEnviar} className="px-4 py-2 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90">
               Enviar
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Diálogo de confirmación de eliminación */}
       <Dialog open={deleteId !== null} onOpenChange={(open) => { if (!open) setDeleteId(null); }}>
