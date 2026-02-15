@@ -54,6 +54,7 @@ const EnviarComunicado = () => {
   const [codigoRemitente, setCodigoRemitente] = useState("");
   const [enviando, setEnviando] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+  const [deleteId, setDeleteId] = useState<number | null>(null);
 
   // Destinatarios state
   const [perfil, setPerfil] = useState("");
@@ -119,9 +120,11 @@ const EnviarComunicado = () => {
     setLoadingHistorial(false);
   };
 
-  const handleEliminar = async (id: number) => {
-    await supabase.from("Comunicados").delete().eq("id", id);
-    setHistorial((prev) => prev.filter((c) => c.id !== id));
+  const handleEliminar = async () => {
+    if (!deleteId) return;
+    await supabase.from("Comunicados").delete().eq("id", deleteId);
+    setHistorial((prev) => prev.filter((c) => c.id !== deleteId));
+    setDeleteId(null);
   };
 
   // Reset dependientes al cambiar perfil
@@ -455,7 +458,7 @@ const EnviarComunicado = () => {
                           {formatFecha(c.fecha)}
                         </div>
                         <button
-                          onClick={() => handleEliminar(c.id)}
+                          onClick={() => setDeleteId(c.id)}
                           className="text-muted-foreground hover:text-destructive transition-colors"
                           title="Eliminar"
                         >
@@ -508,6 +511,24 @@ const EnviarComunicado = () => {
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
             <AlertDialogAction onClick={handleEnviar}>
               Enviar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Diálogo de confirmación de eliminación */}
+      <AlertDialog open={deleteId !== null} onOpenChange={(open) => { if (!open) setDeleteId(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Eliminar comunicado</AlertDialogTitle>
+            <AlertDialogDescription>
+              Este comunicado se eliminará permanentemente y no se podrá recuperar.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleEliminar} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Eliminar
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
