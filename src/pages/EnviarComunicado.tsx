@@ -109,7 +109,7 @@ const EnviarComunicado = () => {
   const fetchHistorial = async () => {
     setLoadingHistorial(true);
     const { data } = await supabase
-      .from("Comunicados_Enviados")
+      .from("Comunicados")
       .select("*")
       .eq("remitente", remitente)
       .order("fecha", { ascending: false });
@@ -202,10 +202,16 @@ const EnviarComunicado = () => {
       }
 
       // Guardar en historial
-      await supabase.from("Comunicados_Enviados").insert({
+      await supabase.from("Comunicados").insert({
         remitente,
         destinatarios: destinatariosTexto,
+        perfil: perfil || null,
+        nivel: (nivel && nivel !== "Todos") ? nivel : null,
+        grado: grado || null,
+        salon: (salon && salon !== "Todos") ? salon : null,
+        codigo_estudiantil: (estudiante && estudiante !== "Todos") ? estudiante : null,
         mensaje: mensaje.trim(),
+        tipo: "comunicado",
       });
 
       toast({
