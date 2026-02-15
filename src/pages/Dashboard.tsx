@@ -145,18 +145,18 @@ const Dashboard = () => {
             />
           </button>
           <button
-            onClick={() => navigate("/profesor/estadisticas")}
-            className="flex items-center gap-3 p-6 rounded-lg bg-gradient-to-r from-blue-500 to-blue-600 text-white font-bold text-lg transition-all duration-200 hover:shadow-md hover:scale-[1.02] hover:from-blue-600 hover:to-blue-500 min-w-[240px] justify-center"
-          >
-            <BarChart3 className="w-6 h-6" />
-            <span>Estadísticas</span>
-          </button>
-          <button
             onClick={() => navigate("/enviar-comunicado")}
             className="flex items-center gap-3 p-6 rounded-lg bg-gradient-to-r from-purple-500 to-purple-600 text-white font-bold text-lg transition-all duration-200 hover:shadow-md hover:scale-[1.02] hover:from-purple-600 hover:to-purple-500 min-w-[240px] justify-center"
           >
             <Megaphone className="w-6 h-6" />
             <span>Enviar Comunicado</span>
+          </button>
+          <button
+            onClick={() => navigate("/profesor/estadisticas")}
+            className="flex items-center gap-3 p-6 rounded-lg bg-gradient-to-r from-blue-500 to-blue-600 text-white font-bold text-lg transition-all duration-200 hover:shadow-md hover:scale-[1.02] hover:from-blue-600 hover:to-blue-500 min-w-[240px] justify-center"
+          >
+            <BarChart3 className="w-6 h-6" />
+            <span>Estadísticas</span>
           </button>
         </div>
       </main>
