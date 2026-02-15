@@ -75,7 +75,7 @@ const DashboardRector = () => {
               className="flex flex-col items-center justify-center gap-4 p-8 rounded-lg border-2 border-border bg-background transition-all duration-200 hover:shadow-md hover:border-primary hover:bg-primary/10"
             >
               <Megaphone className="w-16 h-16 text-primary" />
-              <span className="font-semibold text-lg text-foreground">Comunicado</span>
+              <span className="font-semibold text-lg text-foreground text-center">Enviar Comunicado</span>
             </button>
 
             <button
@@ -83,7 +83,7 @@ const DashboardRector = () => {
               className="flex flex-col items-center justify-center gap-4 p-8 rounded-lg border-2 border-border bg-background transition-all duration-200 hover:shadow-md hover:border-primary hover:bg-primary/10"
             >
               <FileUp className="w-16 h-16 text-primary" />
-              <span className="font-semibold text-lg text-foreground">Documento</span>
+              <span className="font-semibold text-lg text-foreground text-center">Enviar Documento</span>
             </button>
           </div>
         </div>

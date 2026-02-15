@@ -19,9 +19,10 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getSession, isRectorOrCoordinador } from "@/hooks/useSession";
 import HeaderNormy from "@/components/HeaderNormy";
-import { Loader2, Send } from "lucide-react";
+import { Loader2, Send, Clock } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -36,6 +37,14 @@ const NIVELES_GRADOS: Record<string, string[]> = {
 };
 
 const SALONES = ["1", "2", "3", "4", "5", "6"];
+
+interface ComunicadoEnviado {
+  id: number;
+  remitente: string;
+  destinatarios: string;
+  mensaje: string;
+  fecha: string;
+}
 
 const EnviarComunicado = () => {
   const navigate = useNavigate();
@@ -56,6 +65,10 @@ const EnviarComunicado = () => {
 
   // Mensaje
   const [mensaje, setMensaje] = useState("");
+
+  // Historial
+  const [historial, setHistorial] = useState<ComunicadoEnviado[]>([]);
+  const [loadingHistorial, setLoadingHistorial] = useState(false);
 
   useEffect(() => {
     const session = getSession();
@@ -92,6 +105,17 @@ const EnviarComunicado = () => {
     };
     fetchEstudiantes();
   }, [grado, salon]);
+
+  const fetchHistorial = async () => {
+    setLoadingHistorial(true);
+    const { data } = await supabase
+      .from("Comunicados_Enviados")
+      .select("*")
+      .eq("remitente", remitente)
+      .order("fecha", { ascending: false });
+    setHistorial((data as ComunicadoEnviado[]) || []);
+    setLoadingHistorial(false);
+  };
 
   // Reset dependientes al cambiar perfil
   const handlePerfilChange = (value: string) => {
@@ -176,6 +200,13 @@ const EnviarComunicado = () => {
         throw new Error(`Error del servidor: ${response.status}`);
       }
 
+      // Guardar en historial
+      await supabase.from("Comunicados_Enviados").insert({
+        remitente,
+        destinatarios: destinatariosTexto,
+        mensaje: mensaje.trim(),
+      });
+
       toast({
         title: "Comunicado enviado",
         description: "El comunicado se está enviando por WhatsApp.",
@@ -200,6 +231,17 @@ const EnviarComunicado = () => {
     }
   };
 
+  const formatFecha = (fecha: string) => {
+    const d = new Date(fecha);
+    return d.toLocaleDateString("es-CO", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
+
   const backLink = isRectorOrCoordinador() ? "/dashboard-rector" : "/dashboard";
 
   return (
@@ -217,154 +259,198 @@ const EnviarComunicado = () => {
         </div>
 
         <div className="bg-card rounded-lg shadow-soft p-6 md:p-8 max-w-2xl mx-auto">
-          <h2 className="text-2xl font-bold text-foreground mb-6 text-center">
-            Enviar Comunicado
-          </h2>
+          <Tabs defaultValue="enviar" onValueChange={(v) => { if (v === "historial") fetchHistorial(); }}>
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="enviar">Enviar Comunicado</TabsTrigger>
+              <TabsTrigger value="historial">Comunicados Enviados</TabsTrigger>
+            </TabsList>
 
-          {/* Destinatarios */}
-          <div className="space-y-4 mb-6">
-            <h3 className="text-lg font-semibold text-foreground">
-              Destinatarios
-            </h3>
+            <TabsContent value="enviar">
+              <h2 className="text-2xl font-bold text-foreground mb-6 text-center mt-4">
+                Enviar Comunicado
+              </h2>
 
-            {/* Perfil */}
-            <div className="space-y-2">
-              <Label>Perfil</Label>
-              <Select value={perfil} onValueChange={handlePerfilChange}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecciona el perfil" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Estudiantes">Estudiantes</SelectItem>
-                  <SelectItem value="Padres de familia">
-                    Padres de familia
-                  </SelectItem>
-                  <SelectItem value="Estudiantes y Padres de familia">
-                    Estudiantes y Padres de familia
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+              {/* Destinatarios */}
+              <div className="space-y-4 mb-6">
+                <h3 className="text-lg font-semibold text-foreground">
+                  Destinatarios
+                </h3>
 
-            {/* Nivel */}
-            {perfil && (
-              <div className="space-y-2">
-                <Label>Nivel</Label>
-                <Select value={nivel} onValueChange={handleNivelChange}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecciona el nivel" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Todos">Todos los niveles</SelectItem>
-                    {Object.keys(NIVELES_GRADOS).map((n) => (
-                      <SelectItem key={n} value={n}>
-                        {n}
+                {/* Perfil */}
+                <div className="space-y-2">
+                  <Label>Perfil</Label>
+                  <Select value={perfil} onValueChange={handlePerfilChange}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecciona el perfil" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Estudiantes">Estudiantes</SelectItem>
+                      <SelectItem value="Padres de familia">
+                        Padres de familia
                       </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
-
-            {/* Grado - solo si se eligió un nivel específico */}
-            {nivel && nivel !== "Todos" && (
-              <div className="space-y-2">
-                <Label>Grado</Label>
-                <Select value={grado} onValueChange={handleGradoChange}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecciona el grado" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {NIVELES_GRADOS[nivel]?.map((g) => (
-                      <SelectItem key={g} value={g}>
-                        {g}
+                      <SelectItem value="Estudiantes y Padres de familia">
+                        Estudiantes y Padres de familia
                       </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Nivel */}
+                {perfil && (
+                  <div className="space-y-2">
+                    <Label>Nivel</Label>
+                    <Select value={nivel} onValueChange={handleNivelChange}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecciona el nivel" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Todos">Todos los niveles</SelectItem>
+                        {Object.keys(NIVELES_GRADOS).map((n) => (
+                          <SelectItem key={n} value={n}>
+                            {n}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+
+                {/* Grado - solo si se eligió un nivel específico */}
+                {nivel && nivel !== "Todos" && (
+                  <div className="space-y-2">
+                    <Label>Grado</Label>
+                    <Select value={grado} onValueChange={handleGradoChange}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecciona el grado" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {NIVELES_GRADOS[nivel]?.map((g) => (
+                          <SelectItem key={g} value={g}>
+                            {g}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+
+                {/* Salón - solo si se eligió grado */}
+                {grado && (
+                  <div className="space-y-2">
+                    <Label>Salón</Label>
+                    <Select value={salon} onValueChange={handleSalonChange}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecciona el salón" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Todos">Todos</SelectItem>
+                        {SALONES.map((s) => (
+                          <SelectItem key={s} value={s}>
+                            {s}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+
+                {/* Estudiante - solo si se eligió salón específico */}
+                {salon && salon !== "Todos" && (
+                  <div className="space-y-2">
+                    <Label>Estudiante</Label>
+                    <Select value={estudiante} onValueChange={setEstudiante}>
+                      <SelectTrigger>
+                        <SelectValue placeholder={loadingEstudiantes ? "Cargando..." : "Todos los estudiantes"} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Todos">Todos</SelectItem>
+                        {estudiantes.map((e) => (
+                          <SelectItem key={e.codigo} value={e.codigo}>
+                            {e.nombre}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+
+                {/* Preview de destinatarios */}
+                {perfil && (
+                  <p className="text-sm text-muted-foreground">
+                    Destinatarios:{" "}
+                    <span className="font-medium text-foreground">
+                      {destinatariosTexto}
+                    </span>
+                  </p>
+                )}
               </div>
-            )}
 
-            {/* Salón - solo si se eligió grado */}
-            {grado && (
-              <div className="space-y-2">
-                <Label>Salón</Label>
-                <Select value={salon} onValueChange={handleSalonChange}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecciona el salón" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Todos">Todos</SelectItem>
-                    {SALONES.map((s) => (
-                      <SelectItem key={s} value={s}>
-                        {s}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+              {/* Mensaje */}
+              <div className="space-y-2 mb-6">
+                <h3 className="text-lg font-semibold text-foreground">Mensaje</h3>
+                <Textarea
+                  value={mensaje}
+                  onChange={(e) => setMensaje(e.target.value)}
+                  placeholder="Escribe el comunicado..."
+                  rows={6}
+                />
               </div>
-            )}
 
-            {/* Estudiante - solo si se eligió salón específico */}
-            {salon && salon !== "Todos" && (
-              <div className="space-y-2">
-                <Label>Estudiante</Label>
-                <Select value={estudiante} onValueChange={setEstudiante}>
-                  <SelectTrigger>
-                    <SelectValue placeholder={loadingEstudiantes ? "Cargando..." : "Todos los estudiantes"} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Todos">Todos</SelectItem>
-                    {estudiantes.map((e) => (
-                      <SelectItem key={e.codigo} value={e.codigo}>
-                        {e.nombre}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
+              {/* Botón enviar */}
+              <button
+                disabled={!canSend || enviando}
+                onClick={() => setShowConfirm(true)}
+                className="w-full flex items-center justify-center gap-2 p-4 rounded-lg bg-gradient-to-r from-green-500 to-green-600 text-white font-bold text-lg transition-all duration-200 hover:shadow-md hover:scale-[1.01] hover:from-green-600 hover:to-green-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+              >
+                {enviando ? (
+                  <>
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                    Enviando...
+                  </>
+                ) : (
+                  <>
+                    <Send className="w-5 h-5" />
+                    Enviar comunicado
+                  </>
+                )}
+              </button>
+            </TabsContent>
 
-            {/* Preview de destinatarios */}
-            {perfil && (
-              <p className="text-sm text-muted-foreground">
-                Destinatarios:{" "}
-                <span className="font-medium text-foreground">
-                  {destinatariosTexto}
-                </span>
-              </p>
-            )}
-          </div>
+            <TabsContent value="historial">
+              <h2 className="text-2xl font-bold text-foreground mb-6 text-center mt-4">
+                Comunicados Enviados
+              </h2>
 
-          {/* Mensaje */}
-          <div className="space-y-2 mb-6">
-            <h3 className="text-lg font-semibold text-foreground">Mensaje</h3>
-            <Textarea
-              value={mensaje}
-              onChange={(e) => setMensaje(e.target.value)}
-              placeholder="Escribe el comunicado..."
-              rows={6}
-            />
-          </div>
-
-          {/* Botón enviar */}
-          <button
-            disabled={!canSend || enviando}
-            onClick={() => setShowConfirm(true)}
-            className="w-full flex items-center justify-center gap-2 p-4 rounded-lg bg-gradient-to-r from-green-500 to-green-600 text-white font-bold text-lg transition-all duration-200 hover:shadow-md hover:scale-[1.01] hover:from-green-600 hover:to-green-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
-          >
-            {enviando ? (
-              <>
-                <Loader2 className="w-5 h-5 animate-spin" />
-                Enviando...
-              </>
-            ) : (
-              <>
-                <Send className="w-5 h-5" />
-                Enviar comunicado
-              </>
-            )}
-          </button>
+              {loadingHistorial ? (
+                <div className="flex items-center justify-center gap-2 py-8 text-muted-foreground">
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                  Cargando...
+                </div>
+              ) : historial.length === 0 ? (
+                <p className="text-center text-muted-foreground py-8">
+                  No has enviado comunicados aún.
+                </p>
+              ) : (
+                <div className="space-y-4">
+                  {historial.map((c) => (
+                    <div key={c.id} className="border rounded-lg p-4 space-y-2">
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                        <Clock className="w-3 h-3" />
+                        {formatFecha(c.fecha)}
+                      </div>
+                      <p className="text-sm">
+                        <span className="font-medium text-foreground">Para:</span>{" "}
+                        {c.destinatarios}
+                      </p>
+                      <p className="text-sm whitespace-pre-wrap bg-muted p-3 rounded-md">
+                        {c.mensaje}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </TabsContent>
+          </Tabs>
         </div>
       </main>
 
