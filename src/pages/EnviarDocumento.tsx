@@ -132,7 +132,12 @@ const EnviarDocumento = () => {
 
       // 1. Subir archivo a Supabase Storage
       const timestamp = Date.now();
-      const fileName = `${timestamp}_${archivo.name}`;
+      // Sanitizar nombre: quitar acentos y caracteres especiales
+      const nombreLimpio = archivo.name
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-zA-Z0-9._-]/g, "_");
+      const fileName = `${timestamp}_${nombreLimpio}`;
 
       const { error: uploadError } = await supabase.storage
         .from("documentos")
@@ -183,9 +188,10 @@ const EnviarDocumento = () => {
       }
     } catch (error) {
       console.error("Error enviando documento:", error);
+      const errorMsg = error instanceof Error ? error.message : "Error desconocido";
       toast({
         title: "Error",
-        description: "No se pudo enviar el documento. Intenta de nuevo.",
+        description: errorMsg,
         variant: "destructive",
       });
     } finally {
