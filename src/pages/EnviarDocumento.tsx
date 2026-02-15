@@ -140,11 +140,12 @@ const EnviarDocumento = () => {
       return texto;
     }
 
-    texto += ` de ${nivel}`;
+    if (!grado) {
+      texto += ` de ${nivel}`;
+      return texto;
+    }
 
-    if (!grado) return texto;
-
-    texto += `, grado ${grado}`;
+    texto += ` de ${grado}`;
 
     if (salon && salon !== "Todos") {
       texto += ` ${salon}`;
