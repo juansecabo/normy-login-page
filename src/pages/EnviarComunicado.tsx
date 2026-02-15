@@ -223,13 +223,7 @@ const EnviarComunicado = () => {
         description: "El comunicado se está enviando por WhatsApp.",
       });
 
-      // Limpiar formulario
-      setPerfil("");
-      setNivel("");
-      setGrado("");
-      setSalon("");
-      setEstudiante("");
-      setMensaje("");
+      // No limpiar formulario para permitir reenvíos rápidos
     } catch (error) {
       console.error("Error enviando comunicado:", error);
       toast({
