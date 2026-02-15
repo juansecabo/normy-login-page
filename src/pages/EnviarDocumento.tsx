@@ -35,6 +35,7 @@ interface DocumentoEnviado {
   remitente: string;
   destinatarios: string;
   mensaje: string;
+  archivo_url: string | null;
   fecha: string;
 }
 
@@ -259,6 +260,7 @@ const EnviarDocumento = () => {
         salon: (salon && salon !== "Todos") ? salon : null,
         codigo_estudiantil: (estudiante && estudiante !== "Todos") ? estudiante : null,
         mensaje: mensaje.trim() || archivo.name,
+        archivo_url: archivoUrl,
         tipo: "documento",
       });
 
@@ -548,9 +550,22 @@ const EnviarDocumento = () => {
                         <span className="font-medium text-foreground">Para:</span>{" "}
                         {c.destinatarios}
                       </p>
-                      <p className="text-sm whitespace-pre-wrap bg-muted p-3 rounded-md max-h-32 overflow-y-auto">
-                        {c.mensaje}
-                      </p>
+                      {c.archivo_url && (
+                        <a
+                          href={c.archivo_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-2 text-sm text-primary hover:underline"
+                        >
+                          <FileUp className="w-4 h-4 shrink-0" />
+                          Ver documento
+                        </a>
+                      )}
+                      {c.mensaje && (
+                        <p className="text-sm whitespace-pre-wrap bg-muted p-3 rounded-md max-h-32 overflow-y-auto">
+                          {c.mensaje}
+                        </p>
+                      )}
                     </div>
                   ))}
                 </div>
