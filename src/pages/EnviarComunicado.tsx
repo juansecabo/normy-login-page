@@ -83,9 +83,7 @@ const EnviarComunicado = () => {
 
   // Construir texto de destinatarios
   const buildDestinatarios = (): string => {
-    if (perfil === "Toda la comunidad") return "Toda la comunidad educativa";
-
-    let texto = perfil; // "Estudiantes" o "Padres de familia"
+    let texto = perfil; // "Estudiantes", "Padres de familia" o "Estudiantes y Padres de familia"
 
     if (!nivel || nivel === "Todos") {
       // No se eligió nivel específico
@@ -182,15 +180,15 @@ const EnviarComunicado = () => {
                   <SelectItem value="Padres de familia">
                     Padres de familia
                   </SelectItem>
-                  <SelectItem value="Toda la comunidad">
-                    Toda la comunidad
+                  <SelectItem value="Estudiantes y Padres de familia">
+                    Estudiantes y Padres de familia
                   </SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
-            {/* Nivel - solo si no es "Toda la comunidad" */}
-            {perfil && perfil !== "Toda la comunidad" && (
+            {/* Nivel */}
+            {perfil && (
               <div className="space-y-2">
                 <Label>Nivel</Label>
                 <Select value={nivel} onValueChange={handleNivelChange}>
