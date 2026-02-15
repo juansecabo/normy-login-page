@@ -20,6 +20,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { getSession, isRectorOrCoordinador } from "@/hooks/useSession";
 import HeaderNormy from "@/components/HeaderNormy";
 import { Loader2, Send, Clock, Trash2 } from "lucide-react";
@@ -469,7 +470,7 @@ const EnviarComunicado = () => {
                         <span className="font-medium text-foreground">Para:</span>{" "}
                         {c.destinatarios}
                       </p>
-                      <p className="text-sm whitespace-pre-wrap bg-muted p-3 rounded-md">
+                      <p className="text-sm whitespace-pre-wrap bg-muted p-3 rounded-md max-h-32 overflow-y-auto">
                         {c.mensaje}
                       </p>
                     </div>
@@ -501,7 +502,7 @@ const EnviarComunicado = () => {
                 <p>
                   <span className="font-medium text-foreground">Mensaje:</span>
                 </p>
-                <p className="whitespace-pre-wrap bg-muted p-3 rounded-md">
+                <p className="whitespace-pre-wrap bg-muted p-3 rounded-md max-h-48 overflow-y-auto">
                   {mensaje}
                 </p>
               </div>
@@ -517,22 +518,24 @@ const EnviarComunicado = () => {
       </AlertDialog>
 
       {/* Diálogo de confirmación de eliminación */}
-      <AlertDialog open={deleteId !== null} onOpenChange={(open) => { if (!open) setDeleteId(null); }}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Eliminar comunicado</AlertDialogTitle>
-            <AlertDialogDescription>
+      <Dialog open={deleteId !== null} onOpenChange={(open) => { if (!open) setDeleteId(null); }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Eliminar comunicado</DialogTitle>
+            <DialogDescription>
               Este comunicado se eliminará permanentemente y no se podrá recuperar.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={handleEliminar} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <button onClick={() => setDeleteId(null)} className="px-4 py-2 rounded-md border text-sm font-medium hover:bg-muted">
+              Cancelar
+            </button>
+            <button onClick={handleEliminar} className="px-4 py-2 rounded-md bg-destructive text-destructive-foreground text-sm font-medium hover:bg-destructive/90">
               Eliminar
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
