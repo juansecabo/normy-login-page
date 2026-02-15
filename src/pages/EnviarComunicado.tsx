@@ -271,9 +271,9 @@ const EnviarComunicado = () => {
 
         <div className="bg-card rounded-lg shadow-soft p-6 md:p-8 max-w-2xl mx-auto">
           <Tabs defaultValue="enviar" onValueChange={(v) => { if (v === "historial") fetchHistorial(); }}>
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="enviar">Enviar Comunicado</TabsTrigger>
-              <TabsTrigger value="historial">Comunicados Enviados</TabsTrigger>
+            <TabsList className="flex w-full">
+              <TabsTrigger value="enviar" className="flex-1 text-xs md:text-sm px-2 md:px-3">Enviar Comunicado</TabsTrigger>
+              <TabsTrigger value="historial" className="flex-1 text-xs md:text-sm px-2 md:px-3">Comunicados Enviados</TabsTrigger>
             </TabsList>
 
             <TabsContent value="enviar">
@@ -454,8 +454,9 @@ const EnviarComunicado = () => {
                   </div>
                   {historial.filter((c) => {
                     if (!busqueda.trim()) return true;
-                    const term = busqueda.toLowerCase();
-                    return c.destinatarios.toLowerCase().includes(term) || c.mensaje.toLowerCase().includes(term);
+                    const normalize = (s: string) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+                    const term = normalize(busqueda);
+                    return normalize(c.destinatarios).includes(term) || normalize(c.mensaje).includes(term);
                   }).map((c) => (
                     <div key={c.id} className="border rounded-lg p-4 space-y-2">
                       <div className="flex items-center justify-between">

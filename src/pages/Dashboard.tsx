@@ -132,24 +132,24 @@ const Dashboard = () => {
         </div>
 
         {/* Botones de acciones */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 mt-8 max-w-4xl mx-auto">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 mt-8 max-w-5xl mx-auto">
           <button
             onClick={() => navigate("/enviar-comunicado")}
-            className="flex items-center gap-2 md:gap-3 p-3 md:p-6 rounded-lg bg-gradient-to-r from-purple-500 to-purple-600 text-white font-bold text-sm md:text-lg whitespace-nowrap transition-all duration-200 hover:shadow-md hover:scale-[1.02] hover:from-purple-600 hover:to-purple-500 justify-center"
+            className="flex flex-col md:flex-row items-center gap-1 md:gap-3 p-4 md:p-6 rounded-lg bg-gradient-to-r from-purple-500 to-purple-600 text-white font-bold text-sm md:text-lg transition-all duration-200 hover:shadow-md hover:scale-[1.02] hover:from-purple-600 hover:to-purple-500 justify-center text-center"
           >
-            <Megaphone className="w-4 h-4 md:w-6 md:h-6 shrink-0" />
+            <Megaphone className="w-5 h-5 md:w-6 md:h-6 shrink-0" />
             <span>Enviar Comunicado</span>
           </button>
           <button
             onClick={() => navigate("/enviar-documento")}
-            className="flex items-center gap-2 md:gap-3 p-3 md:p-6 rounded-lg bg-gradient-to-r from-orange-500 to-orange-600 text-white font-bold text-sm md:text-lg whitespace-nowrap transition-all duration-200 hover:shadow-md hover:scale-[1.02] hover:from-orange-600 hover:to-orange-500 justify-center"
+            className="flex flex-col md:flex-row items-center gap-1 md:gap-3 p-4 md:p-6 rounded-lg bg-gradient-to-r from-orange-500 to-orange-600 text-white font-bold text-sm md:text-lg transition-all duration-200 hover:shadow-md hover:scale-[1.02] hover:from-orange-600 hover:to-orange-500 justify-center text-center"
           >
-            <FileUp className="w-4 h-4 md:w-6 md:h-6 shrink-0" />
+            <FileUp className="w-5 h-5 md:w-6 md:h-6 shrink-0" />
             <span>Enviar Documento</span>
           </button>
           <button
             onClick={() => navigate("/normy-examinadora")}
-            className="relative overflow-hidden p-3 md:p-6 rounded-lg bg-gradient-to-r from-green-400 to-green-500 text-white font-bold text-sm md:text-lg whitespace-nowrap transition-all duration-200 hover:shadow-md hover:scale-[1.02] hover:from-green-500 hover:to-green-400 justify-center"
+            className="relative overflow-hidden flex flex-col md:flex-row items-center gap-1 md:gap-3 p-4 md:p-6 rounded-lg bg-gradient-to-r from-green-400 to-green-500 text-white font-bold text-sm md:text-lg transition-all duration-200 hover:shadow-md hover:scale-[1.02] hover:from-green-500 hover:to-green-400 justify-center text-center"
           >
             <span className="relative z-10">Normy Examinadora</span>
             <img
@@ -160,9 +160,9 @@ const Dashboard = () => {
           </button>
           <button
             onClick={() => navigate("/profesor/estadisticas")}
-            className="flex items-center gap-2 md:gap-3 p-3 md:p-6 rounded-lg bg-gradient-to-r from-blue-500 to-blue-600 text-white font-bold text-sm md:text-lg whitespace-nowrap transition-all duration-200 hover:shadow-md hover:scale-[1.02] hover:from-blue-600 hover:to-blue-500 justify-center"
+            className="flex flex-col md:flex-row items-center gap-1 md:gap-3 p-4 md:p-6 rounded-lg bg-gradient-to-r from-blue-500 to-blue-600 text-white font-bold text-sm md:text-lg transition-all duration-200 hover:shadow-md hover:scale-[1.02] hover:from-blue-600 hover:to-blue-500 justify-center text-center"
           >
-            <BarChart3 className="w-4 h-4 md:w-6 md:h-6 shrink-0" />
+            <BarChart3 className="w-5 h-5 md:w-6 md:h-6 shrink-0" />
             <span>Estadísticas</span>
           </button>
         </div>
