@@ -267,7 +267,12 @@ const EnviarDocumento = () => {
         description: "El documento se está enviando por WhatsApp.",
       });
 
-      // No limpiar formulario para permitir reenvíos rápidos
+      // Limpiar solo archivo y mensaje, mantener destinatarios
+      setArchivo(null);
+      setMensaje("");
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
     } catch (error) {
       console.error("Error enviando documento:", error);
       const errorMsg = error instanceof Error ? error.message : "Error desconocido";
