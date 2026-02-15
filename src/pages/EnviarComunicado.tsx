@@ -122,16 +122,14 @@ const EnviarComunicado = () => {
 
   // Construir texto de destinatarios
   const buildDestinatarios = (): string => {
-    const estudianteNombre = estudiantes.find((e) => e.codigo === estudiante)?.nombre;
-
-    if (estudiante && estudiante !== "Todos" && estudianteNombre) {
-      // Estudiante específico
+    if (estudiante && estudiante !== "Todos") {
+      // Estudiante específico - pasar código para búsqueda directa
       if (perfil === "Estudiantes") {
-        return `Estudiante ${estudianteNombre} de ${grado} ${salon}`;
+        return `Estudiante con código ${estudiante}`;
       } else if (perfil === "Padres de familia") {
-        return `Padres de familia de ${estudianteNombre} de ${grado} ${salon}`;
+        return `Padres de estudiante con código ${estudiante}`;
       } else {
-        return `Estudiante y Padres de familia de ${estudianteNombre} de ${grado} ${salon}`;
+        return `Estudiante y padres de estudiante con código ${estudiante}`;
       }
     }
 
