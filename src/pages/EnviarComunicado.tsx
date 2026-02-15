@@ -22,7 +22,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getSession, isRectorOrCoordinador } from "@/hooks/useSession";
 import HeaderNormy from "@/components/HeaderNormy";
-import { Loader2, Send, Clock } from "lucide-react";
+import { Loader2, Send, Clock, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -51,6 +51,7 @@ const EnviarComunicado = () => {
   const { toast } = useToast();
 
   const [remitente, setRemitente] = useState("");
+  const [codigoRemitente, setCodigoRemitente] = useState("");
   const [enviando, setEnviando] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
 
@@ -77,6 +78,7 @@ const EnviarComunicado = () => {
       return;
     }
     setRemitente(`${session.cargo} ${session.nombres} ${session.apellidos}`);
+    setCodigoRemitente(session.codigo!);
   }, [navigate]);
 
   // Fetch estudiantes cuando cambia grado + salón
@@ -111,10 +113,15 @@ const EnviarComunicado = () => {
     const { data } = await supabase
       .from("Comunicados")
       .select("*")
-      .eq("remitente", remitente)
+      .eq("codigo_remitente", codigoRemitente)
       .order("fecha", { ascending: false });
     setHistorial((data as ComunicadoEnviado[]) || []);
     setLoadingHistorial(false);
+  };
+
+  const handleEliminar = async (id: number) => {
+    await supabase.from("Comunicados").delete().eq("id", id);
+    setHistorial((prev) => prev.filter((c) => c.id !== id));
   };
 
   // Reset dependientes al cambiar perfil
@@ -204,6 +211,7 @@ const EnviarComunicado = () => {
       // Guardar en historial
       await supabase.from("Comunicados").insert({
         remitente,
+        codigo_remitente: codigoRemitente,
         destinatarios: destinatariosTexto,
         perfil: perfil || null,
         nivel: (nivel && nivel !== "Todos") ? nivel : null,
@@ -441,9 +449,18 @@ const EnviarComunicado = () => {
                 <div className="space-y-4">
                   {historial.map((c) => (
                     <div key={c.id} className="border rounded-lg p-4 space-y-2">
-                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                        <Clock className="w-3 h-3" />
-                        {formatFecha(c.fecha)}
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                          <Clock className="w-3 h-3" />
+                          {formatFecha(c.fecha)}
+                        </div>
+                        <button
+                          onClick={() => handleEliminar(c.id)}
+                          className="text-muted-foreground hover:text-destructive transition-colors"
+                          title="Eliminar"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
                       </div>
                       <p className="text-sm">
                         <span className="font-medium text-foreground">Para:</span>{" "}
