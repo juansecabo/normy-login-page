@@ -157,7 +157,7 @@ const DashboardPadre = () => {
             >
               <Badge count={badges.actividades} />
               <ClipboardList className="w-12 h-12 text-foreground" />
-              <span className="font-semibold text-foreground text-center">Actividades Asignadas</span>
+              <span className="font-semibold text-foreground text-center">Actividades</span>
             </button>
 
             <button
@@ -174,7 +174,7 @@ const DashboardPadre = () => {
             >
               <Badge count={badges.comunicados} />
               <Megaphone className="w-12 h-12 text-foreground" />
-              <span className="font-semibold text-foreground text-center">Comunicados Recibidos</span>
+              <span className="font-semibold text-foreground text-center">Comunicados</span>
             </button>
 
             <button
@@ -183,7 +183,7 @@ const DashboardPadre = () => {
             >
               <Badge count={badges.documentos} />
               <FileText className="w-12 h-12 text-foreground" />
-              <span className="font-semibold text-foreground text-center">Documentos Recibidos</span>
+              <span className="font-semibold text-foreground text-center">Documentos</span>
             </button>
           </div>
         </div>
