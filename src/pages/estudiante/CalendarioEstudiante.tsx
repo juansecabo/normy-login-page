@@ -148,7 +148,7 @@ const CalendarioEstudiante = () => {
                   onMonthChange={setMesActual}
                   locale={es}
                   modifiers={{ conActividad: diasConActividades }}
-                  modifiersClassNames={{ conActividad: "bg-orange-400 text-white hover:bg-orange-500 rounded-full !h-8 !w-8" }}
+                  modifiersClassNames={{ conActividad: "!bg-orange-400 !text-white hover:!bg-orange-500 !rounded-full !h-8 !w-8" }}
                   className="rounded-md border shadow-sm"
                 />
               </div>
