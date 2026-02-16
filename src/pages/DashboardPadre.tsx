@@ -117,26 +117,21 @@ const DashboardPadre = () => {
       <HeaderNormy backLink="/dashboard-padre" />
 
       <main className="flex-1 container mx-auto p-8">
-        <div className="bg-card rounded-lg shadow-soft p-8 max-w-2xl mx-auto text-center">
-          <h2 className="text-2xl lg:text-3xl font-bold text-foreground mb-4">
+        <div className="bg-card rounded-lg shadow-soft p-5 max-w-2xl mx-auto text-center">
+          <h2 className="text-2xl font-bold text-foreground mb-1">
             Bienvenido(a)
           </h2>
-          <p className="text-xl text-primary font-semibold">
+          <p className="text-lg text-primary font-semibold">
             {nombres}
           </p>
-          <p className="text-muted-foreground mt-3">
+          <p className="text-sm text-muted-foreground mt-1 mb-1">
             Padre de familia de
           </p>
-          <div className="mt-2 space-y-2">
+          <div className="space-y-0.5">
             {hijos.map(h => (
-              <div key={h.codigo}>
-                <p className="text-foreground font-medium">
-                  {h.nombre} {h.apellidos}
-                </p>
-                <p className="text-muted-foreground text-sm">
-                  ({h.grado} {h.salon})
-                </p>
-              </div>
+              <p key={h.codigo} className="text-sm text-foreground">
+                {h.nombre} {h.apellidos} <span className="text-muted-foreground">({h.grado} {h.salon})</span>
+              </p>
             ))}
           </div>
         </div>
