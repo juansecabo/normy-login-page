@@ -2681,7 +2681,7 @@ const TablaNotas = () => {
         </div>
 
         {/* Pestañas de Períodos */}
-        <div className="bg-card rounded-lg shadow-soft overflow-hidden">
+        <div className="bg-card rounded-lg shadow-soft overflow-clip">
           {/* Tab Headers */}
           <div className="flex border-b border-border">
             {periodos.map((periodo) => {
