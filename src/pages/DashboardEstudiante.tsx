@@ -47,6 +47,8 @@ const DashboardEstudiante = () => {
 
       try {
         const lastSeen = await getAllLastSeen(codigo);
+        console.log('[Badges] Session:', { codigo, grado: session.grado, salon: session.salon });
+        console.log('[Badges] lastSeen:', lastSeen);
 
         const [msgResult, actResult, notasResult] = await Promise.all([
           supabase
@@ -55,7 +57,7 @@ const DashboardEstudiante = () => {
             .in('perfil', ['Estudiantes', 'Estudiantes y Padres de familia']),
           supabase
             .from('Calendario Actividades')
-            .select('column_id')
+            .select('auto_id')
             .eq('Grado', session.grado)
             .eq('Salon', session.salon),
           supabase
@@ -84,17 +86,26 @@ const DashboardEstudiante = () => {
           );
         }
 
+        if (actResult.error) {
+          console.warn('[Badges] Error actividades:', actResult.error);
+        }
         if (actResult.data) {
-          b.actividades = countNewItems(actResult.data.map((a: any) => a.column_id), lastSeen['actividades']);
+          console.log('[Badges] Actividades data:', actResult.data.length, 'rows, sample auto_id:', actResult.data[0]?.auto_id, typeof actResult.data[0]?.auto_id);
+          b.actividades = countNewItems(actResult.data.map((a: any) => a.auto_id), lastSeen['actividades']);
         }
 
+        if (notasResult.error) {
+          console.warn('[Badges] Error notas:', notasResult.error);
+        }
         if (notasResult.data) {
+          console.log('[Badges] Notas data:', notasResult.data.length, 'rows, sample column_id:', notasResult.data[0]?.column_id, typeof notasResult.data[0]?.column_id);
           b.notas = countNewItems(notasResult.data.map((n: any) => n.column_id), lastSeen['notas']);
         }
       } catch (err) {
         console.error('Error fetching badges:', err);
       }
 
+      console.log('[Badges] Final:', b);
       setBadges(b);
     };
 

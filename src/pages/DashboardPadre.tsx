@@ -79,12 +79,14 @@ const DashboardPadre = () => {
         }
 
         for (const hijo of hijosData) {
+          console.log('[Badges Padre] Hijo:', { codigo: hijo.codigo, grado: hijo.grado, salon: hijo.salon });
           const lastSeenHijo = await getAllLastSeen(hijo.codigo);
+          console.log('[Badges Padre] lastSeenHijo:', lastSeenHijo);
 
           const [actResult, notasResult] = await Promise.all([
             supabase
               .from('Calendario Actividades')
-              .select('column_id')
+              .select('auto_id')
               .eq('Grado', hijo.grado)
               .eq('Salon', hijo.salon),
             supabase
@@ -95,10 +97,15 @@ const DashboardPadre = () => {
               .eq('salon', hijo.salon),
           ]);
 
+          if (actResult.error) console.warn('[Badges Padre] Error actividades:', actResult.error);
           if (actResult.data) {
-            b.actividades += countNewItems(actResult.data.map((a: any) => a.column_id), lastSeenHijo['actividades']);
+            console.log('[Badges Padre] Actividades:', actResult.data.length, 'rows, sample auto_id:', actResult.data[0]?.auto_id, typeof actResult.data[0]?.auto_id);
+            b.actividades += countNewItems(actResult.data.map((a: any) => a.auto_id), lastSeenHijo['actividades']);
           }
+
+          if (notasResult.error) console.warn('[Badges Padre] Error notas:', notasResult.error);
           if (notasResult.data) {
+            console.log('[Badges Padre] Notas:', notasResult.data.length, 'rows, sample column_id:', notasResult.data[0]?.column_id, typeof notasResult.data[0]?.column_id);
             b.notas += countNewItems(notasResult.data.map((n: any) => n.column_id), lastSeenHijo['notas']);
           }
         }
@@ -106,6 +113,7 @@ const DashboardPadre = () => {
         console.error('Error fetching badges:', err);
       }
 
+      console.log('[Badges Padre] Final:', b);
       setBadges(b);
     };
 

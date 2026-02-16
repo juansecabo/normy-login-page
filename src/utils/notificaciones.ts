@@ -54,7 +54,10 @@ export const getAllLastSeen = async (codigo: string): Promise<Record<string, num
 };
 
 // Contar cuántos IDs son mayores que el último visto
-export const countNewItems = (currentIds: number[], lastSeenId: number | undefined): number => {
+export const countNewItems = (currentIds: (number | string)[], lastSeenId: number | undefined): number => {
   const threshold = lastSeenId ?? 0;
-  return currentIds.filter(id => typeof id === 'number' && id > threshold).length;
+  return currentIds.filter(raw => {
+    const id = typeof raw === 'string' ? Number(raw) : raw;
+    return typeof id === 'number' && !isNaN(id) && id > threshold;
+  }).length;
 };
