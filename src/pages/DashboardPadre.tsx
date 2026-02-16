@@ -94,7 +94,8 @@ const DashboardPadre = () => {
               .select('fecha_modificacion')
               .eq('codigo_estudiantil', hijo.codigo)
               .eq('grado', hijo.grado)
-              .eq('salon', hijo.salon),
+              .eq('salon', hijo.salon)
+              .not('nombre_actividad', 'in', '("Final Periodo","Final Definitiva")'),
           ]);
 
           if (actResult.error) console.warn('[Badges Padre] Error actividades:', actResult.error);

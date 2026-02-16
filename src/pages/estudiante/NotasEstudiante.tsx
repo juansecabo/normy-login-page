@@ -22,7 +22,8 @@ const NotasEstudiante = () => {
         .select('fecha_modificacion')
         .eq('codigo_estudiantil', session.codigo)
         .eq('grado', session.grado)
-        .eq('salon', session.salon);
+        .eq('salon', session.salon)
+        .not('nombre_actividad', 'in', '("Final Periodo","Final Definitiva")');
       if (data) {
         const epochs = data.map((n: any) => n.fecha_modificacion ? Math.floor(new Date(n.fecha_modificacion).getTime() / 1000) : 0).filter((e: number) => e > 0);
         const maxEpoch = epochs.length > 0 ? Math.max(...epochs) : 0;

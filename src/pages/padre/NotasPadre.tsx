@@ -36,7 +36,8 @@ const NotasPadre = () => {
             .select('fecha_modificacion')
             .eq('codigo_estudiantil', h.codigo)
             .eq('grado', h.grado)
-            .eq('salon', h.salon);
+            .eq('salon', h.salon)
+            .not('nombre_actividad', 'in', '("Final Periodo","Final Definitiva")');
           if (data) {
             const epochs = data.map((n: any) => n.fecha_modificacion ? Math.floor(new Date(n.fecha_modificacion).getTime() / 1000) : 0).filter((e: number) => e > 0);
             b[h.codigo] = countNewItems(epochs, lastSeen['notas']);
@@ -58,7 +59,8 @@ const NotasPadre = () => {
         .select('fecha_modificacion')
         .eq('codigo_estudiantil', h.codigo)
         .eq('grado', h.grado)
-        .eq('salon', h.salon);
+        .eq('salon', h.salon)
+        .not('nombre_actividad', 'in', '("Final Periodo","Final Definitiva")');
       if (data) {
         const epochs = data.map((n: any) => n.fecha_modificacion ? Math.floor(new Date(n.fecha_modificacion).getTime() / 1000) : 0).filter((e: number) => e > 0);
         const maxEpoch = epochs.length > 0 ? Math.max(...epochs) : 0;
