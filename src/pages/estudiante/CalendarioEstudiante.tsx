@@ -67,27 +67,56 @@ const CalendarioEstudiante = () => {
 
     cargar();
 
-    // Cargar marcas desde localStorage
-    const stored = localStorage.getItem(`tareas_marcas_${session.codigo}`);
-    if (stored) {
+    // Cargar marcas desde Supabase
+    const cargarMarcas = async () => {
       try {
-        setMarcas(JSON.parse(stored));
+        const { data } = await supabase
+          .from('Actividades_Marcas')
+          .select('actividad_id, marca')
+          .eq('estudiante_codigo', session.codigo);
+        if (data) {
+          const m: Record<number, 'hecho' | 'estudiar'> = {};
+          data.forEach((r: any) => { m[r.actividad_id] = r.marca; });
+          setMarcas(m);
+        }
       } catch {}
-    }
+    };
+    cargarMarcas();
   }, [navigate]);
 
-  const toggleMarca = (columnId: number, tipo: 'hecho' | 'estudiar') => {
+  const toggleMarca = async (columnId: number, tipo: 'hecho' | 'estudiar') => {
+    const session = getSession();
+    const codigo = session.codigo!;
+    const yaEsta = marcas[columnId] === tipo;
+
+    // Actualizar UI inmediatamente
     setMarcas(prev => {
       const next = { ...prev };
-      if (next[columnId] === tipo) {
+      if (yaEsta) {
         delete next[columnId];
       } else {
         next[columnId] = tipo;
       }
-      const session = getSession();
-      localStorage.setItem(`tareas_marcas_${session.codigo}`, JSON.stringify(next));
       return next;
     });
+
+    // Persistir en Supabase
+    try {
+      if (yaEsta) {
+        await supabase
+          .from('Actividades_Marcas')
+          .delete()
+          .eq('estudiante_codigo', codigo)
+          .eq('actividad_id', columnId);
+      } else {
+        await supabase
+          .from('Actividades_Marcas')
+          .upsert(
+            { estudiante_codigo: codigo, actividad_id: columnId, marca: tipo, updated_at: new Date().toISOString() },
+            { onConflict: 'estudiante_codigo,actividad_id' }
+          );
+      }
+    } catch {}
   };
 
   // Mapear actividades por fecha
@@ -148,7 +177,7 @@ const CalendarioEstudiante = () => {
                   onMonthChange={setMesActual}
                   locale={es}
                   modifiers={{ conActividad: diasConActividades }}
-                  modifiersClassNames={{ conActividad: "bg-orange-400 text-white hover:bg-orange-500" }}
+                  modifiersClassNames={{ conActividad: "bg-orange-400 text-white hover:bg-orange-500 !h-8 !w-8" }}
                   className="rounded-md border shadow-sm"
                 />
               </div>
