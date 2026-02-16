@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ClipboardList, X } from "lucide-react";
+import { ClipboardList, X, User } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { getSession, isPadreDeFamilia, HijoData } from "@/hooks/useSession";
 import HeaderNormy from "@/components/HeaderNormy";
@@ -31,9 +31,10 @@ const fechaKey = (d: Date): string =>
 
 const CalendarioPadre = () => {
   const navigate = useNavigate();
+  const [hijos, setHijos] = useState<HijoData[]>([]);
   const [hijo, setHijo] = useState<HijoData | null>(null);
   const [actividades, setActividades] = useState<ActividadCalendario[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [mesActual, setMesActual] = useState(new Date());
   const [diaSeleccionado, setDiaSeleccionado] = useState<Date | undefined>(undefined);
 
@@ -44,34 +45,43 @@ const CalendarioPadre = () => {
       return;
     }
 
-    const storedHijo = localStorage.getItem("hijoSeleccionado");
-    if (!storedHijo) {
-      navigate("/dashboard-padre");
-      return;
-    }
+    const hijosData = session.hijos || [];
+    setHijos(hijosData);
 
-    let hijoData: HijoData;
-    try {
-      hijoData = JSON.parse(storedHijo);
-      setHijo(hijoData);
-    } catch {
-      navigate("/dashboard-padre");
-      return;
+    if (hijosData.length === 1) {
+      seleccionar(hijosData[0]);
+    } else {
+      const stored = localStorage.getItem("hijoSeleccionado");
+      if (stored) {
+        try {
+          const parsed = JSON.parse(stored);
+          const existe = hijosData.find(h => h.codigo === parsed.codigo);
+          if (existe) seleccionar(existe);
+        } catch {}
+      }
     }
+  }, [navigate]);
+
+  const seleccionar = (h: HijoData) => {
+    setHijo(h);
+    localStorage.setItem("hijoSeleccionado", JSON.stringify(h));
+    setActividades([]);
+    setDiaSeleccionado(undefined);
+    setLoading(true);
 
     const cargar = async () => {
       try {
         const { data, error } = await supabase
           .from('Calendario Actividades')
           .select('*')
-          .eq('Grado', hijoData.grado)
-          .eq('Salon', hijoData.salon)
+          .eq('Grado', h.grado)
+          .eq('Salon', h.salon)
           .order('fecha_de_presentacion', { ascending: true });
 
         if (!error && data) {
           setActividades(data);
           const maxId = Math.max(...data.map((a: ActividadCalendario) => a.column_id), 0);
-          markLastSeen('actividades', hijoData.codigo, maxId);
+          markLastSeen('actividades', h.codigo, maxId);
         }
       } catch (err) {
         console.error('Error:', err);
@@ -79,9 +89,14 @@ const CalendarioPadre = () => {
         setLoading(false);
       }
     };
-
     cargar();
-  }, [navigate]);
+  };
+
+  const cambiarEstudiante = () => {
+    setHijo(null);
+    setActividades([]);
+    setDiaSeleccionado(undefined);
+  };
 
   const actividadesPorFecha: Record<string, ActividadCalendario[]> = {};
   actividades.forEach(a => {
@@ -113,93 +128,123 @@ const CalendarioPadre = () => {
               Inicio
             </button>
             <span className="text-muted-foreground">&rarr;</span>
-            <span className="text-foreground font-medium">Actividades de {hijo?.nombre}</span>
+            <span className="text-foreground font-medium">Actividades{hijo ? ` de ${hijo.nombre}` : ''}</span>
           </div>
         </div>
 
-        <div className="bg-card rounded-lg shadow-soft p-6">
-          <h2 className="text-xl font-bold text-foreground flex items-center gap-2 mb-2">
-            <ClipboardList className="h-5 w-5 text-primary" />
-            Actividades Asignadas
-          </h2>
-          <p className="text-sm text-muted-foreground mb-6">
-            {hijo?.nombre} {hijo?.apellidos} &mdash; {hijo?.grado} {hijo?.salon}
-          </p>
-
-          {loading ? (
-            <div className="text-center py-8 text-muted-foreground">Cargando...</div>
-          ) : (
-            <div className="flex flex-col lg:flex-row lg:items-start gap-6">
-              <div className="flex justify-center lg:sticky lg:top-4 shrink-0">
-                <Calendar
-                  mode="single"
-                  selected={diaSeleccionado}
-                  onSelect={setDiaSeleccionado}
-                  month={mesActual}
-                  onMonthChange={setMesActual}
-                  locale={es}
-                  modifiers={{ conActividad: diasConActividades }}
-                  modifiersClassNames={{ conActividad: "bg-orange-400 text-white hover:bg-orange-500 !h-8 !w-8" }}
-                  className="rounded-md border shadow-sm"
-                />
-              </div>
-
-              <div className="flex-1 min-w-0 lg:max-h-[420px] lg:overflow-y-auto">
-                {diaSeleccionado && actividadesDelDia.length > 0 ? (
+        {!hijo && hijos.length > 1 && (
+          <div className="bg-card rounded-lg shadow-soft p-6 mb-6">
+            <h3 className="text-lg font-bold text-foreground mb-4 text-center">
+              Selecciona un estudiante
+            </h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {hijos.map((h) => (
+                <button
+                  key={h.codigo}
+                  onClick={() => seleccionar(h)}
+                  className="flex items-center gap-3 p-4 rounded-lg border-2 border-border hover:border-primary/50 hover:bg-muted/50 transition-all duration-200 text-left"
+                >
+                  <div className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 bg-muted text-muted-foreground">
+                    <User className="w-5 h-5" />
+                  </div>
                   <div>
-                    <div className="flex items-center justify-between mb-4">
-                      <h3 className="text-lg font-semibold text-foreground">
-                        {diaSeleccionado.toLocaleDateString("es-CO", { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
-                      </h3>
-                      <button
-                        onClick={() => setDiaSeleccionado(undefined)}
-                        className="text-muted-foreground hover:text-foreground"
-                      >
-                        <X className="h-5 w-5" />
-                      </button>
-                    </div>
-                    <p className="text-sm text-muted-foreground mb-4">
-                      {actividadesDelDia.length} actividad{actividadesDelDia.length > 1 ? 'es' : ''}
-                    </p>
-                    <div className="space-y-3">
-                      {actividadesDelDia.map(actividad => (
-                        <div
-                          key={actividad.column_id}
-                          className="border border-border rounded-lg p-4 hover:border-primary/50 transition-colors"
-                        >
-                          <div className="flex items-start justify-between gap-2">
-                            <div>
-                              <span className="inline-block px-2 py-0.5 text-xs font-medium bg-primary/10 text-primary rounded-full mb-2">
-                                {actividad.Asignatura}
-                              </span>
-                              <p className="text-foreground font-medium">{actividad.Descripción}</p>
-                              <p className="text-sm text-muted-foreground mt-1">
-                                Prof. {actividad.Nombres} {actividad.Apellidos}
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
+                    <p className="font-semibold text-foreground">{h.nombre} {h.apellidos}</p>
+                    <p className="text-sm text-muted-foreground">{h.grado} - {h.salon}</p>
                   </div>
-                ) : diaSeleccionado ? (
-                  <div className="flex flex-col items-center justify-center h-full py-8 text-muted-foreground">
-                    <ClipboardList className="h-10 w-10 mb-2 opacity-50" />
-                    <p>No hay actividades para este d&iacute;a</p>
-                  </div>
-                ) : (
-                  <div className="flex flex-col items-center justify-center h-full py-8 text-muted-foreground">
-                    <ClipboardList className="h-10 w-10 mb-2 opacity-50" />
-                    <p>Selecciona un d&iacute;a para ver sus actividades</p>
-                    {actividades.length === 0 && (
-                      <p className="text-sm mt-1">No hay actividades asignadas a&uacute;n</p>
-                    )}
-                  </div>
-                )}
-              </div>
+                </button>
+              ))}
             </div>
-          )}
-        </div>
+          </div>
+        )}
+
+        {hijo && (
+          <div className="bg-card rounded-lg shadow-soft p-6">
+            <h2 className="text-xl font-bold text-foreground flex items-center gap-2 mb-2">
+              <ClipboardList className="h-5 w-5 text-primary" />
+              Actividades Asignadas
+            </h2>
+            <div className="flex items-center justify-between mb-6">
+              <p className="text-sm text-muted-foreground">
+                {hijo.nombre} {hijo.apellidos} &mdash; {hijo.grado} {hijo.salon}
+              </p>
+              {hijos.length > 1 && (
+                <button onClick={cambiarEstudiante} className="text-sm text-primary hover:underline">
+                  Cambiar
+                </button>
+              )}
+            </div>
+
+            {loading ? (
+              <div className="text-center py-8 text-muted-foreground">Cargando...</div>
+            ) : (
+              <div className="flex flex-col lg:flex-row lg:items-start gap-6">
+                <div className="flex justify-center lg:sticky lg:top-4 shrink-0">
+                  <Calendar
+                    mode="single"
+                    selected={diaSeleccionado}
+                    onSelect={setDiaSeleccionado}
+                    month={mesActual}
+                    onMonthChange={setMesActual}
+                    locale={es}
+                    modifiers={{ conActividad: diasConActividades }}
+                    modifiersClassNames={{ conActividad: "bg-orange-400 text-white hover:bg-orange-500 !h-8 !w-8" }}
+                    className="rounded-md border shadow-sm"
+                  />
+                </div>
+
+                <div className="flex-1 min-w-0 lg:max-h-[420px] lg:overflow-y-auto">
+                  {diaSeleccionado && actividadesDelDia.length > 0 ? (
+                    <div>
+                      <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-lg font-semibold text-foreground">
+                          {diaSeleccionado.toLocaleDateString("es-CO", { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+                        </h3>
+                        <button
+                          onClick={() => setDiaSeleccionado(undefined)}
+                          className="text-muted-foreground hover:text-foreground"
+                        >
+                          <X className="h-5 w-5" />
+                        </button>
+                      </div>
+                      <p className="text-sm text-muted-foreground mb-4">
+                        {actividadesDelDia.length} actividad{actividadesDelDia.length > 1 ? 'es' : ''}
+                      </p>
+                      <div className="space-y-3">
+                        {actividadesDelDia.map(actividad => (
+                          <div
+                            key={actividad.column_id}
+                            className="border border-border rounded-lg p-4 hover:border-primary/50 transition-colors"
+                          >
+                            <span className="inline-block px-2 py-0.5 text-xs font-medium bg-primary/10 text-primary rounded-full mb-2">
+                              {actividad.Asignatura}
+                            </span>
+                            <p className="text-foreground font-medium">{actividad.Descripción}</p>
+                            <p className="text-sm text-muted-foreground mt-1">
+                              Prof. {actividad.Nombres} {actividad.Apellidos}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ) : diaSeleccionado ? (
+                    <div className="flex flex-col items-center justify-center h-full py-8 text-muted-foreground">
+                      <ClipboardList className="h-10 w-10 mb-2 opacity-50" />
+                      <p>No hay actividades para este día</p>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center justify-center h-full py-8 text-muted-foreground">
+                      <ClipboardList className="h-10 w-10 mb-2 opacity-50" />
+                      <p>Selecciona un día para ver sus actividades</p>
+                      {actividades.length === 0 && (
+                        <p className="text-sm mt-1">No hay actividades asignadas aún</p>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
       </main>
     </div>
   );

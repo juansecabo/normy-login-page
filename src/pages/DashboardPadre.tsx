@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getSession, isPadreDeFamilia, HijoData } from "@/hooks/useSession";
-import { BookOpen, ClipboardList, BarChart3, Megaphone, FileText, User } from "lucide-react";
+import { BookOpen, ClipboardList, BarChart3, Megaphone, FileText } from "lucide-react";
 import HeaderNormy from "@/components/HeaderNormy";
 import { supabase } from "@/integrations/supabase/client";
 import { getAllLastSeen, countNewItems } from "@/utils/notificaciones";
@@ -19,7 +19,6 @@ const DashboardPadre = () => {
   const navigate = useNavigate();
   const [nombres, setNombres] = useState("");
   const [hijos, setHijos] = useState<HijoData[]>([]);
-  const [hijoSeleccionado, setHijoSeleccionado] = useState<HijoData | null>(null);
   const [badges, setBadges] = useState({ notas: 0, actividades: 0, comunicados: 0, documentos: 0 });
 
   useEffect(() => {
@@ -38,25 +37,8 @@ const DashboardPadre = () => {
     setNombres(session.nombres || "");
     setHijos(session.hijos || []);
 
-    const storedHijo = localStorage.getItem("hijoSeleccionado");
-    if (storedHijo) {
-      try {
-        const parsed = JSON.parse(storedHijo);
-        const existe = (session.hijos || []).find(h => h.codigo === parsed.codigo);
-        if (existe) {
-          setHijoSeleccionado(existe);
-        } else if (session.hijos && session.hijos.length > 0) {
-          setHijoSeleccionado(session.hijos[0]);
-          localStorage.setItem("hijoSeleccionado", JSON.stringify(session.hijos[0]));
-        }
-      } catch {
-        if (session.hijos && session.hijos.length > 0) {
-          setHijoSeleccionado(session.hijos[0]);
-          localStorage.setItem("hijoSeleccionado", JSON.stringify(session.hijos[0]));
-        }
-      }
-    } else if (session.hijos && session.hijos.length > 0) {
-      setHijoSeleccionado(session.hijos[0]);
+    // Si solo tiene un hijo, auto-seleccionar en localStorage para las páginas internas
+    if (session.hijos && session.hijos.length === 1) {
       localStorage.setItem("hijoSeleccionado", JSON.stringify(session.hijos[0]));
     }
 
@@ -130,11 +112,6 @@ const DashboardPadre = () => {
     fetchBadges();
   }, [navigate]);
 
-  const seleccionarHijo = (hijo: HijoData) => {
-    setHijoSeleccionado(hijo);
-    localStorage.setItem("hijoSeleccionado", JSON.stringify(hijo));
-  };
-
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <HeaderNormy backLink="/dashboard-padre" />
@@ -147,56 +124,19 @@ const DashboardPadre = () => {
           <p className="text-xl text-primary font-semibold">
             {nombres}
           </p>
-          <p className="text-muted-foreground mt-2">
-            Padre de familia
+          <p className="text-muted-foreground mt-3">
+            Padre de familia de
           </p>
+          <div className="mt-2 space-y-1">
+            {hijos.map(h => (
+              <p key={h.codigo} className="text-foreground font-medium">
+                {h.nombre} {h.apellidos} — {h.grado} {h.salon}
+              </p>
+            ))}
+          </div>
         </div>
 
-        {hijos.length > 1 && (
-          <div className="bg-card rounded-lg shadow-soft p-6 max-w-4xl mx-auto mt-6">
-            <h3 className="text-lg font-bold text-foreground mb-4 text-center">
-              Selecciona un hijo
-            </h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {hijos.map((hijo) => {
-                const isSelected = hijoSeleccionado?.codigo === hijo.codigo;
-                return (
-                  <button
-                    key={hijo.codigo}
-                    onClick={() => seleccionarHijo(hijo)}
-                    className={`flex items-center gap-3 p-4 rounded-lg border-2 transition-all duration-200 text-left
-                      ${isSelected
-                        ? 'border-primary bg-primary/10 shadow-md'
-                        : 'border-border hover:border-primary/50 hover:bg-muted/50'
-                      }`}
-                  >
-                    <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${isSelected ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>
-                      <User className="w-5 h-5" />
-                    </div>
-                    <div>
-                      <p className="font-semibold text-foreground">
-                        {hijo.nombre} {hijo.apellidos}
-                      </p>
-                      <p className="text-sm text-muted-foreground">
-                        {hijo.grado} - {hijo.salon}
-                      </p>
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        {hijos.length === 1 && hijoSeleccionado && (
-          <div className="bg-card rounded-lg shadow-soft p-4 max-w-2xl mx-auto mt-4 text-center">
-            <p className="text-muted-foreground text-sm">
-              Hijo: <span className="font-semibold text-foreground">{hijoSeleccionado.nombre} {hijoSeleccionado.apellidos}</span> — {hijoSeleccionado.grado} {hijoSeleccionado.salon}
-            </p>
-          </div>
-        )}
-
-        <div className="bg-card rounded-lg shadow-soft p-8 max-w-4xl mx-auto mt-6">
+        <div className="bg-card rounded-lg shadow-soft p-8 max-w-4xl mx-auto mt-8">
           <h3 className="text-xl font-bold text-foreground mb-6 text-center">
             ¿Qué deseas consultar?
           </h3>
@@ -217,7 +157,7 @@ const DashboardPadre = () => {
             >
               <Badge count={badges.actividades} />
               <ClipboardList className="w-12 h-12 text-foreground" />
-              <span className="font-semibold text-foreground">Actividades</span>
+              <span className="font-semibold text-foreground text-center">Actividades Asignadas</span>
             </button>
 
             <button
@@ -234,7 +174,7 @@ const DashboardPadre = () => {
             >
               <Badge count={badges.comunicados} />
               <Megaphone className="w-12 h-12 text-foreground" />
-              <span className="font-semibold text-foreground text-center">Comunicados</span>
+              <span className="font-semibold text-foreground text-center">Comunicados Recibidos</span>
             </button>
 
             <button
@@ -243,7 +183,7 @@ const DashboardPadre = () => {
             >
               <Badge count={badges.documentos} />
               <FileText className="w-12 h-12 text-foreground" />
-              <span className="font-semibold text-foreground text-center">Documentos</span>
+              <span className="font-semibold text-foreground text-center">Documentos Recibidos</span>
             </button>
           </div>
         </div>
