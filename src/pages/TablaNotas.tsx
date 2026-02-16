@@ -728,10 +728,14 @@ const TablaNotas = () => {
       
       if (errorActividad) {
         console.error('Error eliminando de Nombre de Actividades:', errorActividad);
-      } else {
-        console.log('✅ Actividad eliminada de Nombre de Actividades');
+        toast({
+          title: "Error",
+          description: `No se pudo eliminar la actividad: ${errorActividad.message}`,
+          variant: "destructive",
+        });
+        return;
       }
-      
+
       // LUEGO: Eliminar todas las notas de esta actividad de Supabase
       const { error } = await supabase
         .from('Notas')
@@ -2744,7 +2748,7 @@ const TablaNotas = () => {
                           >
                             <div className="flex items-center justify-center gap-1">
                               <div className="flex-1 min-w-0">
-                                <div className="truncate max-w-[150px]" title={actividad.nombre}>
+                                <div className="whitespace-nowrap" title={actividad.nombre}>
                                   {actividad.nombre}
                                 </div>
                                 {actividad.porcentaje !== null && (
