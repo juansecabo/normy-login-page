@@ -26,15 +26,6 @@ const NotasPadre = () => {
     if (hijosData.length === 1) {
       seleccionar(hijosData[0]);
     } else {
-      const stored = localStorage.getItem("hijoSeleccionado");
-      if (stored) {
-        try {
-          const parsed = JSON.parse(stored);
-          const existe = hijosData.find(h => h.codigo === parsed.codigo);
-          if (existe) seleccionar(existe);
-        } catch {}
-      }
-
       // Calcular badges por hijo
       const fetchBadges = async () => {
         const b: Record<string, number> = {};

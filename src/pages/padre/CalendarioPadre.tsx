@@ -52,15 +52,6 @@ const CalendarioPadre = () => {
     if (hijosData.length === 1) {
       seleccionar(hijosData[0]);
     } else {
-      const stored = localStorage.getItem("hijoSeleccionado");
-      if (stored) {
-        try {
-          const parsed = JSON.parse(stored);
-          const existe = hijosData.find(h => h.codigo === parsed.codigo);
-          if (existe) seleccionar(existe);
-        } catch {}
-      }
-
       const fetchBadges = async () => {
         const b: Record<string, number> = {};
         for (const h of hijosData) {

@@ -27,17 +27,6 @@ const EstadisticasPadre = () => {
     if (hijosData.length === 1) {
       setHijo(hijosData[0]);
       localStorage.setItem("hijoSeleccionado", JSON.stringify(hijosData[0]));
-    } else {
-      const stored = localStorage.getItem("hijoSeleccionado");
-      if (stored) {
-        try {
-          const parsed = JSON.parse(stored);
-          const existe = hijosData.find(h => h.codigo === parsed.codigo);
-          if (existe) {
-            setHijo(existe);
-          }
-        } catch {}
-      }
     }
   }, [navigate]);
 
