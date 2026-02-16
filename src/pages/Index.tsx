@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { saveSession, getSession } from "@/hooks/useSession";
+import { saveSession, getSession, HijoData } from "@/hooks/useSession";
 
 const Index = () => {
   const [identificacion, setIdentificacion] = useState("");
@@ -23,6 +23,10 @@ const Index = () => {
     if (session.codigo) {
       if (session.cargo === 'Rector' || session.cargo === 'Coordinador(a)') {
         navigate("/dashboard-rector", { replace: true });
+      } else if (session.cargo === 'Estudiante') {
+        navigate("/dashboard-estudiante", { replace: true });
+      } else if (session.cargo === 'Padre de familia') {
+        navigate("/dashboard-padre", { replace: true });
       } else {
         navigate("/dashboard", { replace: true });
       }
@@ -47,7 +51,7 @@ const Index = () => {
     setLoading(true);
 
     try {
-      // 1. Buscar usuario por código de identidad
+      // 1. Buscar en Internos por código de identidad
       const { data: usuario, error } = await supabase
         .from('Internos')
         .select('*')
@@ -60,56 +64,144 @@ const Index = () => {
         return;
       }
 
-      if (!usuario) {
-        toast({ title: "Error", description: "Identificación no encontrada", variant: "destructive" });
+      if (usuario) {
+        // Verificar contraseña de interno
+        const contrasenaCorrecta = usuario.contrasena
+          ? usuario.contrasena === passInput
+          : String(usuario.codigo) === passInput;
+
+        if (!contrasenaCorrecta) {
+          toast({ title: "Error", description: "Contraseña incorrecta", variant: "destructive" });
+          setLoading(false);
+          return;
+        }
+
+        const cargosPermitidos = ['Profesor(a)', 'Rector', 'Coordinador(a)'];
+        if (!cargosPermitidos.includes(usuario.cargo)) {
+          toast({ title: "Acceso denegado", description: "No tienes permisos de acceso", variant: "destructive" });
+          setLoading(false);
+          return;
+        }
+
+        saveSession(String(usuario.codigo), usuario.nombres || "", usuario.apellidos || "", usuario.cargo || "");
+        toast({ title: "Bienvenido(a)", description: `${usuario.nombres} ${usuario.apellidos}` });
+
+        if (usuario.cargo === 'Rector' || usuario.cargo === 'Coordinador(a)') {
+          navigate("/dashboard-rector");
+        } else {
+          navigate("/dashboard");
+        }
+        return;
+      }
+
+      // 2. Buscar en Perfiles_Generales como Estudiante
+      const { data: perfilEstudiante, error: errEstudiante } = await supabase
+        .from('Perfiles_Generales')
+        .select('*')
+        .eq('estudiante_codigo', idInput)
+        .not('perfil', 'is', null)
+        .maybeSingle();
+
+      if (errEstudiante) {
+        toast({ title: "Error", description: "Error al verificar", variant: "destructive" });
         setLoading(false);
         return;
       }
 
-      // 2. Verificar contraseña
-      const contrasenaCorrecta = usuario.contrasena
-        ? usuario.contrasena === passInput                    // Tiene contraseña personalizada
-        : String(usuario.codigo) === passInput;               // Sin contraseña: usa el código
+      if (perfilEstudiante) {
+        if (perfilEstudiante.contrasena !== passInput) {
+          toast({ title: "Error", description: "Contraseña incorrecta", variant: "destructive" });
+          setLoading(false);
+          return;
+        }
 
-      if (!contrasenaCorrecta) {
-        toast({ title: "Error", description: "Contraseña incorrecta", variant: "destructive" });
+        // Buscar datos del estudiante en tabla Estudiantes
+        const { data: estData } = await supabase
+          .from('Estudiantes')
+          .select('*')
+          .eq('codigo_estudiantil', idInput)
+          .maybeSingle();
+
+        const nivel = estData?.nivel_estudiante || perfilEstudiante.estudiante_nivel || '';
+        const grado = estData?.grado_estudiante || perfilEstudiante.estudiante_grado || '';
+        const salon = estData?.salon_estudiante || perfilEstudiante.estudiante_salon || '';
+        const nombre = estData?.nombre_estudiante || perfilEstudiante.estudiante_nombre || '';
+        const apellidos = estData?.apellidos_estudiante || perfilEstudiante.estudiante_apellidos || '';
+
+        saveSession(idInput, nombre, apellidos, 'Estudiante', nivel, grado, salon);
+        toast({ title: "Bienvenido(a)", description: `${nombre} ${apellidos}` });
+        navigate("/dashboard-estudiante");
+        return;
+      }
+
+      // 3. Buscar en Perfiles_Generales como Padre de familia
+      const { data: perfilPadre, error: errPadre } = await supabase
+        .from('Perfiles_Generales')
+        .select('*')
+        .eq('padre_codigo', idInput)
+        .not('perfil', 'is', null)
+        .maybeSingle();
+
+      if (errPadre) {
+        toast({ title: "Error", description: "Error al verificar", variant: "destructive" });
         setLoading(false);
         return;
       }
 
-      const data = usuario;
+      if (perfilPadre) {
+        if (perfilPadre.contrasena !== passInput) {
+          toast({ title: "Error", description: "Contraseña incorrecta", variant: "destructive" });
+          setLoading(false);
+          return;
+        }
 
-      // Verificar si tiene permisos (Profesor, Rector o Coordinador)
-      const cargosPermitidos = ['Profesor(a)', 'Rector', 'Coordinador(a)'];
-      if (!cargosPermitidos.includes(data.cargo)) {
-        toast({
-          title: "Acceso denegado",
-          description: "No tienes permisos de acceso",
-          variant: "destructive",
-        });
-        setLoading(false);
+        // Construir lista de hijos
+        const hijos: HijoData[] = [];
+        const numMap: Record<string, number> = { "1 (uno)": 1, "2 (dos)": 2, "3 (tres)": 3 };
+        const numHijos = numMap[perfilPadre.padre_numero_de_estudiantes] || 0;
+
+        for (let i = 1; i <= numHijos; i++) {
+          const codigoHijo = perfilPadre[`padre_estudiante${i}_codigo` as keyof typeof perfilPadre];
+          if (!codigoHijo) continue;
+
+          // Buscar datos actualizados del hijo en Estudiantes
+          const { data: hijoData } = await supabase
+            .from('Estudiantes')
+            .select('*')
+            .eq('codigo_estudiantil', String(codigoHijo))
+            .maybeSingle();
+
+          if (hijoData) {
+            hijos.push({
+              codigo: String(hijoData.codigo_estudiantil),
+              nombre: hijoData.nombre_estudiante || '',
+              apellidos: hijoData.apellidos_estudiante || '',
+              nivel: hijoData.nivel_estudiante || '',
+              grado: hijoData.grado_estudiante || '',
+              salon: hijoData.salon_estudiante || '',
+            });
+          } else {
+            // Fallback: usar datos del perfil
+            hijos.push({
+              codigo: String(codigoHijo),
+              nombre: (perfilPadre as any)[`padre_estudiante${i}_nombre`] || '',
+              apellidos: (perfilPadre as any)[`padre_estudiante${i}_apellidos`] || '',
+              nivel: (perfilPadre as any)[`padre_estudiante${i}_nivel`] || '',
+              grado: (perfilPadre as any)[`padre_estudiante${i}_grado`] || '',
+              salon: (perfilPadre as any)[`padre_estudiante${i}_salon`] || '',
+            });
+          }
+        }
+
+        const nombrePadre = perfilPadre.padre_nombre || '';
+        saveSession(idInput, nombrePadre, '', 'Padre de familia', null, null, null, hijos);
+        toast({ title: "Bienvenido(a)", description: nombrePadre });
+        navigate("/dashboard-padre");
         return;
       }
 
-      // Login exitoso - guardar sesión con cargo
-      saveSession(
-        String(data.codigo),
-        data.nombres || "",
-        data.apellidos || "",
-        data.cargo || ""
-      );
-
-      toast({
-        title: "Bienvenido(a)",
-        description: `${data.nombres} ${data.apellidos}`,
-      });
-
-      // Redirigir según el cargo
-      if (data.cargo === 'Rector' || data.cargo === 'Coordinador(a)') {
-        navigate("/dashboard-rector");
-      } else {
-        navigate("/dashboard");
-      }
+      // 4. No encontrado en ninguna tabla
+      toast({ title: "Error", description: "Identificación no encontrada", variant: "destructive" });
     } catch {
       toast({
         title: "Error",

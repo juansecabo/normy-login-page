@@ -1,0 +1,48 @@
+import { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { getSession, isEstudiante } from "@/hooks/useSession";
+import HeaderNormy from "@/components/HeaderNormy";
+import ConsolidadoNotas from "@/components/ConsolidadoNotas";
+
+const NotasEstudiante = () => {
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const session = getSession();
+    if (!session.codigo || !isEstudiante()) {
+      navigate("/");
+    }
+  }, [navigate]);
+
+  const session = getSession();
+  if (!session.codigo || !isEstudiante()) return null;
+
+  return (
+    <div className="min-h-screen bg-background flex flex-col">
+      <HeaderNormy backLink="/dashboard-estudiante" />
+
+      <main className="flex-1 container mx-auto p-4 md:p-8">
+        {/* Breadcrumb */}
+        <div className="bg-card rounded-lg shadow-soft p-4 mb-6">
+          <div className="flex items-center gap-2 text-sm">
+            <button onClick={() => navigate("/dashboard-estudiante")} className="text-primary hover:underline">
+              Inicio
+            </button>
+            <span className="text-muted-foreground">→</span>
+            <span className="text-foreground font-medium">Notas</span>
+          </div>
+        </div>
+
+        <ConsolidadoNotas
+          codigoEstudiante={session.codigo}
+          nombreEstudiante={session.nombres || ''}
+          apellidosEstudiante={session.apellidos || ''}
+          grado={session.grado || ''}
+          salon={session.salon || ''}
+        />
+      </main>
+    </div>
+  );
+};
+
+export default NotasEstudiante;

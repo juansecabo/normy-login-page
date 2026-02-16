@@ -56,35 +56,75 @@ const CambiarContrasenaModal = ({ open, onOpenChange }: CambiarContrasenaModalPr
 
     setLoading(true);
     try {
-      const { data: usuario, error: fetchError } = await supabase
-        .from("Internos")
-        .select("codigo, contrasena")
-        .eq("codigo", parseInt(session.codigo))
-        .maybeSingle();
+      const cargo = session.cargo;
+      const isExterno = cargo === 'Estudiante' || cargo === 'Padre de familia';
 
-      if (fetchError || !usuario) {
-        setError("No se pudo verificar el usuario");
-        setLoading(false);
-        return;
-      }
+      if (isExterno) {
+        // Estudiante o Padre: consultar/actualizar Perfiles_Generales
+        const column = cargo === 'Estudiante' ? 'estudiante_codigo' : 'padre_codigo';
 
-      const contrasenaEsperada = usuario.contrasena ?? String(usuario.codigo);
-      if (contrasenaActual !== contrasenaEsperada) {
-        setError("La contraseña actual es incorrecta");
-        setLoading(false);
-        return;
-      }
+        const { data: perfil, error: fetchError } = await supabase
+          .from("Perfiles_Generales")
+          .select("id, contrasena")
+          .eq(column, session.codigo)
+          .not('perfil', 'is', null)
+          .maybeSingle();
 
-      const { data: updated, error: updateError } = await supabase
-        .from("Internos")
-        .update({ contrasena: nuevaContrasena })
-        .eq("codigo", parseInt(session.codigo))
-        .select();
+        if (fetchError || !perfil) {
+          setError("No se pudo verificar el usuario");
+          setLoading(false);
+          return;
+        }
 
-      if (updateError || !updated || updated.length === 0) {
-        setError("No se pudo guardar la contraseña. Contacta al administrador.");
-        setLoading(false);
-        return;
+        if (contrasenaActual !== perfil.contrasena) {
+          setError("La contraseña actual es incorrecta");
+          setLoading(false);
+          return;
+        }
+
+        const { data: updated, error: updateError } = await supabase
+          .from("Perfiles_Generales")
+          .update({ contrasena: nuevaContrasena })
+          .eq("id", perfil.id)
+          .select();
+
+        if (updateError || !updated || updated.length === 0) {
+          setError("No se pudo guardar la contraseña. Contacta al administrador.");
+          setLoading(false);
+          return;
+        }
+      } else {
+        // Interno: consultar/actualizar Internos (flujo original)
+        const { data: usuario, error: fetchError } = await supabase
+          .from("Internos")
+          .select("codigo, contrasena")
+          .eq("codigo", parseInt(session.codigo))
+          .maybeSingle();
+
+        if (fetchError || !usuario) {
+          setError("No se pudo verificar el usuario");
+          setLoading(false);
+          return;
+        }
+
+        const contrasenaEsperada = usuario.contrasena ?? String(usuario.codigo);
+        if (contrasenaActual !== contrasenaEsperada) {
+          setError("La contraseña actual es incorrecta");
+          setLoading(false);
+          return;
+        }
+
+        const { data: updated, error: updateError } = await supabase
+          .from("Internos")
+          .update({ contrasena: nuevaContrasena })
+          .eq("codigo", parseInt(session.codigo))
+          .select();
+
+        if (updateError || !updated || updated.length === 0) {
+          setError("No se pudo guardar la contraseña. Contacta al administrador.");
+          setLoading(false);
+          return;
+        }
       }
 
       setSuccess("Contraseña actualizada correctamente");
