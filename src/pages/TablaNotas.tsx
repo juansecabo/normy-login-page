@@ -142,11 +142,11 @@ const TablaNotas = () => {
   const isNavigating = useRef(false);
   const celdaEditandoRef = useRef<CeldaEditando | null>(null);
 
-  // Refs y estado para scrollbar horizontal fija en desktop
+  // Refs para scrollbar horizontal duplicada arriba de la tabla (desktop)
   const tableContainerRef = useRef<HTMLDivElement>(null);
-  const fixedScrollRef = useRef<HTMLDivElement>(null);
+  const topScrollRef = useRef<HTMLDivElement>(null);
   const isSyncingScroll = useRef(false);
-  const [showFixedScrollbar, setShowFixedScrollbar] = useState(false);
+  const [tableScrollWidth, setTableScrollWidth] = useState(0);
 
   // useEffect UNIFICADO: Verificar sesión y cargar datos
   useEffect(() => {
@@ -2590,55 +2590,25 @@ const TablaNotas = () => {
     }
   }, [celdaEditando]);
 
-  // Scrollbar horizontal fija en desktop: visibilidad via estado React, posición via DOM
+  // Rastrear ancho de scroll de la tabla para la scrollbar superior
   useEffect(() => {
     const container = tableContainerRef.current;
     if (!container) return;
-
-    const update = () => {
-      // No mostrar en móvil
-      if (window.innerWidth < 768) {
-        setShowFixedScrollbar(false);
-        return;
-      }
-      const hasOverflow = container.scrollWidth > container.clientWidth;
-      const rect = container.getBoundingClientRect();
-      const inView = rect.top < window.innerHeight && rect.bottom > 0;
-      const shouldShow = hasOverflow && inView;
-
-      setShowFixedScrollbar(shouldShow);
-
-      // Posicionar via DOM directo (no depende de re-render)
-      const scrollbar = fixedScrollRef.current;
-      if (scrollbar) {
-        scrollbar.style.left = rect.left + 'px';
-        scrollbar.style.width = rect.width + 'px';
-        const spacer = scrollbar.firstElementChild as HTMLElement;
-        if (spacer) spacer.style.width = container.scrollWidth + 'px';
-      }
-    };
-
+    const update = () => setTableScrollWidth(container.scrollWidth);
     update();
-    window.addEventListener('scroll', update, { passive: true });
-    window.addEventListener('resize', update);
     const observer = new ResizeObserver(update);
     observer.observe(container);
-
-    return () => {
-      window.removeEventListener('scroll', update);
-      window.removeEventListener('resize', update);
-      observer.disconnect();
-    };
+    return () => observer.disconnect();
   }, [actividades, estudiantes, periodoActivo, esFinalDefinitiva]);
 
-  const syncScroll = (source: 'table' | 'scrollbar') => {
+  const syncScroll = (source: 'table' | 'top') => {
     if (isSyncingScroll.current) return;
     isSyncingScroll.current = true;
     const table = tableContainerRef.current;
-    const scrollbar = fixedScrollRef.current;
-    if (table && scrollbar) {
-      if (source === 'table') scrollbar.scrollLeft = table.scrollLeft;
-      else table.scrollLeft = scrollbar.scrollLeft;
+    const top = topScrollRef.current;
+    if (table && top) {
+      if (source === 'table') top.scrollLeft = table.scrollLeft;
+      else table.scrollLeft = top.scrollLeft;
     }
     requestAnimationFrame(() => { isSyncingScroll.current = false; });
   };
@@ -2788,7 +2758,16 @@ const TablaNotas = () => {
               No hay estudiantes en este salón
             </div>
           ) : (
-            <div ref={tableContainerRef} className="overflow-x-auto md-hide-scrollbar border-l border-t border-border" onScroll={() => syncScroll('table')}>
+            <>
+            {/* Scrollbar horizontal superior (solo desktop, solo si hay overflow) */}
+            <div
+              ref={topScrollRef}
+              className="hidden md:block overflow-x-auto"
+              onScroll={() => syncScroll('top')}
+            >
+              <div style={{ width: tableScrollWidth, height: 1 }} />
+            </div>
+            <div ref={tableContainerRef} className="overflow-x-auto border-l border-t border-border" onScroll={() => syncScroll('table')}>
               <table className="w-full border-separate border-spacing-0">
                 <thead>
                   <tr className="bg-primary text-primary-foreground">
@@ -3155,18 +3134,10 @@ const TablaNotas = () => {
                 </tfoot>
               </table>
             </div>
+            </>
           )}
         </div>
       </main>
-
-      {/* Scrollbar horizontal fija en desktop */}
-      <div
-        ref={fixedScrollRef}
-        className={`fixed bottom-0 z-40 overflow-x-auto ${showFixedScrollbar ? '' : 'hidden'}`}
-        onScroll={() => syncScroll('scrollbar')}
-      >
-        <div style={{ height: 1 }} />
-      </div>
 
       {/* Modal para crear/editar actividad */}
       <Dialog open={modalOpen} onOpenChange={setModalOpen}>
