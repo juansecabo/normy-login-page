@@ -2693,7 +2693,7 @@ const TablaNotas = () => {
             </div>
           ) : (
             <div className="overflow-x-auto border-l border-t border-border">
-              <table className="w-full border-separate border-spacing-0 table-fixed">
+              <table className="w-full border-separate border-spacing-0">
                 <thead>
                   <tr className="bg-primary text-primary-foreground">
                     {/* Columnas fijas en desktop, normales en móvil */}
@@ -2713,12 +2713,12 @@ const TablaNotas = () => {
                         {periodos.map((periodo) => (
                           <th 
                             key={periodo.numero}
-                            className="border-r border-b border-border/30 p-2 text-center text-xs font-medium w-[120px] bg-primary/80"
+                            className="border-r border-b border-border/30 p-2 text-center text-xs font-medium min-w-[120px] bg-primary/80"
                           >
                             {periodo.nombre}
                           </th>
                         ))}
-                        <th className="border-r border-b border-border/30 p-2 text-center text-xs font-semibold w-[130px] bg-primary" id="col-final-definitiva">
+                        <th className="border-r border-b border-border/30 p-2 text-center text-xs font-semibold min-w-[130px] bg-primary" id="col-final-definitiva">
                           Final Definitiva
                         </th>
                       </>
@@ -2728,7 +2728,7 @@ const TablaNotas = () => {
                         {getActividadesPorPeriodo(periodoActivo).map((actividad) => (
                           <th 
                             key={actividad.id}
-                            className="border-r border-b border-border/30 p-2 text-center text-xs font-medium w-[120px] bg-primary/90"
+                            className="border-r border-b border-border/30 p-2 text-center text-xs font-medium min-w-[120px] bg-primary/90"
                           >
                             <div className="flex items-center justify-center gap-1">
                               <div className="flex-1 min-w-0">
@@ -2765,7 +2765,7 @@ const TablaNotas = () => {
                           </th>
                         ))}
                         {/* Botón Agregar */}
-                        <th className="border-r border-b border-border/30 p-2 text-center w-[100px] bg-primary/90">
+                        <th className="border-r border-b border-border/30 p-2 text-center min-w-[100px] bg-primary/90">
                           <Button
                             variant="secondary"
                             size="sm"
@@ -2781,7 +2781,7 @@ const TablaNotas = () => {
                           const porcentajeUsado = getPorcentajeUsado(periodoActivo);
                           const isComplete = porcentajeUsado === 100;
                           return (
-                            <th className="border-r border-b border-border/30 p-2 text-center text-xs font-medium w-[130px] bg-primary">
+                            <th className="border-r border-b border-border/30 p-2 text-center text-xs font-medium min-w-[130px] bg-primary">
                               <div className="flex flex-col items-center">
                                 <span>Final Periodo</span>
                                 <span className={`text-xs ${isComplete ? 'text-green-300' : 'text-primary-foreground/70'}`}>
@@ -2852,7 +2852,7 @@ const TablaNotas = () => {
                               const comentario = comentarios[estudiante.codigo_estudiantil]?.[0]?.['0-Final Definitiva'] || null;
                               const tieneNotas = tieneAlgunaNotaEnAnio(estudiante.codigo_estudiantil);
                               return (
-                                <td className="border-r border-b border-border p-1 text-center text-sm w-[130px] bg-primary/20 font-bold relative group">
+                                <td className="border-r border-b border-border p-1 text-center text-sm min-w-[130px] bg-primary/20 font-bold relative group">
                                   <div className="relative flex items-center justify-center h-8">
                                     <span className={finalDef !== null ? "" : "text-muted-foreground"}>
                                       {finalDef !== null ? finalDef.toFixed(2) : "—"}
@@ -2950,7 +2950,7 @@ const TablaNotas = () => {
                               );
                             })}
                             {/* Celda vacía bajo botón Agregar */}
-                            <td className="border-r border-b border-border p-3 text-center text-sm text-muted-foreground/50 w-[100px]">
+                            <td className="border-r border-b border-border p-3 text-center text-sm text-muted-foreground/50 min-w-[100px]">
                               
                             </td>
                             {/* Celda Final Periodo */}
@@ -3040,7 +3040,7 @@ const TablaNotas = () => {
                           </td>
                         ))}
                         {/* Celda vacía bajo botón Agregar */}
-                        <td className="border-r border-b border-border p-1 w-[100px]"></td>
+                        <td className="border-r border-b border-border p-1 min-w-[100px]"></td>
                         {/* Botón Final Periodo */}
                         <td className="border-r border-b border-border p-1 text-center">
                           {periodoTieneFinal(periodoActivo) && (
