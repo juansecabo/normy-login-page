@@ -84,9 +84,9 @@ const CalendarioEstudiante = () => {
     return new Date(y, m - 1, d);
   });
 
-  // Actividades del día seleccionado
+  // Actividades del día seleccionado (ordenadas por asignatura)
   const actividadesDelDia = diaSeleccionado
-    ? actividadesPorFecha[fechaKey(diaSeleccionado)] || []
+    ? (actividadesPorFecha[fechaKey(diaSeleccionado)] || []).slice().sort((a, b) => a.Asignatura.localeCompare(b.Asignatura))
     : [];
 
   return (
@@ -125,7 +125,7 @@ const CalendarioEstudiante = () => {
                   onMonthChange={setMesActual}
                   locale={es}
                   modifiers={{ conActividad: diasConActividades }}
-                  modifiersClassNames={{ conActividad: "bg-orange-400 text-white hover:bg-orange-500" }}
+                  modifiersClassNames={{ conActividad: "bg-orange-400 text-white hover:bg-orange-500 rounded-full !h-8 !w-8" }}
                   className="rounded-md border shadow-sm"
                 />
               </div>
