@@ -9,7 +9,8 @@ import { es } from "date-fns/locale";
 import { markLastSeen } from "@/utils/notificaciones";
 
 interface ActividadCalendario {
-  column_id: number;
+  column_id: string;
+  auto_id: number;
   Nombres: string;
   Apellidos: string;
   Asignatura: string;
@@ -55,7 +56,7 @@ const CalendarioEstudiante = () => {
 
         if (!error && data) {
           setActividades(data);
-          const ids = data.map((a: ActividadCalendario) => a.column_id).filter((id): id is number => typeof id === 'number' && id > 0);
+          const ids = data.map((a: any) => Number(a.auto_id)).filter((id: number) => !isNaN(id) && id > 0);
           const maxId = ids.length > 0 ? Math.max(...ids) : 0;
           markLastSeen('actividades', session.codigo!, maxId);
         }

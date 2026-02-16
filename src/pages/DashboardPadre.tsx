@@ -91,7 +91,7 @@ const DashboardPadre = () => {
               .eq('Salon', hijo.salon),
             supabase
               .from('Notas')
-              .select('column_id')
+              .select('fecha_modificacion')
               .eq('codigo_estudiantil', hijo.codigo)
               .eq('grado', hijo.grado)
               .eq('salon', hijo.salon),
@@ -105,8 +105,11 @@ const DashboardPadre = () => {
 
           if (notasResult.error) console.warn('[Badges Padre] Error notas:', notasResult.error);
           if (notasResult.data) {
-            console.log('[Badges Padre] Notas:', notasResult.data.length, 'rows, sample column_id:', notasResult.data[0]?.column_id, typeof notasResult.data[0]?.column_id);
-            b.notas += countNewItems(notasResult.data.map((n: any) => n.column_id), lastSeenHijo['notas']);
+            const notasEpochs = notasResult.data
+              .map((n: any) => n.fecha_modificacion ? Math.floor(new Date(n.fecha_modificacion).getTime() / 1000) : 0)
+              .filter((e: number) => e > 0);
+            console.log('[Badges Padre] Notas:', notasResult.data.length, 'rows, sample epoch:', notasEpochs[0], 'lastSeen:', lastSeenHijo['notas']);
+            b.notas += countNewItems(notasEpochs, lastSeenHijo['notas']);
           }
         }
       } catch (err) {

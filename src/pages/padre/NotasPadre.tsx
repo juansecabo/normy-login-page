@@ -33,12 +33,13 @@ const NotasPadre = () => {
           const lastSeen = await getAllLastSeen(h.codigo);
           const { data } = await supabase
             .from('Notas')
-            .select('column_id')
+            .select('fecha_modificacion')
             .eq('codigo_estudiantil', h.codigo)
             .eq('grado', h.grado)
             .eq('salon', h.salon);
           if (data) {
-            b[h.codigo] = countNewItems(data.map((n: any) => n.column_id), lastSeen['notas']);
+            const epochs = data.map((n: any) => n.fecha_modificacion ? Math.floor(new Date(n.fecha_modificacion).getTime() / 1000) : 0).filter((e: number) => e > 0);
+            b[h.codigo] = countNewItems(epochs, lastSeen['notas']);
           }
         }
         setBadgesPorHijo(b);
@@ -54,13 +55,14 @@ const NotasPadre = () => {
     const marcarVisto = async () => {
       const { data } = await supabase
         .from('Notas')
-        .select('column_id')
+        .select('fecha_modificacion')
         .eq('codigo_estudiantil', h.codigo)
         .eq('grado', h.grado)
         .eq('salon', h.salon);
       if (data) {
-        const maxId = Math.max(...data.map((n: any) => n.column_id), 0);
-        await markLastSeen('notas', h.codigo, maxId);
+        const epochs = data.map((n: any) => n.fecha_modificacion ? Math.floor(new Date(n.fecha_modificacion).getTime() / 1000) : 0).filter((e: number) => e > 0);
+        const maxEpoch = epochs.length > 0 ? Math.max(...epochs) : 0;
+        await markLastSeen('notas', h.codigo, maxEpoch);
       }
     };
     marcarVisto();

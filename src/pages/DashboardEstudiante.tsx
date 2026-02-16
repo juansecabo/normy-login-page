@@ -62,7 +62,7 @@ const DashboardEstudiante = () => {
             .eq('Salon', session.salon),
           supabase
             .from('Notas')
-            .select('column_id')
+            .select('fecha_modificacion')
             .eq('codigo_estudiantil', codigo)
             .eq('grado', session.grado)
             .eq('salon', session.salon),
@@ -98,8 +98,11 @@ const DashboardEstudiante = () => {
           console.warn('[Badges] Error notas:', notasResult.error);
         }
         if (notasResult.data) {
-          console.log('[Badges] Notas data:', notasResult.data.length, 'rows, sample column_id:', notasResult.data[0]?.column_id, typeof notasResult.data[0]?.column_id);
-          b.notas = countNewItems(notasResult.data.map((n: any) => n.column_id), lastSeen['notas']);
+          const notasEpochs = notasResult.data
+            .map((n: any) => n.fecha_modificacion ? Math.floor(new Date(n.fecha_modificacion).getTime() / 1000) : 0)
+            .filter((e: number) => e > 0);
+          console.log('[Badges] Notas data:', notasResult.data.length, 'rows, sample epoch:', notasEpochs[0], 'lastSeen:', lastSeen['notas']);
+          b.notas = countNewItems(notasEpochs, lastSeen['notas']);
         }
       } catch (err) {
         console.error('Error fetching badges:', err);
