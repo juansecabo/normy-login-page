@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ClipboardList, X, Check } from "lucide-react";
+import { ClipboardList, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { getSession, isEstudiante } from "@/hooks/useSession";
 import HeaderNormy from "@/components/HeaderNormy";
@@ -35,7 +35,7 @@ const CalendarioEstudiante = () => {
   const [loading, setLoading] = useState(true);
   const [mesActual, setMesActual] = useState(new Date());
   const [diaSeleccionado, setDiaSeleccionado] = useState<Date | undefined>(undefined);
-  const [completadas, setCompletadas] = useState<Set<number>>(new Set());
+  const [marcas, setMarcas] = useState<Record<number, 'hecho' | 'estudiar'>>({});
 
   useEffect(() => {
     const session = getSession();
@@ -67,25 +67,25 @@ const CalendarioEstudiante = () => {
 
     cargar();
 
-    // Cargar tareas completadas desde localStorage
-    const stored = localStorage.getItem(`tareas_hechas_${session.codigo}`);
+    // Cargar marcas desde localStorage
+    const stored = localStorage.getItem(`tareas_marcas_${session.codigo}`);
     if (stored) {
       try {
-        setCompletadas(new Set(JSON.parse(stored)));
+        setMarcas(JSON.parse(stored));
       } catch {}
     }
   }, [navigate]);
 
-  const toggleCompletada = (columnId: number) => {
-    setCompletadas(prev => {
-      const next = new Set(prev);
-      if (next.has(columnId)) {
-        next.delete(columnId);
+  const toggleMarca = (columnId: number, tipo: 'hecho' | 'estudiar') => {
+    setMarcas(prev => {
+      const next = { ...prev };
+      if (next[columnId] === tipo) {
+        delete next[columnId];
       } else {
-        next.add(columnId);
+        next[columnId] = tipo;
       }
       const session = getSession();
-      localStorage.setItem(`tareas_hechas_${session.codigo}`, JSON.stringify([...next]));
+      localStorage.setItem(`tareas_marcas_${session.codigo}`, JSON.stringify(next));
       return next;
     });
   };
@@ -148,7 +148,7 @@ const CalendarioEstudiante = () => {
                   onMonthChange={setMesActual}
                   locale={es}
                   modifiers={{ conActividad: diasConActividades }}
-                  modifiersClassNames={{ conActividad: "!bg-orange-400 !text-white hover:!bg-orange-500 !rounded-full !h-8 !w-8" }}
+                  modifiersClassNames={{ conActividad: "bg-orange-400 text-white hover:bg-orange-500" }}
                   className="rounded-md border shadow-sm"
                 />
               </div>
@@ -173,27 +173,33 @@ const CalendarioEstudiante = () => {
                     </p>
                     <div className="space-y-3">
                       {actividadesDelDia.map(actividad => {
-                        const hecha = completadas.has(actividad.column_id);
+                        const marca = marcas[actividad.column_id];
                         return (
                           <div
                             key={actividad.column_id}
-                            className={`border rounded-lg p-4 transition-colors ${hecha ? 'border-green-300 bg-green-50/50' : 'border-border hover:border-primary/50'}`}
+                            className={`border rounded-lg p-4 transition-colors ${marca === 'hecho' ? 'border-green-300 bg-green-50/50' : marca === 'estudiar' ? 'border-yellow-300 bg-yellow-50/50' : 'border-border hover:border-primary/50'}`}
                           >
-                            <div className="flex items-start gap-3">
-                              <button
-                                onClick={() => toggleCompletada(actividad.column_id)}
-                                className={`mt-1 shrink-0 h-6 w-6 rounded-full border-2 flex items-center justify-center transition-colors ${hecha ? 'bg-green-500 border-green-500 text-white' : 'border-muted-foreground/40 hover:border-primary'}`}
-                              >
-                                {hecha && <Check className="h-4 w-4" />}
-                              </button>
-                              <div className="flex-1 min-w-0">
-                                <span className="inline-block px-2 py-0.5 text-xs font-medium bg-primary/10 text-primary rounded-full mb-2">
-                                  {actividad.Asignatura}
-                                </span>
-                                <p className={`font-medium ${hecha ? 'text-muted-foreground line-through' : 'text-foreground'}`}>{actividad.Descripción}</p>
-                                <p className="text-sm text-muted-foreground mt-1">
-                                  Prof. {actividad.Nombres} {actividad.Apellidos}
-                                </p>
+                            <div>
+                              <span className="inline-block px-2 py-0.5 text-xs font-medium bg-primary/10 text-primary rounded-full mb-2">
+                                {actividad.Asignatura}
+                              </span>
+                              <p className={`font-medium ${marca === 'hecho' ? 'text-muted-foreground line-through' : 'text-foreground'}`}>{actividad.Descripción}</p>
+                              <p className="text-sm text-muted-foreground mt-1">
+                                Prof. {actividad.Nombres} {actividad.Apellidos}
+                              </p>
+                              <div className="flex gap-2 mt-3">
+                                <button
+                                  onClick={() => toggleMarca(actividad.column_id, 'hecho')}
+                                  className={`px-3 py-1 text-xs font-medium rounded-full transition-colors ${marca === 'hecho' ? 'bg-green-500 text-white' : 'bg-green-100 text-green-700 hover:bg-green-200'}`}
+                                >
+                                  Hecho
+                                </button>
+                                <button
+                                  onClick={() => toggleMarca(actividad.column_id, 'estudiar')}
+                                  className={`px-3 py-1 text-xs font-medium rounded-full transition-colors ${marca === 'estudiar' ? 'bg-yellow-500 text-white' : 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200'}`}
+                                >
+                                  Estudiar
+                                </button>
                               </div>
                             </div>
                           </div>
