@@ -62,7 +62,14 @@ const NotaCelda = ({
         <div className="relative flex items-center justify-center h-8">
           <button
             className="flex-1 h-full hover:bg-muted/50 rounded cursor-pointer transition-colors flex items-center justify-center"
-            onMouseDown={(e) => { e.preventDefault(); if (e.button === 0) onClick(); }}
+            onMouseDown={(e) => {
+              e.preventDefault();
+              if (e.button === 0) {
+                const active = document.activeElement;
+                if (active instanceof HTMLInputElement) active.blur();
+                onClick();
+              }
+            }}
           >
             {nota !== undefined ? nota.toFixed(2) : <span className="text-muted-foreground">—</span>}
           </button>
