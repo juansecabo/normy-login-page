@@ -2681,9 +2681,9 @@ const TablaNotas = () => {
         </div>
 
         {/* Pestañas de Períodos */}
-        <div className="bg-card rounded-lg shadow-soft overflow-hidden">
+        <div className="bg-card rounded-lg shadow-soft">
           {/* Tab Headers */}
-          <div className="flex border-b border-border">
+          <div className="flex border-b border-border rounded-t-lg overflow-hidden">
             {periodos.map((periodo) => {
               const porcentajeUsado = getPorcentajeUsado(periodo.numero);
               const isActive = periodoActivo === periodo.numero;
@@ -2759,13 +2759,14 @@ const TablaNotas = () => {
             </div>
           ) : (
             <>
-            {/* Scrollbar horizontal superior (solo desktop, solo si hay overflow) */}
+            {/* Scrollbar horizontal superior (solo desktop, después de columnas fijas) */}
             <div
               ref={topScrollRef}
               className="hidden md:block overflow-x-auto"
+              style={{ marginLeft: 430 }}
               onScroll={() => syncScroll('top')}
             >
-              <div style={{ width: tableScrollWidth, height: 1 }} />
+              <div style={{ width: Math.max(0, tableScrollWidth - 430), height: 1 }} />
             </div>
             <div ref={tableContainerRef} className="overflow-x-auto border-l border-t border-border" onScroll={() => syncScroll('table')}>
               <table className="w-full border-separate border-spacing-0">
