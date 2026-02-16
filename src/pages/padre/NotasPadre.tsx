@@ -4,7 +4,7 @@ import { getSession, isPadreDeFamilia, HijoData } from "@/hooks/useSession";
 import HeaderNormy from "@/components/HeaderNormy";
 import ConsolidadoNotas from "@/components/ConsolidadoNotas";
 import { supabase } from "@/integrations/supabase/client";
-import { markAsSeen } from "@/utils/notificaciones";
+import { markLastSeen } from "@/utils/notificaciones";
 
 const NotasPadre = () => {
   const navigate = useNavigate();
@@ -31,7 +31,8 @@ const NotasPadre = () => {
             .eq('grado', hijoData.grado)
             .eq('salon', hijoData.salon);
           if (data) {
-            await markAsSeen('notas', hijoData.codigo, data.map((n: any) => n.column_id));
+            const maxId = Math.max(...data.map((n: any) => n.column_id), 0);
+            await markLastSeen('notas', hijoData.codigo, maxId);
           }
         };
         marcarVisto();

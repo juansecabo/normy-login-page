@@ -4,7 +4,7 @@ import { getSession, isEstudiante } from "@/hooks/useSession";
 import HeaderNormy from "@/components/HeaderNormy";
 import ConsolidadoNotas from "@/components/ConsolidadoNotas";
 import { supabase } from "@/integrations/supabase/client";
-import { markAsSeen } from "@/utils/notificaciones";
+import { markLastSeen } from "@/utils/notificaciones";
 
 const NotasEstudiante = () => {
   const navigate = useNavigate();
@@ -24,7 +24,8 @@ const NotasEstudiante = () => {
         .eq('grado', session.grado)
         .eq('salon', session.salon);
       if (data) {
-        await markAsSeen('notas', session.codigo!, data.map((n: any) => n.column_id));
+        const maxId = Math.max(...data.map((n: any) => n.column_id), 0);
+        await markLastSeen('notas', session.codigo!, maxId);
       }
     };
     marcarVisto();

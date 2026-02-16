@@ -6,7 +6,7 @@ import { getSession, isPadreDeFamilia, HijoData } from "@/hooks/useSession";
 import HeaderNormy from "@/components/HeaderNormy";
 import { Calendar } from "@/components/ui/calendar";
 import { es } from "date-fns/locale";
-import { markAsSeen } from "@/utils/notificaciones";
+import { markLastSeen } from "@/utils/notificaciones";
 
 interface ActividadCalendario {
   column_id: number;
@@ -70,7 +70,8 @@ const CalendarioPadre = () => {
 
         if (!error && data) {
           setActividades(data);
-          markAsSeen('actividades', hijoData.codigo, data.map((a: ActividadCalendario) => a.column_id));
+          const maxId = Math.max(...data.map((a: ActividadCalendario) => a.column_id), 0);
+          markLastSeen('actividades', hijoData.codigo, maxId);
         }
       } catch (err) {
         console.error('Error:', err);

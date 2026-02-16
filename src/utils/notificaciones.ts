@@ -1,24 +1,25 @@
 import { supabase } from "@/integrations/supabase/client";
 
-// Obtener IDs vistos de Supabase para un usuario y sección
-export const getSeenIds = async (seccion: string, codigo: string): Promise<Set<number>> => {
+// Obtener el último ID visto para una sección
+export const getLastSeenId = async (seccion: string, codigo: string): Promise<number> => {
   try {
     const { data } = await supabase
       .from('Notificaciones_Vistas')
-      .select('ids_vistos')
+      .select('ultimo_id_visto')
       .eq('usuario_codigo', codigo)
       .eq('seccion', seccion)
       .single();
 
-    if (data?.ids_vistos && Array.isArray(data.ids_vistos)) {
-      return new Set(data.ids_vistos);
+    if (data?.ultimo_id_visto !== null && data?.ultimo_id_visto !== undefined) {
+      return data.ultimo_id_visto;
     }
   } catch {}
-  return new Set();
+  return 0;
 };
 
-// Marcar IDs como vistos en Supabase
-export const markAsSeen = async (seccion: string, codigo: string, ids: number[]) => {
+// Guardar el último ID visto (se llama al entrar a una sección)
+export const markLastSeen = async (seccion: string, codigo: string, maxId: number) => {
+  if (maxId <= 0) return;
   try {
     await supabase
       .from('Notificaciones_Vistas')
@@ -26,7 +27,7 @@ export const markAsSeen = async (seccion: string, codigo: string, ids: number[])
         {
           usuario_codigo: codigo,
           seccion: seccion,
-          ids_vistos: ids,
+          ultimo_id_visto: maxId,
           updated_at: new Date().toISOString(),
         },
         { onConflict: 'usuario_codigo,seccion' }
@@ -34,26 +35,26 @@ export const markAsSeen = async (seccion: string, codigo: string, ids: number[])
   } catch {}
 };
 
-// Obtener todos los registros de un usuario de una vez (para optimizar dashboard)
-export const getAllSeenForUser = async (codigo: string): Promise<Record<string, Set<number>>> => {
-  const result: Record<string, Set<number>> = {};
+// Obtener todos los últimos IDs vistos de un usuario de una vez (para el dashboard)
+export const getAllLastSeen = async (codigo: string): Promise<Record<string, number>> => {
+  const result: Record<string, number> = {};
   try {
     const { data } = await supabase
       .from('Notificaciones_Vistas')
-      .select('seccion, ids_vistos')
+      .select('seccion, ultimo_id_visto')
       .eq('usuario_codigo', codigo);
 
     data?.forEach((row: any) => {
-      if (row.ids_vistos && Array.isArray(row.ids_vistos)) {
-        result[row.seccion] = new Set(row.ids_vistos);
+      if (row.ultimo_id_visto !== null && row.ultimo_id_visto !== undefined) {
+        result[row.seccion] = row.ultimo_id_visto;
       }
     });
   } catch {}
   return result;
 };
 
-// Contar no vistos usando un mapa pre-cargado de IDs vistos
-export const countUnseenFromMap = (currentIds: number[], seenSet: Set<number> | undefined): number => {
-  if (!seenSet) return currentIds.length;
-  return currentIds.filter(id => !seenSet.has(id)).length;
+// Contar cuántos IDs son mayores que el último visto
+export const countNewItems = (currentIds: number[], lastSeenId: number | undefined): number => {
+  const threshold = lastSeenId ?? 0;
+  return currentIds.filter(id => id > threshold).length;
 };

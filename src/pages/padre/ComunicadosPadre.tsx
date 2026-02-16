@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { getSession, isPadreDeFamilia } from "@/hooks/useSession";
 import HeaderNormy from "@/components/HeaderNormy";
 import ListaComunicados from "@/components/ListaComunicados";
-import { markAsSeen } from "@/utils/notificaciones";
+import { markLastSeen } from "@/utils/notificaciones";
 
 interface Comunicado {
   id: number;
@@ -60,7 +60,8 @@ const ComunicadosPadre = () => {
             });
           });
           setComunicados(filtrados);
-          markAsSeen('comunicados', session.codigo!, filtrados.map((c: Comunicado) => c.id));
+          const maxId = Math.max(...filtrados.map((c: Comunicado) => c.id), 0);
+          markLastSeen('comunicados', session.codigo!, maxId);
         }
       } catch (err) {
         console.error('Error:', err);

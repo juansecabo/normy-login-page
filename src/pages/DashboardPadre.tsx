@@ -4,7 +4,7 @@ import { getSession, isPadreDeFamilia, HijoData } from "@/hooks/useSession";
 import { BookOpen, ClipboardList, BarChart3, Megaphone, FileText, User } from "lucide-react";
 import HeaderNormy from "@/components/HeaderNormy";
 import { supabase } from "@/integrations/supabase/client";
-import { getAllSeenForUser, countUnseenFromMap } from "@/utils/notificaciones";
+import { getAllLastSeen, countNewItems } from "@/utils/notificaciones";
 
 const Badge = ({ count }: { count: number }) => {
   if (count <= 0) return null;
@@ -38,7 +38,6 @@ const DashboardPadre = () => {
     setNombres(session.nombres || "");
     setHijos(session.hijos || []);
 
-    // Restaurar hijo seleccionado de localStorage o seleccionar el primero
     const storedHijo = localStorage.getItem("hijoSeleccionado");
     if (storedHijo) {
       try {
@@ -61,17 +60,14 @@ const DashboardPadre = () => {
       localStorage.setItem("hijoSeleccionado", JSON.stringify(session.hijos[0]));
     }
 
-    // Fetch notification badges
     const fetchBadges = async () => {
       const codigo = session.codigo!;
       const hijosData = session.hijos || [];
       const b = { notas: 0, actividades: 0, comunicados: 0, documentos: 0 };
 
       try {
-        // IDs vistos del padre (comunicados/documentos)
-        const seenMapPadre = await getAllSeenForUser(codigo);
+        const lastSeenPadre = await getAllLastSeen(codigo);
 
-        // Comunicados y documentos (nivel padre)
         const { data: msgData } = await supabase
           .from('Comunicados')
           .select('id, tipo, perfil, nivel, grado, salon, codigo_estudiantil')
@@ -90,15 +86,18 @@ const DashboardPadre = () => {
               return true;
             });
           });
-          const comunicados = filtrados.filter((c: any) => c.tipo === 'comunicado');
-          const documentos = filtrados.filter((c: any) => c.tipo === 'documento');
-          b.comunicados = countUnseenFromMap(comunicados.map((c: any) => c.id), seenMapPadre['comunicados']);
-          b.documentos = countUnseenFromMap(documentos.map((c: any) => c.id), seenMapPadre['documentos']);
+          b.comunicados = countNewItems(
+            filtrados.filter((c: any) => c.tipo === 'comunicado').map((c: any) => c.id),
+            lastSeenPadre['comunicados']
+          );
+          b.documentos = countNewItems(
+            filtrados.filter((c: any) => c.tipo === 'documento').map((c: any) => c.id),
+            lastSeenPadre['documentos']
+          );
         }
 
-        // Actividades y notas (por cada hijo)
         for (const hijo of hijosData) {
-          const seenMapHijo = await getAllSeenForUser(hijo.codigo);
+          const lastSeenHijo = await getAllLastSeen(hijo.codigo);
 
           const [actResult, notasResult] = await Promise.all([
             supabase
@@ -115,10 +114,10 @@ const DashboardPadre = () => {
           ]);
 
           if (actResult.data) {
-            b.actividades += countUnseenFromMap(actResult.data.map((a: any) => a.column_id), seenMapHijo['actividades']);
+            b.actividades += countNewItems(actResult.data.map((a: any) => a.column_id), lastSeenHijo['actividades']);
           }
           if (notasResult.data) {
-            b.notas += countUnseenFromMap(notasResult.data.map((n: any) => n.column_id), seenMapHijo['notas']);
+            b.notas += countNewItems(notasResult.data.map((n: any) => n.column_id), lastSeenHijo['notas']);
           }
         }
       } catch (err) {
@@ -141,7 +140,6 @@ const DashboardPadre = () => {
       <HeaderNormy backLink="/dashboard-padre" />
 
       <main className="flex-1 container mx-auto p-8">
-        {/* Bienvenida */}
         <div className="bg-card rounded-lg shadow-soft p-8 max-w-2xl mx-auto text-center">
           <h2 className="text-2xl lg:text-3xl font-bold text-foreground mb-4">
             Bienvenido(a)
@@ -154,7 +152,6 @@ const DashboardPadre = () => {
           </p>
         </div>
 
-        {/* Selector de hijos */}
         {hijos.length > 1 && (
           <div className="bg-card rounded-lg shadow-soft p-6 max-w-4xl mx-auto mt-6">
             <h3 className="text-lg font-bold text-foreground mb-4 text-center">
@@ -191,7 +188,6 @@ const DashboardPadre = () => {
           </div>
         )}
 
-        {/* Info del hijo seleccionado (si solo hay uno) */}
         {hijos.length === 1 && hijoSeleccionado && (
           <div className="bg-card rounded-lg shadow-soft p-4 max-w-2xl mx-auto mt-4 text-center">
             <p className="text-muted-foreground text-sm">
@@ -200,7 +196,6 @@ const DashboardPadre = () => {
           </div>
         )}
 
-        {/* Botones principales */}
         <div className="bg-card rounded-lg shadow-soft p-8 max-w-4xl mx-auto mt-6">
           <h3 className="text-xl font-bold text-foreground mb-6 text-center">
             ¿Qué deseas consultar?
