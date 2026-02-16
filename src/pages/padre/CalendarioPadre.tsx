@@ -67,7 +67,8 @@ const CalendarioPadre = () => {
             data.forEach((a: ActividadCalendario) => {
               todasActividades.push({ ...a, hijo });
             });
-            const maxId = Math.max(...data.map((a: ActividadCalendario) => a.column_id), 0);
+            const ids = data.map((a: ActividadCalendario) => a.column_id).filter((id): id is number => typeof id === 'number' && id > 0);
+            const maxId = ids.length > 0 ? Math.max(...ids) : 0;
             markLastSeen('actividades', hijo.codigo, maxId);
           }
         }

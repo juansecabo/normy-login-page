@@ -55,7 +55,8 @@ const CalendarioEstudiante = () => {
 
         if (!error && data) {
           setActividades(data);
-          const maxId = Math.max(...data.map((a: ActividadCalendario) => a.column_id), 0);
+          const ids = data.map((a: ActividadCalendario) => a.column_id).filter((id): id is number => typeof id === 'number' && id > 0);
+          const maxId = ids.length > 0 ? Math.max(...ids) : 0;
           markLastSeen('actividades', session.codigo!, maxId);
         }
       } catch (err) {

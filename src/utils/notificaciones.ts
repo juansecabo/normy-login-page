@@ -19,7 +19,7 @@ export const getLastSeenId = async (seccion: string, codigo: string): Promise<nu
 
 // Guardar el último ID visto (se llama al entrar a una sección)
 export const markLastSeen = async (seccion: string, codigo: string, maxId: number) => {
-  if (maxId <= 0) return;
+  if (!maxId || maxId <= 0 || !Number.isFinite(maxId)) return;
   try {
     await supabase
       .from('Notificaciones_Vistas')
@@ -56,5 +56,5 @@ export const getAllLastSeen = async (codigo: string): Promise<Record<string, num
 // Contar cuántos IDs son mayores que el último visto
 export const countNewItems = (currentIds: number[], lastSeenId: number | undefined): number => {
   const threshold = lastSeenId ?? 0;
-  return currentIds.filter(id => id > threshold).length;
+  return currentIds.filter(id => typeof id === 'number' && id > threshold).length;
 };
