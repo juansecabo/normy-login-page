@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ClipboardList, X } from "lucide-react";
+import { ClipboardList, X, Check } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { getSession, isEstudiante } from "@/hooks/useSession";
 import HeaderNormy from "@/components/HeaderNormy";
@@ -35,6 +35,7 @@ const CalendarioEstudiante = () => {
   const [loading, setLoading] = useState(true);
   const [mesActual, setMesActual] = useState(new Date());
   const [diaSeleccionado, setDiaSeleccionado] = useState<Date | undefined>(undefined);
+  const [completadas, setCompletadas] = useState<Set<number>>(new Set());
 
   useEffect(() => {
     const session = getSession();
@@ -65,7 +66,29 @@ const CalendarioEstudiante = () => {
     };
 
     cargar();
+
+    // Cargar tareas completadas desde localStorage
+    const stored = localStorage.getItem(`tareas_hechas_${session.codigo}`);
+    if (stored) {
+      try {
+        setCompletadas(new Set(JSON.parse(stored)));
+      } catch {}
+    }
   }, [navigate]);
+
+  const toggleCompletada = (columnId: number) => {
+    setCompletadas(prev => {
+      const next = new Set(prev);
+      if (next.has(columnId)) {
+        next.delete(columnId);
+      } else {
+        next.add(columnId);
+      }
+      const session = getSession();
+      localStorage.setItem(`tareas_hechas_${session.codigo}`, JSON.stringify([...next]));
+      return next;
+    });
+  };
 
   // Mapear actividades por fecha
   const actividadesPorFecha: Record<string, ActividadCalendario[]> = {};
@@ -149,24 +172,33 @@ const CalendarioEstudiante = () => {
                       {actividadesDelDia.length} actividad{actividadesDelDia.length > 1 ? 'es' : ''}
                     </p>
                     <div className="space-y-3">
-                      {actividadesDelDia.map(actividad => (
-                        <div
-                          key={actividad.column_id}
-                          className="border border-border rounded-lg p-4 hover:border-primary/50 transition-colors"
-                        >
-                          <div className="flex items-start justify-between gap-2">
-                            <div>
-                              <span className="inline-block px-2 py-0.5 text-xs font-medium bg-primary/10 text-primary rounded-full mb-2">
-                                {actividad.Asignatura}
-                              </span>
-                              <p className="text-foreground font-medium">{actividad.Descripción}</p>
-                              <p className="text-sm text-muted-foreground mt-1">
-                                Prof. {actividad.Nombres} {actividad.Apellidos}
-                              </p>
+                      {actividadesDelDia.map(actividad => {
+                        const hecha = completadas.has(actividad.column_id);
+                        return (
+                          <div
+                            key={actividad.column_id}
+                            className={`border rounded-lg p-4 transition-colors ${hecha ? 'border-green-300 bg-green-50/50' : 'border-border hover:border-primary/50'}`}
+                          >
+                            <div className="flex items-start gap-3">
+                              <button
+                                onClick={() => toggleCompletada(actividad.column_id)}
+                                className={`mt-1 shrink-0 h-6 w-6 rounded-full border-2 flex items-center justify-center transition-colors ${hecha ? 'bg-green-500 border-green-500 text-white' : 'border-muted-foreground/40 hover:border-primary'}`}
+                              >
+                                {hecha && <Check className="h-4 w-4" />}
+                              </button>
+                              <div className="flex-1 min-w-0">
+                                <span className="inline-block px-2 py-0.5 text-xs font-medium bg-primary/10 text-primary rounded-full mb-2">
+                                  {actividad.Asignatura}
+                                </span>
+                                <p className={`font-medium ${hecha ? 'text-muted-foreground line-through' : 'text-foreground'}`}>{actividad.Descripción}</p>
+                                <p className="text-sm text-muted-foreground mt-1">
+                                  Prof. {actividad.Nombres} {actividad.Apellidos}
+                                </p>
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   </div>
                 ) : diaSeleccionado ? (
