@@ -140,6 +140,7 @@ const TablaNotas = () => {
   // Ref para almacenar las celdas y flag para evitar doble guardado
   const inputRefs = useRef<{ [key: string]: HTMLInputElement | null }>({});
   const isNavigating = useRef(false);
+  const celdaEditandoRef = useRef<CeldaEditando | null>(null);
 
   // useEffect UNIFICADO: Verificar sesión y cargar datos
   useEffect(() => {
@@ -2274,17 +2275,17 @@ const TablaNotas = () => {
     const nota = notas[nextStudent.codigo_estudiantil]?.[periodo]?.[actividadId];
     
     // Activar edición en la siguiente celda
-    setCeldaEditando({ 
-      codigoEstudiantil: nextStudent.codigo_estudiantil, 
-      actividadId, 
-      periodo 
-    });
+    const celda = { codigoEstudiantil: nextStudent.codigo_estudiantil, actividadId, periodo };
+    setCeldaEditando(celda);
+    celdaEditandoRef.current = celda;
     setValorEditando(nota !== undefined ? nota.toString() : "");
   }, [estudiantes, notas]);
 
   // Handlers para edición de notas
   const handleClickCelda = (codigoEstudiantil: string, actividadId: string, periodo: number, notaActual: number | undefined) => {
-    setCeldaEditando({ codigoEstudiantil, actividadId, periodo });
+    const celda = { codigoEstudiantil, actividadId, periodo };
+    setCeldaEditando(celda);
+    celdaEditandoRef.current = celda;
     setValorEditando(notaActual !== undefined ? notaActual.toString() : "");
   };
 
@@ -2308,6 +2309,7 @@ const TablaNotas = () => {
     if (!actividad) {
       console.error("Actividad no encontrada:", actividadId);
       setCeldaEditando(null);
+      celdaEditandoRef.current = null;
       setValorEditando("");
       return;
     }
@@ -2415,6 +2417,7 @@ const TablaNotas = () => {
           variant: "destructive",
         });
         setCeldaEditando(null);
+        celdaEditandoRef.current = null;
         setValorEditando("");
         return;
       }
@@ -2508,8 +2511,13 @@ const TablaNotas = () => {
       }
     }
 
-    setCeldaEditando(null);
-    setValorEditando("");
+    // Solo limpiar si no se seleccionó otra celda durante el guardado async
+    const current = celdaEditandoRef.current;
+    if (!current || (current.codigoEstudiantil === codigoEstudiantil && current.actividadId === actividadId)) {
+      setCeldaEditando(null);
+      celdaEditandoRef.current = null;
+      setValorEditando("");
+    }
   };
 
   // Handler para cuando se presiona Enter (navegar a celda de abajo)
@@ -2528,6 +2536,7 @@ const TablaNotas = () => {
       }, 100);
     } else if (e.key === 'Escape') {
       setCeldaEditando(null);
+      celdaEditandoRef.current = null;
       setValorEditando("");
     }
   };
