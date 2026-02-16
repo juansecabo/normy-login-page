@@ -79,9 +79,7 @@ const DashboardPadre = () => {
         }
 
         for (const hijo of hijosData) {
-          console.log('[Badges Padre] Hijo:', { codigo: hijo.codigo, grado: hijo.grado, salon: hijo.salon });
           const lastSeenHijo = await getAllLastSeen(hijo.codigo);
-          console.log('[Badges Padre] lastSeenHijo:', lastSeenHijo);
 
           const [actResult, notasResult] = await Promise.all([
             supabase
@@ -98,18 +96,14 @@ const DashboardPadre = () => {
               .not('nombre_actividad', 'in', '("Final Periodo","Final Definitiva")'),
           ]);
 
-          if (actResult.error) console.warn('[Badges Padre] Error actividades:', actResult.error);
           if (actResult.data) {
-            console.log('[Badges Padre] Actividades:', actResult.data.length, 'rows, sample auto_id:', actResult.data[0]?.auto_id, typeof actResult.data[0]?.auto_id);
             b.actividades += countNewItems(actResult.data.map((a: any) => a.auto_id), lastSeenHijo['actividades']);
           }
 
-          if (notasResult.error) console.warn('[Badges Padre] Error notas:', notasResult.error);
           if (notasResult.data) {
             const notasEpochs = notasResult.data
               .map((n: any) => n.fecha_modificacion ? Math.floor(new Date(n.fecha_modificacion).getTime() / 1000) : 0)
               .filter((e: number) => e > 0);
-            console.log('[Badges Padre] Notas:', notasResult.data.length, 'rows, sample epoch:', notasEpochs[0], 'lastSeen:', lastSeenHijo['notas']);
             b.notas += countNewItems(notasEpochs, lastSeenHijo['notas']);
           }
         }
@@ -117,7 +111,6 @@ const DashboardPadre = () => {
         console.error('Error fetching badges:', err);
       }
 
-      console.log('[Badges Padre] Final:', b);
       setBadges(b);
     };
 
