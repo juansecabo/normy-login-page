@@ -141,12 +141,22 @@ const CalendarioPadre = () => {
 
       <main className="flex-1 container mx-auto p-4 md:p-8">
         <div className="bg-card rounded-lg shadow-soft p-4 mb-6">
-          <div className="flex items-center gap-2 text-sm">
+          <div className="flex items-center gap-2 text-sm flex-wrap">
             <button onClick={() => navigate("/dashboard-padre")} className="text-primary hover:underline">
               Inicio
             </button>
             <span className="text-muted-foreground">&rarr;</span>
-            <span className="text-foreground font-medium">Actividades{hijo ? ` de ${hijo.nombre}` : ''}</span>
+            {hijo && hijos.length > 1 ? (
+              <>
+                <button onClick={cambiarEstudiante} className="text-primary hover:underline">
+                  Escoger Estudiante
+                </button>
+                <span className="text-muted-foreground">&rarr;</span>
+                <span className="text-foreground font-medium">Actividades de {hijo.nombre}</span>
+              </>
+            ) : (
+              <span className="text-foreground font-medium">Actividades{hijo ? ` de ${hijo.nombre}` : ''}</span>
+            )}
           </div>
         </div>
 
@@ -186,16 +196,9 @@ const CalendarioPadre = () => {
               <ClipboardList className="h-5 w-5 text-primary" />
               Actividades Asignadas
             </h2>
-            <div className="flex items-center justify-between mb-6">
-              <p className="text-sm text-muted-foreground">
-                {hijo.nombre} {hijo.apellidos} &mdash; {hijo.grado} {hijo.salon}
-              </p>
-              {hijos.length > 1 && (
-                <button onClick={cambiarEstudiante} className="text-sm text-primary hover:underline">
-                  Cambiar
-                </button>
-              )}
-            </div>
+            <p className="text-sm text-muted-foreground mb-6">
+              {hijo.nombre} {hijo.apellidos} &mdash; {hijo.grado} {hijo.salon}
+            </p>
 
             {loading ? (
               <div className="text-center py-8 text-muted-foreground">Cargando...</div>
