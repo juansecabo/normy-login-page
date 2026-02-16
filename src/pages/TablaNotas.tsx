@@ -142,10 +142,11 @@ const TablaNotas = () => {
   const isNavigating = useRef(false);
   const celdaEditandoRef = useRef<CeldaEditando | null>(null);
 
-  // Refs para scrollbar horizontal fija en desktop
+  // Refs y estado para scrollbar horizontal fija en desktop
   const tableContainerRef = useRef<HTMLDivElement>(null);
   const fixedScrollRef = useRef<HTMLDivElement>(null);
   const isSyncingScroll = useRef(false);
+  const [showFixedScrollbar, setShowFixedScrollbar] = useState(false);
 
   // useEffect UNIFICADO: Verificar sesión y cargar datos
   useEffect(() => {
@@ -2589,30 +2590,31 @@ const TablaNotas = () => {
     }
   }, [celdaEditando]);
 
-  // Scrollbar horizontal fija en desktop: posicionar y mostrar/ocultar via DOM directo
+  // Scrollbar horizontal fija en desktop: visibilidad via estado React, posición via DOM
   useEffect(() => {
     const container = tableContainerRef.current;
-    const scrollbar = fixedScrollRef.current;
-    if (!container || !scrollbar) return;
+    if (!container) return;
 
     const update = () => {
       // No mostrar en móvil
       if (window.innerWidth < 768) {
-        scrollbar.style.display = 'none';
+        setShowFixedScrollbar(false);
         return;
       }
       const hasOverflow = container.scrollWidth > container.clientWidth;
       const rect = container.getBoundingClientRect();
       const inView = rect.top < window.innerHeight && rect.bottom > 0;
+      const shouldShow = hasOverflow && inView;
 
-      if (hasOverflow && inView) {
-        scrollbar.style.display = 'block';
+      setShowFixedScrollbar(shouldShow);
+
+      // Posicionar via DOM directo (no depende de re-render)
+      const scrollbar = fixedScrollRef.current;
+      if (scrollbar) {
         scrollbar.style.left = rect.left + 'px';
         scrollbar.style.width = rect.width + 'px';
         const spacer = scrollbar.firstElementChild as HTMLElement;
         if (spacer) spacer.style.width = container.scrollWidth + 'px';
-      } else {
-        scrollbar.style.display = 'none';
       }
     };
 
@@ -3160,8 +3162,7 @@ const TablaNotas = () => {
       {/* Scrollbar horizontal fija en desktop */}
       <div
         ref={fixedScrollRef}
-        className="fixed bottom-0 z-40 overflow-x-auto"
-        style={{ display: 'none' }}
+        className={`fixed bottom-0 z-40 overflow-x-auto ${showFixedScrollbar ? '' : 'hidden'}`}
         onScroll={() => syncScroll('scrollbar')}
       >
         <div style={{ height: 1 }} />
