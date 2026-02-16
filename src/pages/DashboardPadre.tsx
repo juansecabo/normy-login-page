@@ -127,11 +127,16 @@ const DashboardPadre = () => {
           <p className="text-muted-foreground mt-3">
             Padre de familia de
           </p>
-          <div className="mt-2 space-y-1">
+          <div className="mt-2 space-y-2">
             {hijos.map(h => (
-              <p key={h.codigo} className="text-foreground font-medium">
-                {h.nombre} {h.apellidos} — {h.grado} {h.salon}
-              </p>
+              <div key={h.codigo}>
+                <p className="text-foreground font-medium">
+                  {h.nombre} {h.apellidos}
+                </p>
+                <p className="text-muted-foreground text-sm">
+                  ({h.grado} {h.salon})
+                </p>
+              </div>
             ))}
           </div>
         </div>
