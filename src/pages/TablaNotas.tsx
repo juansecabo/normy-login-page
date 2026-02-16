@@ -716,7 +716,15 @@ const TablaNotas = () => {
     
     try {
       // PRIMERO: Eliminar de "Nombre de Actividades"
-      const { error: errorActividad } = await supabase
+      console.log('Eliminando actividad:', {
+        codigo_profesor: session.codigo,
+        asignatura: asignaturaSeleccionada,
+        grado: gradoSeleccionado,
+        salon: salonSeleccionado,
+        periodo: actividadAEliminar.periodo,
+        nombre_actividad: actividadAEliminar.nombre,
+      });
+      const { data: deletedRows, error: errorActividad } = await supabase
         .from('Nombre de Actividades')
         .delete()
         .eq('codigo_profesor', session.codigo)
@@ -724,13 +732,26 @@ const TablaNotas = () => {
         .eq('grado', gradoSeleccionado)
         .eq('salon', salonSeleccionado)
         .eq('periodo', actividadAEliminar.periodo)
-        .eq('nombre_actividad', actividadAEliminar.nombre);
-      
+        .eq('nombre_actividad', actividadAEliminar.nombre)
+        .select();
+
+      console.log('Resultado delete:', { deletedRows, errorActividad });
+
       if (errorActividad) {
         console.error('Error eliminando de Nombre de Actividades:', errorActividad);
         toast({
           title: "Error",
           description: `No se pudo eliminar la actividad: ${errorActividad.message}`,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (!deletedRows || deletedRows.length === 0) {
+        console.error('No se eliminó ninguna fila. Posible problema de RLS o filtros no coinciden.');
+        toast({
+          title: "Error",
+          description: "No se pudo eliminar la actividad de la base de datos. Verifica los permisos en Supabase.",
           variant: "destructive",
         });
         return;
@@ -2708,9 +2729,9 @@ const TablaNotas = () => {
               No hay estudiantes en este salón
             </div>
           ) : (
-            <div className="overflow-x-auto border-l border-t border-border">
+            <div className="overflow-auto max-h-[calc(100vh-280px)] border-l border-t border-border">
               <table className="w-full border-separate border-spacing-0">
-                <thead>
+                <thead className="sticky top-0 z-30">
                   <tr className="bg-primary text-primary-foreground">
                     {/* Columnas fijas en desktop, normales en móvil */}
                     <th className="md:sticky md:left-0 z-20 bg-primary border-r border-b border-border/30 w-[80px] md:w-[100px] min-w-[80px] md:min-w-[100px] p-2 md:p-3 text-left font-semibold text-xs md:text-sm">
