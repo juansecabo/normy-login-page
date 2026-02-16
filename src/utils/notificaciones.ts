@@ -1,34 +1,59 @@
-export const getSeenIds = (section: string, codigo: string): Set<number> => {
+import { supabase } from "@/integrations/supabase/client";
+
+// Obtener IDs vistos de Supabase para un usuario y sección
+export const getSeenIds = async (seccion: string, codigo: string): Promise<Set<number>> => {
   try {
-    const stored = localStorage.getItem(`normy_seen_${section}_${codigo}`);
-    if (stored) return new Set(JSON.parse(stored));
+    const { data } = await supabase
+      .from('Notificaciones_Vistas')
+      .select('ids_vistos')
+      .eq('usuario_codigo', codigo)
+      .eq('seccion', seccion)
+      .single();
+
+    if (data?.ids_vistos && Array.isArray(data.ids_vistos)) {
+      return new Set(data.ids_vistos);
+    }
   } catch {}
   return new Set();
 };
 
-export const markAsSeen = (section: string, codigo: string, ids: number[]) => {
-  localStorage.setItem(`normy_seen_${section}_${codigo}`, JSON.stringify(ids));
-};
-
-export const countUnseen = (currentIds: number[], section: string, codigo: string): number => {
-  const seen = getSeenIds(section, codigo);
-  return currentIds.filter(id => !seen.has(id)).length;
-};
-
-export const getStoredCount = (section: string, codigo: string): number => {
+// Marcar IDs como vistos en Supabase
+export const markAsSeen = async (seccion: string, codigo: string, ids: number[]) => {
   try {
-    const stored = localStorage.getItem(`normy_count_${section}_${codigo}`);
-    if (stored) return parseInt(stored);
+    await supabase
+      .from('Notificaciones_Vistas')
+      .upsert(
+        {
+          usuario_codigo: codigo,
+          seccion: seccion,
+          ids_vistos: ids,
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: 'usuario_codigo,seccion' }
+      );
   } catch {}
-  return -1;
 };
 
-export const setStoredCount = (section: string, codigo: string, count: number) => {
-  localStorage.setItem(`normy_count_${section}_${codigo}`, count.toString());
+// Obtener todos los registros de un usuario de una vez (para optimizar dashboard)
+export const getAllSeenForUser = async (codigo: string): Promise<Record<string, Set<number>>> => {
+  const result: Record<string, Set<number>> = {};
+  try {
+    const { data } = await supabase
+      .from('Notificaciones_Vistas')
+      .select('seccion, ids_vistos')
+      .eq('usuario_codigo', codigo);
+
+    data?.forEach((row: any) => {
+      if (row.ids_vistos && Array.isArray(row.ids_vistos)) {
+        result[row.seccion] = new Set(row.ids_vistos);
+      }
+    });
+  } catch {}
+  return result;
 };
 
-export const countNewByCount = (currentCount: number, section: string, codigo: string): number => {
-  const stored = getStoredCount(section, codigo);
-  if (stored === -1) return currentCount > 0 ? currentCount : 0;
-  return Math.max(0, currentCount - stored);
+// Contar no vistos usando un mapa pre-cargado de IDs vistos
+export const countUnseenFromMap = (currentIds: number[], seenSet: Set<number> | undefined): number => {
+  if (!seenSet) return currentIds.length;
+  return currentIds.filter(id => !seenSet.has(id)).length;
 };

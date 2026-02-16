@@ -4,7 +4,7 @@ import { getSession, isPadreDeFamilia, HijoData } from "@/hooks/useSession";
 import { BookOpen, ClipboardList, BarChart3, Megaphone, FileText, User } from "lucide-react";
 import HeaderNormy from "@/components/HeaderNormy";
 import { supabase } from "@/integrations/supabase/client";
-import { countUnseen, countNewByCount } from "@/utils/notificaciones";
+import { getAllSeenForUser, countUnseenFromMap } from "@/utils/notificaciones";
 
 const Badge = ({ count }: { count: number }) => {
   if (count <= 0) return null;
@@ -68,6 +68,9 @@ const DashboardPadre = () => {
       const b = { notas: 0, actividades: 0, comunicados: 0, documentos: 0 };
 
       try {
+        // IDs vistos del padre (comunicados/documentos)
+        const seenMapPadre = await getAllSeenForUser(codigo);
+
         // Comunicados y documentos (nivel padre)
         const { data: msgData } = await supabase
           .from('Comunicados')
@@ -89,32 +92,33 @@ const DashboardPadre = () => {
           });
           const comunicados = filtrados.filter((c: any) => c.tipo === 'comunicado');
           const documentos = filtrados.filter((c: any) => c.tipo === 'documento');
-          b.comunicados = countUnseen(comunicados.map((c: any) => c.id), 'comunicados', codigo);
-          b.documentos = countUnseen(documentos.map((c: any) => c.id), 'documentos', codigo);
+          b.comunicados = countUnseenFromMap(comunicados.map((c: any) => c.id), seenMapPadre['comunicados']);
+          b.documentos = countUnseenFromMap(documentos.map((c: any) => c.id), seenMapPadre['documentos']);
         }
 
-        // Actividades (por cada hijo)
+        // Actividades y notas (por cada hijo)
         for (const hijo of hijosData) {
-          const { data: actData } = await supabase
-            .from('Calendario Actividades')
-            .select('column_id')
-            .eq('Grado', hijo.grado)
-            .eq('Salon', hijo.salon);
-          if (actData) {
-            b.actividades += countUnseen(actData.map((a: any) => a.column_id), 'actividades', hijo.codigo);
+          const seenMapHijo = await getAllSeenForUser(hijo.codigo);
+
+          const [actResult, notasResult] = await Promise.all([
+            supabase
+              .from('Calendario Actividades')
+              .select('column_id')
+              .eq('Grado', hijo.grado)
+              .eq('Salon', hijo.salon),
+            supabase
+              .from('Notas')
+              .select('column_id')
+              .eq('codigo_estudiantil', hijo.codigo)
+              .eq('grado', hijo.grado)
+              .eq('salon', hijo.salon),
+          ]);
+
+          if (actResult.data) {
+            b.actividades += countUnseenFromMap(actResult.data.map((a: any) => a.column_id), seenMapHijo['actividades']);
           }
-        }
-
-        // Notas (por cada hijo)
-        for (const hijo of hijosData) {
-          const { count } = await supabase
-            .from('Notas')
-            .select('*', { count: 'exact', head: true })
-            .eq('codigo_estudiantil', hijo.codigo)
-            .eq('grado', hijo.grado)
-            .eq('salon', hijo.salon);
-          if (count !== null && count !== undefined) {
-            b.notas += countNewByCount(count, 'notas', hijo.codigo);
+          if (notasResult.data) {
+            b.notas += countUnseenFromMap(notasResult.data.map((n: any) => n.column_id), seenMapHijo['notas']);
           }
         }
       } catch (err) {

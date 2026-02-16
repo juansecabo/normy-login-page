@@ -4,7 +4,7 @@ import { getSession, isEstudiante } from "@/hooks/useSession";
 import { BookOpen, ClipboardList, BarChart3, Megaphone, FileText } from "lucide-react";
 import HeaderNormy from "@/components/HeaderNormy";
 import { supabase } from "@/integrations/supabase/client";
-import { countUnseen, countNewByCount } from "@/utils/notificaciones";
+import { getAllSeenForUser, countUnseenFromMap } from "@/utils/notificaciones";
 
 const Badge = ({ count }: { count: number }) => {
   if (count <= 0) return null;
@@ -46,6 +46,9 @@ const DashboardEstudiante = () => {
       const b = { notas: 0, actividades: 0, comunicados: 0, documentos: 0 };
 
       try {
+        // Obtener todos los IDs vistos del usuario de una vez
+        const seenMap = await getAllSeenForUser(codigo);
+
         const [msgResult, actResult, notasResult] = await Promise.all([
           supabase
             .from('Comunicados')
@@ -58,7 +61,7 @@ const DashboardEstudiante = () => {
             .eq('Salon', session.salon),
           supabase
             .from('Notas')
-            .select('*', { count: 'exact', head: true })
+            .select('column_id')
             .eq('codigo_estudiantil', codigo)
             .eq('grado', session.grado)
             .eq('salon', session.salon),
@@ -74,16 +77,16 @@ const DashboardEstudiante = () => {
           });
           const comunicados = misFiltrados.filter((c: any) => c.tipo === 'comunicado');
           const documentos = misFiltrados.filter((c: any) => c.tipo === 'documento');
-          b.comunicados = countUnseen(comunicados.map((c: any) => c.id), 'comunicados', codigo);
-          b.documentos = countUnseen(documentos.map((c: any) => c.id), 'documentos', codigo);
+          b.comunicados = countUnseenFromMap(comunicados.map((c: any) => c.id), seenMap['comunicados']);
+          b.documentos = countUnseenFromMap(documentos.map((c: any) => c.id), seenMap['documentos']);
         }
 
         if (actResult.data) {
-          b.actividades = countUnseen(actResult.data.map((a: any) => a.column_id), 'actividades', codigo);
+          b.actividades = countUnseenFromMap(actResult.data.map((a: any) => a.column_id), seenMap['actividades']);
         }
 
-        if (notasResult.count !== null && notasResult.count !== undefined) {
-          b.notas = countNewByCount(notasResult.count, 'notas', codigo);
+        if (notasResult.data) {
+          b.notas = countUnseenFromMap(notasResult.data.map((n: any) => n.column_id), seenMap['notas']);
         }
       } catch (err) {
         console.error('Error fetching badges:', err);

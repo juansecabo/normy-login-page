@@ -4,7 +4,7 @@ import { getSession, isEstudiante } from "@/hooks/useSession";
 import HeaderNormy from "@/components/HeaderNormy";
 import ConsolidadoNotas from "@/components/ConsolidadoNotas";
 import { supabase } from "@/integrations/supabase/client";
-import { setStoredCount } from "@/utils/notificaciones";
+import { markAsSeen } from "@/utils/notificaciones";
 
 const NotasEstudiante = () => {
   const navigate = useNavigate();
@@ -17,14 +17,14 @@ const NotasEstudiante = () => {
     }
 
     const marcarVisto = async () => {
-      const { count } = await supabase
+      const { data } = await supabase
         .from('Notas')
-        .select('*', { count: 'exact', head: true })
+        .select('column_id')
         .eq('codigo_estudiantil', session.codigo)
         .eq('grado', session.grado)
         .eq('salon', session.salon);
-      if (count !== null) {
-        setStoredCount('notas', session.codigo!, count);
+      if (data) {
+        await markAsSeen('notas', session.codigo!, data.map((n: any) => n.column_id));
       }
     };
     marcarVisto();
@@ -38,7 +38,6 @@ const NotasEstudiante = () => {
       <HeaderNormy backLink="/dashboard-estudiante" />
 
       <main className="flex-1 container mx-auto p-4 md:p-8">
-        {/* Breadcrumb */}
         <div className="bg-card rounded-lg shadow-soft p-4 mb-6">
           <div className="flex items-center gap-2 text-sm">
             <button onClick={() => navigate("/dashboard-estudiante")} className="text-primary hover:underline">
