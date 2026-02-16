@@ -2729,9 +2729,9 @@ const TablaNotas = () => {
               No hay estudiantes en este salón
             </div>
           ) : (
-            <div className="overflow-auto max-h-[calc(100vh-280px)] border-l border-t border-border">
+            <div className="overflow-x-auto border-l border-t border-border">
               <table className="w-full border-separate border-spacing-0">
-                <thead className="sticky top-0 z-30">
+                <thead>
                   <tr className="bg-primary text-primary-foreground">
                     {/* Columnas fijas en desktop, normales en móvil */}
                     <th className="md:sticky md:left-0 z-20 bg-primary border-r border-b border-border/30 w-[80px] md:w-[100px] min-w-[80px] md:min-w-[100px] p-2 md:p-3 text-left font-semibold text-xs md:text-sm">
