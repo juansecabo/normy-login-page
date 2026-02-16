@@ -212,7 +212,7 @@ const CalendarioEstudiante = () => {
                               <span className="inline-block px-2 py-0.5 text-xs font-medium bg-primary/10 text-primary rounded-full mb-2">
                                 {actividad.Asignatura}
                               </span>
-                              <p className={`font-medium ${marca === 'hecho' ? 'text-muted-foreground line-through' : 'text-foreground'}`}>{actividad.Descripción}</p>
+                              <p className="font-medium text-foreground">{actividad.Descripción}</p>
                               <p className="text-sm text-muted-foreground mt-1">
                                 Prof. {actividad.Nombres} {actividad.Apellidos}
                               </p>
