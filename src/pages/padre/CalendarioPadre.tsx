@@ -6,7 +6,7 @@ import { getSession, isPadreDeFamilia, HijoData } from "@/hooks/useSession";
 import HeaderNormy from "@/components/HeaderNormy";
 import { Calendar } from "@/components/ui/calendar";
 import { es } from "date-fns/locale";
-import { markLastSeen } from "@/utils/notificaciones";
+import { markLastSeen, getAllLastSeen, countNewItems } from "@/utils/notificaciones";
 
 interface ActividadCalendario {
   column_id: number;
@@ -37,6 +37,7 @@ const CalendarioPadre = () => {
   const [loading, setLoading] = useState(false);
   const [mesActual, setMesActual] = useState(new Date());
   const [diaSeleccionado, setDiaSeleccionado] = useState<Date | undefined>(undefined);
+  const [badgesPorHijo, setBadgesPorHijo] = useState<Record<string, number>>({});
 
   useEffect(() => {
     const session = getSession();
@@ -59,6 +60,23 @@ const CalendarioPadre = () => {
           if (existe) seleccionar(existe);
         } catch {}
       }
+
+      const fetchBadges = async () => {
+        const b: Record<string, number> = {};
+        for (const h of hijosData) {
+          const lastSeen = await getAllLastSeen(h.codigo);
+          const { data } = await supabase
+            .from('Calendario Actividades')
+            .select('column_id')
+            .eq('Grado', h.grado)
+            .eq('Salon', h.salon);
+          if (data) {
+            b[h.codigo] = countNewItems(data.map((a: any) => a.column_id), lastSeen['actividades']);
+          }
+        }
+        setBadgesPorHijo(b);
+      };
+      fetchBadges();
     }
   }, [navigate]);
 
@@ -142,8 +160,13 @@ const CalendarioPadre = () => {
                 <button
                   key={h.codigo}
                   onClick={() => seleccionar(h)}
-                  className="flex items-center gap-3 p-4 rounded-lg border-2 border-border hover:border-primary/50 hover:bg-muted/50 transition-all duration-200 text-left"
+                  className="relative flex items-center gap-3 p-4 rounded-lg border-2 border-border hover:border-primary/50 hover:bg-muted/50 transition-all duration-200 text-left"
                 >
+                  {(badgesPorHijo[h.codigo] || 0) > 0 && (
+                    <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full min-w-[20px] h-5 flex items-center justify-center px-1 shadow-sm">
+                      {badgesPorHijo[h.codigo]}
+                    </span>
+                  )}
                   <div className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 bg-muted text-muted-foreground">
                     <User className="w-5 h-5" />
                   </div>
