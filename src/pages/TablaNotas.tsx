@@ -655,9 +655,12 @@ const TablaNotas = () => {
 
         if (error) {
           console.error('Error guardando actividad:', error);
+          const msg = error.message?.includes('unique') || error.message?.includes('duplicate')
+            ? "Ya existe una actividad con ese nombre en este período"
+            : `No se pudo guardar la actividad: ${error.message}`;
           toast({
             title: "Error",
-            description: "No se pudo guardar la actividad",
+            description: msg,
             variant: "destructive",
           });
           setGuardandoMultiple(false);
@@ -2741,7 +2744,7 @@ const TablaNotas = () => {
                           >
                             <div className="flex items-center justify-center gap-1">
                               <div className="flex-1 min-w-0">
-                                <div className="truncate" title={actividad.nombre}>
+                                <div className="truncate max-w-[150px]" title={actividad.nombre}>
                                   {actividad.nombre}
                                 </div>
                                 {actividad.porcentaje !== null && (
