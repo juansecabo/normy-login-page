@@ -42,17 +42,22 @@ const NotaCelda = ({
   return (
     <td className="border-r border-b border-border p-1 text-center text-sm min-w-[120px] relative group">
       {estaEditando ? (
-        <input
-          ref={inputRef}
-          type="text"
-          className="w-full h-8 text-center border border-primary rounded px-1 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-          value={valorEditando}
-          onChange={(e) => onCambioNota(e.target.value)}
-          onBlur={onBlur}
-          onKeyDown={onKeyDown}
-          autoFocus
-          placeholder="0-5"
-        />
+        <>
+          <div className="h-8" aria-hidden="true" />
+          <div className="absolute inset-0 p-1 flex items-center justify-center">
+            <input
+              ref={inputRef}
+              type="text"
+              className="w-full h-8 text-center border border-primary rounded px-1 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+              value={valorEditando}
+              onChange={(e) => onCambioNota(e.target.value)}
+              onBlur={onBlur}
+              onKeyDown={onKeyDown}
+              autoFocus
+              placeholder="0-5"
+            />
+          </div>
+        </>
       ) : (
         <div className="relative flex items-center justify-center h-8">
           <button
