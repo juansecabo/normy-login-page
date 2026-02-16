@@ -142,6 +142,12 @@ const TablaNotas = () => {
   const isNavigating = useRef(false);
   const celdaEditandoRef = useRef<CeldaEditando | null>(null);
 
+  // Refs para scrollbar horizontal sticky en desktop
+  const tableContainerRef = useRef<HTMLDivElement>(null);
+  const stickyScrollRef = useRef<HTMLDivElement>(null);
+  const [tableScrollWidth, setTableScrollWidth] = useState(0);
+  const isSyncingScroll = useRef(false);
+
   // useEffect UNIFICADO: Verificar sesión y cargar datos
   useEffect(() => {
     const inicializar = async () => {
@@ -2584,6 +2590,29 @@ const TablaNotas = () => {
     }
   }, [celdaEditando]);
 
+  // Sincronizar ancho del scrollbar sticky con el ancho real de la tabla
+  useEffect(() => {
+    const container = tableContainerRef.current;
+    if (!container) return;
+    const update = () => setTableScrollWidth(container.scrollWidth);
+    update();
+    const observer = new ResizeObserver(update);
+    observer.observe(container);
+    return () => observer.disconnect();
+  }, [actividades, estudiantes, periodoActivo, esFinalDefinitiva]);
+
+  const syncScroll = (source: 'table' | 'scrollbar') => {
+    if (isSyncingScroll.current) return;
+    isSyncingScroll.current = true;
+    const table = tableContainerRef.current;
+    const scrollbar = stickyScrollRef.current;
+    if (table && scrollbar) {
+      if (source === 'table') scrollbar.scrollLeft = table.scrollLeft;
+      else table.scrollLeft = scrollbar.scrollLeft;
+    }
+    requestAnimationFrame(() => { isSyncingScroll.current = false; });
+  };
+
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <HeaderNormy backLink="/dashboard" />
@@ -2729,7 +2758,8 @@ const TablaNotas = () => {
               No hay estudiantes en este salón
             </div>
           ) : (
-            <div className="overflow-x-auto border-l border-t border-border">
+            <>
+            <div ref={tableContainerRef} className="overflow-x-auto md-hide-scrollbar border-l border-t border-border" onScroll={() => syncScroll('table')}>
               <table className="w-full border-separate border-spacing-0">
                 <thead>
                   <tr className="bg-primary text-primary-foreground">
@@ -3096,6 +3126,15 @@ const TablaNotas = () => {
                 </tfoot>
               </table>
             </div>
+            {/* Scrollbar horizontal sticky en desktop */}
+            <div
+              ref={stickyScrollRef}
+              className="hidden md:block sticky bottom-0 overflow-x-auto border-l border-r border-border"
+              onScroll={() => syncScroll('scrollbar')}
+            >
+              <div style={{ width: tableScrollWidth, height: 1 }} />
+            </div>
+            </>
           )}
         </div>
       </main>

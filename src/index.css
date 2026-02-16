@@ -101,3 +101,13 @@
     font-family: 'Poppins', sans-serif;
   }
 }
+
+/* Ocultar scrollbar nativo en desktop (md+) para usar scrollbar sticky */
+@media (min-width: 768px) {
+  .md-hide-scrollbar {
+    scrollbar-width: none; /* Firefox */
+  }
+  .md-hide-scrollbar::-webkit-scrollbar {
+    display: none; /* Chrome, Safari, Edge */
+  }
+}
