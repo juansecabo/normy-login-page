@@ -142,10 +142,9 @@ const TablaNotas = () => {
   const isNavigating = useRef(false);
   const celdaEditandoRef = useRef<CeldaEditando | null>(null);
 
-  // Refs para scrollbar horizontal sticky en desktop
+  // Refs para scrollbar horizontal fija en desktop
   const tableContainerRef = useRef<HTMLDivElement>(null);
-  const stickyScrollRef = useRef<HTMLDivElement>(null);
-  const [tableScrollWidth, setTableScrollWidth] = useState(0);
+  const fixedScrollRef = useRef<HTMLDivElement>(null);
   const isSyncingScroll = useRef(false);
 
   // useEffect UNIFICADO: Verificar sesión y cargar datos
@@ -2590,22 +2589,51 @@ const TablaNotas = () => {
     }
   }, [celdaEditando]);
 
-  // Sincronizar ancho del scrollbar sticky con el ancho real de la tabla
+  // Scrollbar horizontal fija en desktop: posicionar y mostrar/ocultar via DOM directo
   useEffect(() => {
     const container = tableContainerRef.current;
-    if (!container) return;
-    const update = () => setTableScrollWidth(container.scrollWidth);
+    const scrollbar = fixedScrollRef.current;
+    if (!container || !scrollbar) return;
+
+    const update = () => {
+      // No mostrar en móvil
+      if (window.innerWidth < 768) {
+        scrollbar.style.display = 'none';
+        return;
+      }
+      const hasOverflow = container.scrollWidth > container.clientWidth;
+      const rect = container.getBoundingClientRect();
+      const inView = rect.top < window.innerHeight && rect.bottom > 0;
+
+      if (hasOverflow && inView) {
+        scrollbar.style.display = 'block';
+        scrollbar.style.left = rect.left + 'px';
+        scrollbar.style.width = rect.width + 'px';
+        const spacer = scrollbar.firstElementChild as HTMLElement;
+        if (spacer) spacer.style.width = container.scrollWidth + 'px';
+      } else {
+        scrollbar.style.display = 'none';
+      }
+    };
+
     update();
+    window.addEventListener('scroll', update, { passive: true });
+    window.addEventListener('resize', update);
     const observer = new ResizeObserver(update);
     observer.observe(container);
-    return () => observer.disconnect();
+
+    return () => {
+      window.removeEventListener('scroll', update);
+      window.removeEventListener('resize', update);
+      observer.disconnect();
+    };
   }, [actividades, estudiantes, periodoActivo, esFinalDefinitiva]);
 
   const syncScroll = (source: 'table' | 'scrollbar') => {
     if (isSyncingScroll.current) return;
     isSyncingScroll.current = true;
     const table = tableContainerRef.current;
-    const scrollbar = stickyScrollRef.current;
+    const scrollbar = fixedScrollRef.current;
     if (table && scrollbar) {
       if (source === 'table') scrollbar.scrollLeft = table.scrollLeft;
       else table.scrollLeft = scrollbar.scrollLeft;
@@ -2681,7 +2709,7 @@ const TablaNotas = () => {
         </div>
 
         {/* Pestañas de Períodos */}
-        <div className="bg-card rounded-lg shadow-soft overflow-clip">
+        <div className="bg-card rounded-lg shadow-soft overflow-hidden">
           {/* Tab Headers */}
           <div className="flex border-b border-border">
             {periodos.map((periodo) => {
@@ -2758,7 +2786,6 @@ const TablaNotas = () => {
               No hay estudiantes en este salón
             </div>
           ) : (
-            <>
             <div ref={tableContainerRef} className="overflow-x-auto md-hide-scrollbar border-l border-t border-border" onScroll={() => syncScroll('table')}>
               <table className="w-full border-separate border-spacing-0">
                 <thead>
@@ -3126,18 +3153,19 @@ const TablaNotas = () => {
                 </tfoot>
               </table>
             </div>
-            {/* Scrollbar horizontal sticky en desktop */}
-            <div
-              ref={stickyScrollRef}
-              className="hidden md:block sticky bottom-0 overflow-x-auto border-l border-r border-border"
-              onScroll={() => syncScroll('scrollbar')}
-            >
-              <div style={{ width: tableScrollWidth, height: 1 }} />
-            </div>
-            </>
           )}
         </div>
       </main>
+
+      {/* Scrollbar horizontal fija en desktop */}
+      <div
+        ref={fixedScrollRef}
+        className="fixed bottom-0 z-40 overflow-x-auto"
+        style={{ display: 'none' }}
+        onScroll={() => syncScroll('scrollbar')}
+      >
+        <div style={{ height: 1 }} />
+      </div>
 
       {/* Modal para crear/editar actividad */}
       <Dialog open={modalOpen} onOpenChange={setModalOpen}>
