@@ -2564,7 +2564,7 @@ const TablaNotas = () => {
       <HeaderNormy backLink="/dashboard" />
 
       {/* Main Content */}
-      <main className="flex-1 container mx-auto p-4 md:p-8">
+      <main className="flex-1 min-w-0 container mx-auto p-4 md:p-8">
         {/* Breadcrumb */}
         <div className="bg-card rounded-lg shadow-soft p-4 mb-6">
           <div className="flex flex-wrap items-center justify-between gap-4">
