@@ -114,9 +114,9 @@ const CalendarioEstudiante = () => {
           {loading ? (
             <div className="text-center py-8 text-muted-foreground">Cargando...</div>
           ) : (
-            <div className="flex flex-col lg:flex-row gap-6">
+            <div className="flex flex-col lg:flex-row lg:items-start gap-6">
               {/* Calendario */}
-              <div className="flex justify-center">
+              <div className="flex justify-center lg:sticky lg:top-4 shrink-0">
                 <Calendar
                   mode="single"
                   selected={diaSeleccionado}
@@ -125,40 +125,13 @@ const CalendarioEstudiante = () => {
                   onMonthChange={setMesActual}
                   locale={es}
                   modifiers={{ conActividad: diasConActividades }}
-                  modifiersClassNames={{ conActividad: "relative" }}
-                  components={{
-                    DayContent: ({ date }) => {
-                      const key = fechaKey(date);
-                      const tiene = !!actividadesPorFecha[key];
-                      const cantidad = actividadesPorFecha[key]?.length || 0;
-                      return (
-                        <div className="relative flex items-center justify-center w-full h-full">
-                          <span>{date.getDate()}</span>
-                          {tiene && (
-                            <div className="absolute -bottom-0.5 left-1/2 -translate-x-1/2 flex gap-0.5">
-                              {cantidad <= 3 ? (
-                                Array.from({ length: cantidad }).map((_, i) => (
-                                  <div key={i} className="w-1 h-1 rounded-full bg-primary" />
-                                ))
-                              ) : (
-                                <>
-                                  <div className="w-1 h-1 rounded-full bg-primary" />
-                                  <div className="w-1 h-1 rounded-full bg-primary" />
-                                  <div className="w-1 h-1 rounded-full bg-primary" />
-                                </>
-                              )}
-                            </div>
-                          )}
-                        </div>
-                      );
-                    },
-                  }}
+                  modifiersClassNames={{ conActividad: "bg-orange-400 text-white hover:bg-orange-500" }}
                   className="rounded-md border shadow-sm"
                 />
               </div>
 
               {/* Detalle del día seleccionado */}
-              <div className="flex-1 min-w-0">
+              <div className="flex-1 min-w-0 lg:max-h-[420px] lg:overflow-y-auto">
                 {diaSeleccionado && actividadesDelDia.length > 0 ? (
                   <div>
                     <div className="flex items-center justify-between mb-4">
