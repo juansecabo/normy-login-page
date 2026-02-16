@@ -3,6 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { getSession, isEstudiante } from "@/hooks/useSession";
 import HeaderNormy from "@/components/HeaderNormy";
 import ConsolidadoNotas from "@/components/ConsolidadoNotas";
+import { supabase } from "@/integrations/supabase/client";
+import { setStoredCount } from "@/utils/notificaciones";
 
 const NotasEstudiante = () => {
   const navigate = useNavigate();
@@ -11,7 +13,21 @@ const NotasEstudiante = () => {
     const session = getSession();
     if (!session.codigo || !isEstudiante()) {
       navigate("/");
+      return;
     }
+
+    const marcarVisto = async () => {
+      const { count } = await supabase
+        .from('Notas')
+        .select('*', { count: 'exact', head: true })
+        .eq('codigo_estudiantil', session.codigo)
+        .eq('grado', session.grado)
+        .eq('salon', session.salon);
+      if (count !== null) {
+        setStoredCount('notas', session.codigo!, count);
+      }
+    };
+    marcarVisto();
   }, [navigate]);
 
   const session = getSession();
@@ -28,7 +44,7 @@ const NotasEstudiante = () => {
             <button onClick={() => navigate("/dashboard-estudiante")} className="text-primary hover:underline">
               Inicio
             </button>
-            <span className="text-muted-foreground">→</span>
+            <span className="text-muted-foreground">&rarr;</span>
             <span className="text-foreground font-medium">Notas</span>
           </div>
         </div>

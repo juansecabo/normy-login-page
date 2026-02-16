@@ -87,14 +87,14 @@ const App = () => (
 
           {/* Rutas para Estudiante */}
           <Route path="/estudiante/notas" element={<NotasEstudiante />} />
-          <Route path="/estudiante/calendario" element={<CalendarioEstudiante />} />
+          <Route path="/estudiante/actividades" element={<CalendarioEstudiante />} />
           <Route path="/estudiante/estadisticas" element={<EstadisticasEstudiante />} />
           <Route path="/estudiante/comunicados" element={<ComunicadosEstudiante />} />
           <Route path="/estudiante/documentos" element={<DocumentosEstudiante />} />
 
           {/* Rutas para Padre */}
           <Route path="/padre/notas" element={<NotasPadre />} />
-          <Route path="/padre/calendario" element={<CalendarioPadre />} />
+          <Route path="/padre/actividades" element={<CalendarioPadre />} />
           <Route path="/padre/estadisticas" element={<EstadisticasPadre />} />
           <Route path="/padre/comunicados" element={<ComunicadosPadre />} />
           <Route path="/padre/documentos" element={<DocumentosPadre />} />

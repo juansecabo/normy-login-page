@@ -1,14 +1,26 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getSession, isPadreDeFamilia, HijoData } from "@/hooks/useSession";
-import { BookOpen, Calendar, BarChart3, Megaphone, FileText, User } from "lucide-react";
+import { BookOpen, ClipboardList, BarChart3, Megaphone, FileText, User } from "lucide-react";
 import HeaderNormy from "@/components/HeaderNormy";
+import { supabase } from "@/integrations/supabase/client";
+import { countUnseen, countNewByCount } from "@/utils/notificaciones";
+
+const Badge = ({ count }: { count: number }) => {
+  if (count <= 0) return null;
+  return (
+    <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full min-w-[20px] h-5 flex items-center justify-center px-1 shadow-sm">
+      {count > 99 ? '99+' : count}
+    </span>
+  );
+};
 
 const DashboardPadre = () => {
   const navigate = useNavigate();
   const [nombres, setNombres] = useState("");
   const [hijos, setHijos] = useState<HijoData[]>([]);
   const [hijoSeleccionado, setHijoSeleccionado] = useState<HijoData | null>(null);
+  const [badges, setBadges] = useState({ notas: 0, actividades: 0, comunicados: 0, documentos: 0 });
 
   useEffect(() => {
     const session = getSession();
@@ -31,7 +43,6 @@ const DashboardPadre = () => {
     if (storedHijo) {
       try {
         const parsed = JSON.parse(storedHijo);
-        // Verificar que el hijo guardado siga existiendo en la lista
         const existe = (session.hijos || []).find(h => h.codigo === parsed.codigo);
         if (existe) {
           setHijoSeleccionado(existe);
@@ -49,6 +60,71 @@ const DashboardPadre = () => {
       setHijoSeleccionado(session.hijos[0]);
       localStorage.setItem("hijoSeleccionado", JSON.stringify(session.hijos[0]));
     }
+
+    // Fetch notification badges
+    const fetchBadges = async () => {
+      const codigo = session.codigo!;
+      const hijosData = session.hijos || [];
+      const b = { notas: 0, actividades: 0, comunicados: 0, documentos: 0 };
+
+      try {
+        // Comunicados y documentos (nivel padre)
+        const { data: msgData } = await supabase
+          .from('Comunicados')
+          .select('id, tipo, perfil, nivel, grado, salon, codigo_estudiantil')
+          .in('perfil', ['Padres de familia', 'Estudiantes y Padres de familia']);
+
+        if (msgData) {
+          const filtrados = msgData.filter((c: any) => {
+            if (c.codigo_estudiantil) {
+              return hijosData.some(h => h.codigo === c.codigo_estudiantil);
+            }
+            if (!c.nivel && !c.grado && !c.salon) return true;
+            return hijosData.some(h => {
+              if (c.nivel && c.nivel !== h.nivel) return false;
+              if (c.grado && c.grado !== h.grado) return false;
+              if (c.salon && c.salon !== h.salon) return false;
+              return true;
+            });
+          });
+          const comunicados = filtrados.filter((c: any) => c.tipo === 'comunicado');
+          const documentos = filtrados.filter((c: any) => c.tipo === 'documento');
+          b.comunicados = countUnseen(comunicados.map((c: any) => c.id), 'comunicados', codigo);
+          b.documentos = countUnseen(documentos.map((c: any) => c.id), 'documentos', codigo);
+        }
+
+        // Actividades (por cada hijo)
+        for (const hijo of hijosData) {
+          const { data: actData } = await supabase
+            .from('Calendario Actividades')
+            .select('column_id')
+            .eq('Grado', hijo.grado)
+            .eq('Salon', hijo.salon);
+          if (actData) {
+            b.actividades += countUnseen(actData.map((a: any) => a.column_id), 'actividades', hijo.codigo);
+          }
+        }
+
+        // Notas (por cada hijo)
+        for (const hijo of hijosData) {
+          const { count } = await supabase
+            .from('Notas')
+            .select('*', { count: 'exact', head: true })
+            .eq('codigo_estudiantil', hijo.codigo)
+            .eq('grado', hijo.grado)
+            .eq('salon', hijo.salon);
+          if (count !== null && count !== undefined) {
+            b.notas += countNewByCount(count, 'notas', hijo.codigo);
+          }
+        }
+      } catch (err) {
+        console.error('Error fetching badges:', err);
+      }
+
+      setBadges(b);
+    };
+
+    fetchBadges();
   }, [navigate]);
 
   const seleccionarHijo = (hijo: HijoData) => {
@@ -129,18 +205,20 @@ const DashboardPadre = () => {
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-6 max-w-4xl mx-auto">
             <button
               onClick={() => navigate("/padre/notas")}
-              className="flex flex-col items-center justify-center gap-4 p-6 rounded-lg bg-emerald-100 transition-all duration-200 hover:shadow-md hover:bg-emerald-200"
+              className="relative flex flex-col items-center justify-center gap-4 p-6 rounded-lg bg-emerald-100 transition-all duration-200 hover:shadow-md hover:bg-emerald-200"
             >
+              <Badge count={badges.notas} />
               <BookOpen className="w-12 h-12 text-foreground" />
               <span className="font-semibold text-foreground">Notas</span>
             </button>
 
             <button
-              onClick={() => navigate("/padre/calendario")}
-              className="flex flex-col items-center justify-center gap-4 p-6 rounded-lg bg-green-100 transition-all duration-200 hover:shadow-md hover:bg-green-200"
+              onClick={() => navigate("/padre/actividades")}
+              className="relative flex flex-col items-center justify-center gap-4 p-6 rounded-lg bg-green-100 transition-all duration-200 hover:shadow-md hover:bg-green-200"
             >
-              <Calendar className="w-12 h-12 text-foreground" />
-              <span className="font-semibold text-foreground">Calendario</span>
+              <Badge count={badges.actividades} />
+              <ClipboardList className="w-12 h-12 text-foreground" />
+              <span className="font-semibold text-foreground">Actividades</span>
             </button>
 
             <button
@@ -153,16 +231,18 @@ const DashboardPadre = () => {
 
             <button
               onClick={() => navigate("/padre/comunicados")}
-              className="flex flex-col items-center justify-center gap-4 p-6 rounded-lg bg-lime-100 transition-all duration-200 hover:shadow-md hover:bg-lime-200"
+              className="relative flex flex-col items-center justify-center gap-4 p-6 rounded-lg bg-lime-100 transition-all duration-200 hover:shadow-md hover:bg-lime-200"
             >
+              <Badge count={badges.comunicados} />
               <Megaphone className="w-12 h-12 text-foreground" />
               <span className="font-semibold text-foreground text-center">Comunicados</span>
             </button>
 
             <button
               onClick={() => navigate("/padre/documentos")}
-              className="flex flex-col items-center justify-center gap-4 p-6 rounded-lg bg-cyan-100 transition-all duration-200 hover:shadow-md hover:bg-cyan-200"
+              className="relative flex flex-col items-center justify-center gap-4 p-6 rounded-lg bg-cyan-100 transition-all duration-200 hover:shadow-md hover:bg-cyan-200"
             >
+              <Badge count={badges.documentos} />
               <FileText className="w-12 h-12 text-foreground" />
               <span className="font-semibold text-foreground text-center">Documentos</span>
             </button>

@@ -3,6 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { getSession, isPadreDeFamilia, HijoData } from "@/hooks/useSession";
 import HeaderNormy from "@/components/HeaderNormy";
 import ConsolidadoNotas from "@/components/ConsolidadoNotas";
+import { supabase } from "@/integrations/supabase/client";
+import { setStoredCount } from "@/utils/notificaciones";
 
 const NotasPadre = () => {
   const navigate = useNavigate();
@@ -18,7 +20,21 @@ const NotasPadre = () => {
     const storedHijo = localStorage.getItem("hijoSeleccionado");
     if (storedHijo) {
       try {
-        setHijo(JSON.parse(storedHijo));
+        const hijoData: HijoData = JSON.parse(storedHijo);
+        setHijo(hijoData);
+
+        const marcarVisto = async () => {
+          const { count } = await supabase
+            .from('Notas')
+            .select('*', { count: 'exact', head: true })
+            .eq('codigo_estudiantil', hijoData.codigo)
+            .eq('grado', hijoData.grado)
+            .eq('salon', hijoData.salon);
+          if (count !== null) {
+            setStoredCount('notas', hijoData.codigo, count);
+          }
+        };
+        marcarVisto();
       } catch {
         navigate("/dashboard-padre");
       }
@@ -40,7 +56,7 @@ const NotasPadre = () => {
             <button onClick={() => navigate("/dashboard-padre")} className="text-primary hover:underline">
               Inicio
             </button>
-            <span className="text-muted-foreground">→</span>
+            <span className="text-muted-foreground">&rarr;</span>
             <span className="text-foreground font-medium">Notas de {hijo.nombre}</span>
           </div>
         </div>

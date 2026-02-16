@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { getSession, isPadreDeFamilia } from "@/hooks/useSession";
 import HeaderNormy from "@/components/HeaderNormy";
 import ListaComunicados from "@/components/ListaComunicados";
+import { markAsSeen } from "@/utils/notificaciones";
 
 interface Comunicado {
   id: number;
@@ -56,6 +57,7 @@ const DocumentosPadre = () => {
             });
           });
           setDocumentos(filtrados);
+          markAsSeen('documentos', session.codigo!, filtrados.map((c: Comunicado) => c.id));
         }
       } catch (err) {
         console.error('Error:', err);
