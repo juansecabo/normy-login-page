@@ -182,7 +182,7 @@ const CalendarioPadre = () => {
                       {actividadesPorHijo.map(({ hijo, actividades: acts }) => (
                         <div key={hijo.codigo}>
                           <h4 className="text-lg font-bold text-primary mb-2">
-                            Actividades de <span className="uppercase">{hijo.nombre} {hijo.apellidos}</span>
+                            Actividades de {hijo.nombre} {hijo.apellidos}
                             <span className="text-muted-foreground font-normal text-sm"> — {hijo.grado} {hijo.salon}</span>
                           </h4>
                           <div className="space-y-3">
