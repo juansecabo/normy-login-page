@@ -102,13 +102,23 @@
   }
 }
 
-/* Ocultar scrollbar horizontal nativa en desktop para usar la sticky */
+/* Ocultar scrollbar nativa en desktop para usar la sticky */
 @media (min-width: 768px) {
   .md-hide-scrollbar {
     scrollbar-width: none;
   }
   .md-hide-scrollbar::-webkit-scrollbar {
     display: none;
+  }
+}
+
+/* Mostrar solo en desktop (reemplazo de hidden md:block que falla) */
+.md-only {
+  display: none;
+}
+@media (min-width: 768px) {
+  .md-only {
+    display: block;
   }
 }
 
