@@ -143,9 +143,6 @@ const TablaNotas = () => {
   const celdaEditandoRef = useRef<CeldaEditando | null>(null);
 
   const tableContainerRef = useRef<HTMLDivElement>(null);
-  const stickyScrollRef = useRef<HTMLDivElement>(null);
-  const isSyncingScroll = useRef(false);
-  const [tableScrollWidth, setTableScrollWidth] = useState(0);
 
   // useEffect UNIFICADO: Verificar sesión y cargar datos
   useEffect(() => {
@@ -2589,35 +2586,12 @@ const TablaNotas = () => {
     }
   }, [celdaEditando]);
 
-  // Rastrear ancho de scroll de la tabla para scrollbar sticky
-  useEffect(() => {
-    const container = tableContainerRef.current;
-    if (!container) return;
-    const update = () => setTableScrollWidth(container.scrollWidth);
-    update();
-    const observer = new ResizeObserver(update);
-    observer.observe(container);
-    return () => observer.disconnect();
-  }, [actividades, estudiantes, periodoActivo, esFinalDefinitiva]);
-
-  const syncScroll = (source: 'table' | 'scrollbar') => {
-    if (isSyncingScroll.current) return;
-    isSyncingScroll.current = true;
-    const table = tableContainerRef.current;
-    const scrollbar = stickyScrollRef.current;
-    if (table && scrollbar) {
-      if (source === 'table') scrollbar.scrollLeft = table.scrollLeft;
-      else table.scrollLeft = scrollbar.scrollLeft;
-    }
-    requestAnimationFrame(() => { isSyncingScroll.current = false; });
-  };
-
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div className="min-h-screen md:h-screen bg-background flex flex-col">
       <HeaderNormy backLink="/dashboard" />
 
       {/* Main Content */}
-      <main className="flex-1 min-w-0 container mx-auto p-4 md:p-8">
+      <main className="flex-1 min-w-0 md:flex md:flex-col md:overflow-hidden container mx-auto p-4 md:p-8">
         {/* Breadcrumb */}
         <div className="bg-card rounded-lg shadow-soft p-4 mb-6">
           <div className="flex flex-wrap items-center justify-between gap-4">
@@ -2680,7 +2654,7 @@ const TablaNotas = () => {
         </div>
 
         {/* Pestañas de Períodos */}
-        <div className="bg-card rounded-lg shadow-soft">
+        <div className="bg-card rounded-lg shadow-soft md:flex-1 md:flex md:flex-col md:min-h-0 md:overflow-hidden">
           {/* Tab Headers */}
           <div className="flex border-b border-border rounded-t-lg overflow-hidden">
             {periodos.map((periodo) => {
@@ -2757,8 +2731,7 @@ const TablaNotas = () => {
               No hay estudiantes en este salón
             </div>
           ) : (
-            <>
-            <div ref={tableContainerRef} className="overflow-x-auto md-hide-scrollbar border-l border-t border-border" onScroll={() => syncScroll('table')}>
+            <div ref={tableContainerRef} className="overflow-x-auto md:overflow-auto md:flex-1 md:min-h-0 border-l border-t border-border">
               <table className="w-full border-separate border-spacing-0">
                 <thead>
                   <tr className="bg-primary text-primary-foreground">
@@ -3125,15 +3098,6 @@ const TablaNotas = () => {
                 </tfoot>
               </table>
             </div>
-            {/* Scrollbar horizontal sticky en desktop */}
-            <div
-              ref={stickyScrollRef}
-              className="sticky-scrollbar"
-              onScroll={() => syncScroll('scrollbar')}
-            >
-              <div style={{ width: tableScrollWidth, height: 1 }} />
-            </div>
-            </>
           )}
         </div>
       </main>

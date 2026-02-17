@@ -102,30 +102,4 @@
   }
 }
 
-/* Ocultar scrollbar nativa en desktop para usar la sticky */
-@media (min-width: 768px) {
-  .md-hide-scrollbar {
-    scrollbar-width: none;
-  }
-  .md-hide-scrollbar::-webkit-scrollbar {
-    display: none;
-  }
-}
-
-/* Scrollbar horizontal sticky - solo desktop */
-.sticky-scrollbar {
-  height: 0;
-  overflow: hidden;
-  position: sticky;
-  bottom: 0;
-}
-@media (min-width: 768px) {
-  .sticky-scrollbar {
-    height: auto;
-    overflow-x: auto;
-    overflow-y: hidden;
-    z-index: 30;
-    background: hsl(var(--background));
-  }
-}
 
