@@ -3128,7 +3128,7 @@ const TablaNotas = () => {
             {/* Scrollbar horizontal sticky en desktop */}
             <div
               ref={stickyScrollRef}
-              className="md-only sticky bottom-0 z-30 overflow-x-auto bg-background"
+              className="sticky-scrollbar"
               onScroll={() => syncScroll('scrollbar')}
             >
               <div style={{ width: tableScrollWidth, height: 1 }} />

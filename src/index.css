@@ -112,13 +112,20 @@
   }
 }
 
-/* Mostrar solo en desktop (reemplazo de hidden md:block que falla) */
-.md-only {
-  display: none;
+/* Scrollbar horizontal sticky - solo desktop */
+.sticky-scrollbar {
+  height: 0;
+  overflow: hidden;
+  position: sticky;
+  bottom: 0;
 }
 @media (min-width: 768px) {
-  .md-only {
-    display: block;
+  .sticky-scrollbar {
+    height: auto;
+    overflow-x: auto;
+    overflow-y: hidden;
+    z-index: 30;
+    background: hsl(var(--background));
   }
 }
 
