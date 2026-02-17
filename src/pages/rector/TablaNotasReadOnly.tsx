@@ -272,11 +272,11 @@ const TablaNotasReadOnly = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div className="min-h-screen md:h-screen bg-background flex flex-col">
       <HeaderNormy backLink="/dashboard-rector" />
 
       {/* Main Content */}
-      <main className="flex-1 container mx-auto p-4 md:p-8">
+      <main className="flex-1 min-w-0 md:flex md:flex-col md:overflow-hidden container mx-auto p-4 md:p-8">
         {/* Breadcrumb */}
         <div className="bg-card rounded-lg shadow-soft p-4 mb-6">
           <div className="flex flex-wrap items-center gap-2 text-sm">
@@ -328,7 +328,7 @@ const TablaNotasReadOnly = () => {
         )}
 
         {/* Pestañas de Períodos */}
-        <div className="bg-card rounded-lg shadow-soft overflow-hidden">
+        <div className="bg-card rounded-lg shadow-soft md:flex-1 md:flex md:flex-col md:min-h-0 md:overflow-hidden">
           {/* Tab Headers */}
           <div className="flex border-b border-border">
             {periodos.map((periodo) => {
@@ -401,7 +401,7 @@ const TablaNotasReadOnly = () => {
               No hay estudiantes en este salón
             </div>
           ) : (
-            <div className="overflow-x-auto border-l border-t border-border">
+            <div className="overflow-x-auto md:overflow-auto md:flex-1 md:min-h-0 border-l border-t border-border">
               <table className="w-full border-separate border-spacing-0">
                 <thead>
                   <tr className="bg-primary text-primary-foreground">
