@@ -242,27 +242,18 @@ const EnviarDocumento = () => {
           destinatarios: destinatariosTexto,
           mensaje: mensaje.trim(),
           archivo_url: archivoUrl,
+          codigo_remitente: codigoRemitente,
+          perfil: perfil || null,
+          nivel: (nivel && nivel !== "Todos") ? nivel : null,
+          grado: grado || null,
+          salon: (salon && salon !== "Todos") ? salon : null,
+          codigo_estudiantil: (estudiante && estudiante !== "Todos") ? estudiante : null,
         }),
       });
 
       if (!response.ok) {
         throw new Error(`Error del servidor: ${response.status}`);
       }
-
-      // 4. Guardar en historial
-      await supabase.from("Comunicados").insert({
-        remitente,
-        codigo_remitente: codigoRemitente,
-        destinatarios: destinatariosTexto,
-        perfil: perfil || null,
-        nivel: (nivel && nivel !== "Todos") ? nivel : null,
-        grado: grado || null,
-        salon: (salon && salon !== "Todos") ? salon : null,
-        codigo_estudiantil: (estudiante && estudiante !== "Todos") ? estudiante : null,
-        mensaje: mensaje.trim() || archivo.name,
-        archivo_url: archivoUrl,
-        tipo: "documento",
-      });
 
       toast({
         title: "Documento enviado",
