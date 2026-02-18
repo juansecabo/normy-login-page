@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Eye, EyeOff } from "lucide-react";
 import escudoImg from "@/assets/escudo.webp";
 import normyImg from "@/assets/normy-placeholder.webp";
+import cailicoLogo from "@/assets/cailico-logo.png";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
@@ -310,6 +311,24 @@ const Index = () => {
           <p className="text-center text-xs text-muted-foreground pt-4">
             Sistema de gestión de calificaciones
           </p>
+
+          {/* Desarrollado por */}
+          <div className="text-center pt-4 space-y-2">
+            <p className="text-xs text-muted-foreground">Desarrollado por:</p>
+            <img
+              src={cailicoLogo}
+              alt="Cailico"
+              className="h-8 mx-auto"
+            />
+            <a
+              href="https://cailico.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-xs text-primary hover:underline"
+            >
+              cailico.com
+            </a>
+          </div>
         </div>
       </div>
     </div>
