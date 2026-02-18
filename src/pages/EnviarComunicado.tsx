@@ -210,20 +210,6 @@ const EnviarComunicado = () => {
         throw new Error(`Error del servidor: ${response.status}`);
       }
 
-      // INSERT local (duplica con el de n8n — temporal para prueba)
-      await supabase.from("Comunicados").insert({
-        remitente,
-        destinatarios: destinatariosTexto,
-        mensaje: mensaje.trim(),
-        tipo: "comunicado",
-        perfil: perfil || null,
-        nivel: (nivel && nivel !== "Todos") ? nivel : null,
-        grado: grado || null,
-        salon: (salon && salon !== "Todos") ? salon : null,
-        codigo_estudiantil: (estudiante && estudiante !== "Todos") ? estudiante : null,
-        codigo_remitente: codigoRemitente,
-      });
-
       toast({
         title: "Comunicado enviado",
         description: "El comunicado se está enviando por WhatsApp.",
