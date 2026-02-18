@@ -197,26 +197,18 @@ const EnviarComunicado = () => {
           remitente,
           destinatarios: destinatariosTexto,
           mensaje: mensaje.trim(),
+          codigo_remitente: codigoRemitente,
+          perfil: perfil || null,
+          nivel: (nivel && nivel !== "Todos") ? nivel : null,
+          grado: grado || null,
+          salon: (salon && salon !== "Todos") ? salon : null,
+          codigo_estudiantil: (estudiante && estudiante !== "Todos") ? estudiante : null,
         }),
       });
 
       if (!response.ok) {
         throw new Error(`Error del servidor: ${response.status}`);
       }
-
-      // Guardar en historial
-      await supabase.from("Comunicados").insert({
-        remitente,
-        codigo_remitente: codigoRemitente,
-        destinatarios: destinatariosTexto,
-        perfil: perfil || null,
-        nivel: (nivel && nivel !== "Todos") ? nivel : null,
-        grado: grado || null,
-        salon: (salon && salon !== "Todos") ? salon : null,
-        codigo_estudiantil: (estudiante && estudiante !== "Todos") ? estudiante : null,
-        mensaje: mensaje.trim(),
-        tipo: "comunicado",
-      });
 
       toast({
         title: "Comunicado enviado",
