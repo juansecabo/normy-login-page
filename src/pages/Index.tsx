@@ -307,11 +307,6 @@ const Index = () => {
             </Button>
           </form>
 
-          {/* Footer discreto */}
-          <p className="text-center text-xs text-muted-foreground pt-4">
-            Sistema de gestión de calificaciones
-          </p>
-
           {/* Desarrollado por */}
           <div className="text-center pt-4 space-y-2">
             <p className="text-xs text-muted-foreground">Desarrollado por:</p>
