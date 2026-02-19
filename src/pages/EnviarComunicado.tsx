@@ -14,12 +14,15 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { getSession, isRectorOrCoordinador } from "@/hooks/useSession";
 import HeaderNormy from "@/components/HeaderNormy";
-import { Loader2, Send, Clock, Trash2, Search } from "lucide-react";
+import { Loader2, Send, Clock, Trash2, Search, Users, Eye } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
 const WEBHOOK_URL =
   "https://n8n.srv966880.hstgr.cloud/webhook/ae459f1c-7e94-45f4-9909-aaddc82a7552";
+
+const WEBHOOK_MASIVO_URL =
+  "https://n8n.srv966880.hstgr.cloud/webhook/masivo-personalizado";
 
 const NIVELES_GRADOS: Record<string, string[]> = {
   Preescolar: ["Prejardín", "Jardín", "Transición"],
@@ -59,6 +62,14 @@ const EnviarComunicado = () => {
 
   // Mensaje
   const [mensaje, setMensaje] = useState("");
+
+  // Masivo personalizado
+  const [datosMasivos, setDatosMasivos] = useState("");
+  const [plantillaMasivo, setPlantillaMasivo] = useState("");
+  const [filasParsed, setFilasParsed] = useState<Record<string, string>[]>([]);
+  const [headersMasivo, setHeadersMasivo] = useState<string[]>([]);
+  const [enviandoMasivo, setEnviandoMasivo] = useState(false);
+  const [showConfirmMasivo, setShowConfirmMasivo] = useState(false);
 
   // Historial
   const [historial, setHistorial] = useState<ComunicadoEnviado[]>([]);
@@ -229,6 +240,96 @@ const EnviarComunicado = () => {
     }
   };
 
+  // Parsear datos pegados del Excel (tab-separated)
+  const parsearDatos = (texto: string) => {
+    setDatosMasivos(texto);
+    const lineas = texto.split("\n").filter((l) => l.trim());
+    if (lineas.length < 2) {
+      setHeadersMasivo([]);
+      setFilasParsed([]);
+      return;
+    }
+    const headers = lineas[0].split("\t").map((h) => h.trim());
+    setHeadersMasivo(headers);
+    const filas = lineas.slice(1).map((linea) => {
+      const valores = linea.split("\t").map((v) => v.trim());
+      const fila: Record<string, string> = {};
+      headers.forEach((h, i) => {
+        fila[h] = valores[i] || "";
+      });
+      return fila;
+    });
+    setFilasParsed(filas);
+  };
+
+  // Resolver plantilla para una fila
+  const resolverPlantilla = (plantilla: string, fila: Record<string, string>) => {
+    return plantilla.replace(/\{([^}]+)\}/g, (match, key) => fila[key.trim()] ?? match);
+  };
+
+  const handleEnviarMasivo = async () => {
+    setShowConfirmMasivo(false);
+    setEnviandoMasivo(true);
+
+    try {
+      if (!headersMasivo.length || !filasParsed.length) {
+        throw new Error("No hay datos para enviar");
+      }
+      if (!plantillaMasivo.trim()) {
+        throw new Error("Escribe una plantilla de mensaje");
+      }
+
+      // Primera columna = código del estudiante
+      const colCodigo = headersMasivo[0];
+      const mensajes = filasParsed.map((fila) => ({
+        codigo: fila[colCodigo],
+        mensaje: resolverPlantilla(plantillaMasivo, fila),
+      }));
+
+      const response = await fetch(WEBHOOK_MASIVO_URL, {
+        method: "POST",
+        mode: "cors",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          remitente,
+          codigo_remitente: codigoRemitente,
+          mensajes,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Error del servidor: ${response.status}`);
+      }
+
+      // Guardar resumen en Comunicados
+      await supabase.from("Comunicados").insert({
+        remitente,
+        codigo_remitente: codigoRemitente,
+        destinatarios: `Envío masivo personalizado a ${mensajes.length} estudiantes`,
+        mensaje: plantillaMasivo.trim(),
+      });
+
+      toast({
+        title: "Envío masivo iniciado",
+        description: `Se están enviando ${mensajes.length} mensajes personalizados por WhatsApp.`,
+      });
+
+      setDatosMasivos("");
+      setPlantillaMasivo("");
+      setFilasParsed([]);
+      setHeadersMasivo([]);
+    } catch (error) {
+      console.error("Error enviando masivo:", error);
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "No se pudo enviar. Intenta de nuevo.",
+        variant: "destructive",
+      });
+    } finally {
+      setEnviandoMasivo(false);
+    }
+  };
+
   const formatFecha = (fecha: string) => {
     const d = new Date(fecha);
     return d.toLocaleDateString("es-CO", {
@@ -259,8 +360,9 @@ const EnviarComunicado = () => {
         <div className="bg-card rounded-lg shadow-soft p-6 md:p-8 max-w-2xl mx-auto">
           <Tabs defaultValue="enviar" onValueChange={(v) => { if (v === "historial") fetchHistorial(); }}>
             <TabsList className="flex w-full">
-              <TabsTrigger value="enviar" className="flex-1 text-xs md:text-sm px-2 md:px-3">Enviar Comunicado</TabsTrigger>
-              <TabsTrigger value="historial" className="flex-1 text-xs md:text-sm px-2 md:px-3">Comunicados Enviados</TabsTrigger>
+              <TabsTrigger value="enviar" className="flex-1 text-xs md:text-sm px-2 md:px-3">Enviar</TabsTrigger>
+              <TabsTrigger value="masivo" className="flex-1 text-xs md:text-sm px-2 md:px-3">Masivo</TabsTrigger>
+              <TabsTrigger value="historial" className="flex-1 text-xs md:text-sm px-2 md:px-3">Historial</TabsTrigger>
             </TabsList>
 
             <TabsContent value="enviar">
@@ -414,6 +516,114 @@ const EnviarComunicado = () => {
               </button>
             </TabsContent>
 
+            <TabsContent value="masivo">
+              <h2 className="text-2xl font-bold text-foreground mb-6 text-center mt-4">
+                Envío Masivo Personalizado
+              </h2>
+
+              {/* Paso 1: Pegar datos */}
+              <div className="space-y-2 mb-6">
+                <Label className="text-base font-semibold">1. Pegar datos de Excel</Label>
+                <p className="text-xs text-muted-foreground">
+                  Copia las columnas de Excel y pégalas aquí. La primera fila debe ser los encabezados y la primera columna debe ser el código del estudiante.
+                </p>
+                <Textarea
+                  value={datosMasivos}
+                  onChange={(e) => parsearDatos(e.target.value)}
+                  placeholder={"codigo\tusuario\tcontraseña\n12345\test12345\tPass123!\n12346\test12346\tPass456!"}
+                  rows={5}
+                  className="font-mono text-xs"
+                />
+              </div>
+
+              {/* Tabla de vista previa */}
+              {filasParsed.length > 0 && (
+                <div className="mb-6 space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Eye className="w-4 h-4 text-muted-foreground" />
+                    <span className="text-sm font-medium">{filasParsed.length} filas detectadas</span>
+                  </div>
+                  <div className="border rounded-md overflow-x-auto max-h-48 overflow-y-auto">
+                    <table className="w-full text-xs">
+                      <thead className="bg-muted sticky top-0">
+                        <tr>
+                          {headersMasivo.map((h) => (
+                            <th key={h} className="px-3 py-2 text-left font-medium text-foreground whitespace-nowrap">{h}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {filasParsed.map((fila, i) => (
+                          <tr key={i} className="border-t">
+                            {headersMasivo.map((h) => (
+                              <td key={h} className="px-3 py-1.5 whitespace-nowrap">{fila[h]}</td>
+                            ))}
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+
+              {/* Paso 2: Plantilla */}
+              <div className="space-y-2 mb-6">
+                <Label className="text-base font-semibold">2. Plantilla del mensaje</Label>
+                <p className="text-xs text-muted-foreground">
+                  Usa los nombres de las columnas entre llaves como placeholders. Ej: {"{usuario}"}, {"{contraseña}"}
+                </p>
+                {headersMasivo.length > 0 && (
+                  <div className="flex flex-wrap gap-1 mb-2">
+                    {headersMasivo.map((h) => (
+                      <button
+                        key={h}
+                        type="button"
+                        onClick={() => setPlantillaMasivo((prev) => prev + `{${h}}`)}
+                        className="px-2 py-0.5 text-xs bg-muted rounded-md hover:bg-muted/80 font-mono"
+                      >
+                        {`{${h}}`}
+                      </button>
+                    ))}
+                  </div>
+                )}
+                <Textarea
+                  value={plantillaMasivo}
+                  onChange={(e) => setPlantillaMasivo(e.target.value)}
+                  placeholder="Hola, tu usuario es {usuario} y tu contraseña es {contraseña}. No la compartas con nadie."
+                  rows={4}
+                />
+              </div>
+
+              {/* Vista previa del primer mensaje */}
+              {plantillaMasivo && filasParsed.length > 0 && (
+                <div className="mb-6 space-y-2">
+                  <Label className="text-base font-semibold">Vista previa (primer estudiante)</Label>
+                  <div className="bg-muted p-3 rounded-md text-sm whitespace-pre-wrap">
+                    {resolverPlantilla(plantillaMasivo, filasParsed[0])}
+                  </div>
+                </div>
+              )}
+
+              {/* Botón enviar */}
+              <button
+                disabled={!filasParsed.length || !plantillaMasivo.trim() || enviandoMasivo}
+                onClick={() => setShowConfirmMasivo(true)}
+                className="w-full flex items-center justify-center gap-2 p-4 rounded-lg bg-gradient-to-r from-green-500 to-green-600 text-white font-bold text-lg transition-all duration-200 hover:shadow-md hover:scale-[1.01] hover:from-green-600 hover:to-green-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+              >
+                {enviandoMasivo ? (
+                  <>
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                    Enviando...
+                  </>
+                ) : (
+                  <>
+                    <Users className="w-5 h-5" />
+                    Enviar {filasParsed.length} mensajes personalizados
+                  </>
+                )}
+              </button>
+            </TabsContent>
+
             <TabsContent value="historial">
               <h2 className="text-2xl font-bold text-foreground mb-6 text-center mt-4">
                 Comunicados Enviados
@@ -507,6 +717,38 @@ const EnviarComunicado = () => {
             </button>
             <button onClick={handleEnviar} className="px-4 py-2 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90">
               Enviar
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Diálogo de confirmación masivo */}
+      <Dialog open={showConfirmMasivo} onOpenChange={setShowConfirmMasivo}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirmar envío masivo</DialogTitle>
+            <DialogDescription asChild>
+              <div className="space-y-3 text-sm text-muted-foreground">
+                <p>
+                  Se enviarán <span className="font-bold text-foreground">{filasParsed.length} mensajes personalizados</span> por WhatsApp.
+                </p>
+                <p>
+                  <span className="font-medium text-foreground">Ejemplo (primer estudiante):</span>
+                </p>
+                {filasParsed.length > 0 && plantillaMasivo && (
+                  <p className="whitespace-pre-wrap bg-muted p-3 rounded-md max-h-48 overflow-y-auto">
+                    {resolverPlantilla(plantillaMasivo, filasParsed[0])}
+                  </p>
+                )}
+              </div>
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <button onClick={() => setShowConfirmMasivo(false)} className="px-4 py-2 rounded-md border text-sm font-medium hover:bg-muted">
+              Cancelar
+            </button>
+            <button onClick={handleEnviarMasivo} className="px-4 py-2 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90">
+              Enviar {filasParsed.length} mensajes
             </button>
           </DialogFooter>
         </DialogContent>
