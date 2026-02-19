@@ -113,6 +113,7 @@ const TablaNotas = () => {
   const [crearParaTodosSalones, setCrearParaTodosSalones] = useState(false);
   const [guardandoMultiple, setGuardandoMultiple] = useState(false);
   const [eliminarEnTodosSalones, setEliminarEnTodosSalones] = useState(false);
+  const [salonesConActividad, setSalonesConActividad] = useState<string[]>([]);
 
   // Estado para descargas
   const [descargandoPDF, setDescargandoPDF] = useState(false);
@@ -431,12 +432,27 @@ const TablaNotas = () => {
     setModalOpen(true);
   };
 
+  const buscarSalonesConActividad = async (nombreAct: string, periodo: number) => {
+    const session = getSession();
+    const { data } = await supabase
+      .from('Nombre de Actividades')
+      .select('salon')
+      .eq('codigo_profesor', session.codigo)
+      .eq('asignatura', asignaturaSeleccionada)
+      .eq('grado', gradoSeleccionado)
+      .eq('periodo', periodo)
+      .eq('nombre_actividad', nombreAct)
+      .neq('salon', salonSeleccionado);
+    setSalonesConActividad(data?.map(r => r.salon) || []);
+  };
+
   const handleAbrirModalEditar = (actividad: Actividad) => {
     setPeriodoActual(actividad.periodo);
     setNombreActividad(actividad.nombre);
     setPorcentajeActividad(actividad.porcentaje?.toString() || "");
     setActividadEditando(actividad);
     setCrearParaTodosSalones(false);
+    buscarSalonesConActividad(actividad.nombre, actividad.periodo);
     setModalOpen(true);
   };
 
@@ -492,8 +508,8 @@ const TablaNotas = () => {
       // EDITAR actividad existente
       const nombreAntiguo = actividadEditando.nombre;
       const nombreNuevo = nombreActividad.trim();
-      const salonesAEditar = crearParaTodosSalones && otrosSalones.length > 0
-        ? [salonSeleccionado, ...otrosSalones]
+      const salonesAEditar = crearParaTodosSalones && salonesConActividad.length > 0
+        ? [salonSeleccionado, ...salonesConActividad]
         : [salonSeleccionado];
 
       // Actualizar en tabla "Nombre de Actividades" (el trigger de Supabase actualizará "Notas" automáticamente)
@@ -715,6 +731,7 @@ const TablaNotas = () => {
   const handleConfirmarEliminar = (actividad: Actividad) => {
     setActividadAEliminar(actividad);
     setEliminarEnTodosSalones(false);
+    buscarSalonesConActividad(actividad.nombre, actividad.periodo);
     setDeleteDialogOpen(true);
   };
 
@@ -723,8 +740,8 @@ const TablaNotas = () => {
 
     const session = getSession();
     
-    const salonesAEliminar = eliminarEnTodosSalones && otrosSalones.length > 0
-      ? [salonSeleccionado, ...otrosSalones]
+    const salonesAEliminar = eliminarEnTodosSalones && salonesConActividad.length > 0
+      ? [salonSeleccionado, ...salonesConActividad]
       : [salonSeleccionado];
 
     try {
@@ -3152,7 +3169,7 @@ const TablaNotas = () => {
                 Porcentaje usado: {getPorcentajeUsadoParaModal()}% / 100%
               </p>
             </div>
-            {otrosSalones.length > 0 && (
+            {(actividadEditando ? salonesConActividad.length > 0 : otrosSalones.length > 0) && (
               <div className="flex items-start space-x-2">
                 <Checkbox
                   id="crearParaTodos"
@@ -3164,7 +3181,7 @@ const TablaNotas = () => {
                     {actividadEditando ? "Aplicar cambios en todos los salones de este grado" : "Crear en todos los salones de este grado"}
                   </Label>
                   <p className="text-xs text-muted-foreground">
-                    {actividadEditando ? "También se modificará en: " : "También se creará en: "}{otrosSalones.join(', ')}
+                    {actividadEditando ? "También se modificará en: " : "También se creará en: "}{(actividadEditando ? salonesConActividad : otrosSalones).join(', ')}
                   </p>
                 </div>
               </div>
@@ -3194,7 +3211,7 @@ const TablaNotas = () => {
               ¿Estás seguro de eliminar "{actividadAEliminar?.nombre}"? Se borrarán todas las notas de esta actividad. Esta acción no se puede deshacer.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          {otrosSalones.length > 0 && (
+          {salonesConActividad.length > 0 && (
             <div className="flex items-start space-x-2 py-2">
               <Checkbox
                 id="eliminarEnTodos"
@@ -3206,7 +3223,7 @@ const TablaNotas = () => {
                   Eliminar también en los otros salones de este grado
                 </Label>
                 <p className="text-xs text-muted-foreground">
-                  También se eliminará en: {otrosSalones.join(', ')}
+                  También se eliminará en: {salonesConActividad.join(', ')}
                 </p>
               </div>
             </div>
