@@ -112,6 +112,7 @@ const TablaNotas = () => {
   const [otrosSalones, setOtrosSalones] = useState<string[]>([]);
   const [crearParaTodosSalones, setCrearParaTodosSalones] = useState(false);
   const [guardandoMultiple, setGuardandoMultiple] = useState(false);
+  const [eliminarEnTodosSalones, setEliminarEnTodosSalones] = useState(false);
 
   // Estado para descargas
   const [descargandoPDF, setDescargandoPDF] = useState(false);
@@ -491,23 +492,26 @@ const TablaNotas = () => {
       // EDITAR actividad existente
       const nombreAntiguo = actividadEditando.nombre;
       const nombreNuevo = nombreActividad.trim();
-      
+      const salonesAEditar = crearParaTodosSalones && otrosSalones.length > 0
+        ? [salonSeleccionado, ...otrosSalones]
+        : [salonSeleccionado];
+
       // Actualizar en tabla "Nombre de Actividades" (el trigger de Supabase actualizará "Notas" automáticamente)
       const session = getSession();
       try {
         const { error } = await supabase
           .from('Nombre de Actividades')
-          .update({ 
+          .update({
             nombre_actividad: nombreNuevo,
-            porcentaje: porcentaje 
+            porcentaje: porcentaje
           })
           .eq('codigo_profesor', session.codigo)
           .eq('asignatura', asignaturaSeleccionada)
           .eq('grado', gradoSeleccionado)
-          .eq('salon', salonSeleccionado)
+          .in('salon', salonesAEditar)
           .eq('periodo', actividadEditando.periodo)
           .eq('nombre_actividad', nombreAntiguo);
-        
+
         if (error) {
           console.error('Error actualizando actividad en Nombre de Actividades:', error);
           toast({
@@ -527,7 +531,7 @@ const TablaNotas = () => {
         });
         return;
       }
-      
+
       // Si cambió el porcentaje, actualizar todas las notas en Supabase
       if (actividadEditando.porcentaje !== porcentaje) {
         try {
@@ -537,7 +541,7 @@ const TablaNotas = () => {
             .eq('nombre_actividad', nombreNuevo)
             .eq('asignatura', asignaturaSeleccionada)
             .eq('grado', gradoSeleccionado)
-            .eq('salon', salonSeleccionado)
+            .in('salon', salonesAEditar)
             .eq('periodo', actividadEditando.periodo);
 
           if (error) {
@@ -550,13 +554,13 @@ const TablaNotas = () => {
       }
 
       // Actualizar en el estado local - crear nuevo ID si cambió el nombre
-      const nuevoId = nombreAntiguo !== nombreNuevo 
-        ? `${actividadEditando.periodo}-${nombreNuevo}` 
+      const nuevoId = nombreAntiguo !== nombreNuevo
+        ? `${actividadEditando.periodo}-${nombreNuevo}`
         : actividadEditando.id;
 
-      setActividades(prev => prev.map(a => 
-        a.id === actividadEditando.id 
-          ? { ...a, id: nuevoId, nombre: nombreNuevo, porcentaje } 
+      setActividades(prev => prev.map(a =>
+        a.id === actividadEditando.id
+          ? { ...a, id: nuevoId, nombre: nombreNuevo, porcentaje }
           : a
       ));
 
@@ -578,7 +582,9 @@ const TablaNotas = () => {
       setModalOpen(false);
       toast({
         title: "Actividad actualizada",
-        description: `"${nombreNuevo}" ha sido actualizada`,
+        description: salonesAEditar.length > 1
+          ? `"${nombreNuevo}" actualizada en ${salonesAEditar.length} salones`
+          : `"${nombreNuevo}" ha sido actualizada`,
       });
     } else {
       // CREAR nueva actividad
@@ -708,6 +714,7 @@ const TablaNotas = () => {
 
   const handleConfirmarEliminar = (actividad: Actividad) => {
     setActividadAEliminar(actividad);
+    setEliminarEnTodosSalones(false);
     setDeleteDialogOpen(true);
   };
 
@@ -716,13 +723,17 @@ const TablaNotas = () => {
 
     const session = getSession();
     
+    const salonesAEliminar = eliminarEnTodosSalones && otrosSalones.length > 0
+      ? [salonSeleccionado, ...otrosSalones]
+      : [salonSeleccionado];
+
     try {
       // PRIMERO: Eliminar de "Nombre de Actividades"
       console.log('Eliminando actividad:', {
         codigo_profesor: session.codigo,
         asignatura: asignaturaSeleccionada,
         grado: gradoSeleccionado,
-        salon: salonSeleccionado,
+        salones: salonesAEliminar,
         periodo: actividadAEliminar.periodo,
         nombre_actividad: actividadAEliminar.nombre,
       });
@@ -732,7 +743,7 @@ const TablaNotas = () => {
         .eq('codigo_profesor', session.codigo)
         .eq('asignatura', asignaturaSeleccionada)
         .eq('grado', gradoSeleccionado)
-        .eq('salon', salonSeleccionado)
+        .in('salon', salonesAEliminar)
         .eq('periodo', actividadAEliminar.periodo)
         .eq('nombre_actividad', actividadAEliminar.nombre)
         .select();
@@ -766,7 +777,7 @@ const TablaNotas = () => {
         .eq('nombre_actividad', actividadAEliminar.nombre)
         .eq('asignatura', asignaturaSeleccionada)
         .eq('grado', gradoSeleccionado)
-        .eq('salon', salonSeleccionado)
+        .in('salon', salonesAEliminar)
         .eq('periodo', actividadAEliminar.periodo);
 
       if (error) {
@@ -798,7 +809,9 @@ const TablaNotas = () => {
 
       toast({
         title: "Actividad eliminada",
-        description: `"${actividadAEliminar.nombre}" y todas sus notas han sido eliminadas`,
+        description: salonesAEliminar.length > 1
+          ? `"${actividadAEliminar.nombre}" eliminada en ${salonesAEliminar.length} salones`
+          : `"${actividadAEliminar.nombre}" y todas sus notas han sido eliminadas`,
       });
       
       // Recalcular y guardar Final Periodo y Final Definitiva para todos los estudiantes afectados
@@ -3139,7 +3152,7 @@ const TablaNotas = () => {
                 Porcentaje usado: {getPorcentajeUsadoParaModal()}% / 100%
               </p>
             </div>
-            {!actividadEditando && otrosSalones.length > 0 && (
+            {otrosSalones.length > 0 && (
               <div className="flex items-start space-x-2">
                 <Checkbox
                   id="crearParaTodos"
@@ -3148,10 +3161,10 @@ const TablaNotas = () => {
                 />
                 <div className="grid gap-1">
                   <Label htmlFor="crearParaTodos" className="text-sm font-normal cursor-pointer">
-                    Crear en todos los salones de este grado
+                    {actividadEditando ? "Aplicar cambios en todos los salones de este grado" : "Crear en todos los salones de este grado"}
                   </Label>
                   <p className="text-xs text-muted-foreground">
-                    También se creará en: {otrosSalones.join(', ')}
+                    {actividadEditando ? "También se modificará en: " : "También se creará en: "}{otrosSalones.join(', ')}
                   </p>
                 </div>
               </div>
@@ -3181,9 +3194,26 @@ const TablaNotas = () => {
               ¿Estás seguro de eliminar "{actividadAEliminar?.nombre}"? Se borrarán todas las notas de esta actividad. Esta acción no se puede deshacer.
             </AlertDialogDescription>
           </AlertDialogHeader>
+          {otrosSalones.length > 0 && (
+            <div className="flex items-start space-x-2 py-2">
+              <Checkbox
+                id="eliminarEnTodos"
+                checked={eliminarEnTodosSalones}
+                onCheckedChange={(checked) => setEliminarEnTodosSalones(checked === true)}
+              />
+              <div className="grid gap-1">
+                <Label htmlFor="eliminarEnTodos" className="text-sm font-normal cursor-pointer">
+                  Eliminar también en los otros salones de este grado
+                </Label>
+                <p className="text-xs text-muted-foreground">
+                  También se eliminará en: {otrosSalones.join(', ')}
+                </p>
+              </div>
+            </div>
+          )}
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction 
+            <AlertDialogAction
               onClick={handleEliminarActividad}
               className="bg-destructive hover:bg-destructive/90"
             >
