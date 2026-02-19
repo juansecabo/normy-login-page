@@ -446,13 +446,13 @@ const TablaNotas = () => {
     setSalonesConActividad(data?.map(r => r.salon) || []);
   };
 
-  const handleAbrirModalEditar = (actividad: Actividad) => {
+  const handleAbrirModalEditar = async (actividad: Actividad) => {
     setPeriodoActual(actividad.periodo);
     setNombreActividad(actividad.nombre);
     setPorcentajeActividad(actividad.porcentaje?.toString() || "");
     setActividadEditando(actividad);
     setCrearParaTodosSalones(false);
-    buscarSalonesConActividad(actividad.nombre, actividad.periodo);
+    await buscarSalonesConActividad(actividad.nombre, actividad.periodo);
     setModalOpen(true);
   };
 
@@ -728,10 +728,10 @@ const TablaNotas = () => {
     }
   };
 
-  const handleConfirmarEliminar = (actividad: Actividad) => {
+  const handleConfirmarEliminar = async (actividad: Actividad) => {
     setActividadAEliminar(actividad);
     setEliminarEnTodosSalones(false);
-    buscarSalonesConActividad(actividad.nombre, actividad.periodo);
+    await buscarSalonesConActividad(actividad.nombre, actividad.periodo);
     setDeleteDialogOpen(true);
   };
 
