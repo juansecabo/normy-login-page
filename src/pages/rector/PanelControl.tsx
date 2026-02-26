@@ -1155,7 +1155,7 @@ const PanelControl = () => {
                                     p.padre_estudiante1_grado && `${p.padre_estudiante1_grado} ${p.padre_estudiante1_salon || ""}`.trim(),
                                     p.padre_estudiante2_grado && `${p.padre_estudiante2_grado} ${p.padre_estudiante2_salon || ""}`.trim(),
                                     p.padre_estudiante3_grado && `${p.padre_estudiante3_grado} ${p.padre_estudiante3_salon || ""}`.trim(),
-                                  ].filter(Boolean).join(", ") || "—"}
+                                  ].filter(Boolean).map((g, i) => <div key={i}>{g}</div>) || "—"}
                             </TableCell>
                             <TableCell className="text-muted-foreground">{p.contrasena || "—"}</TableCell>
                             <TableCell className="text-right space-x-1">
