@@ -361,11 +361,12 @@ export const useEstadisticas = () => {
         if (resultado.promedio !== null) promediosPorPeriodo[p] = resultado.promedio;
       }
 
-      // Promedios por asignatura con promedio relativo
+      // Promedios por asignatura con promedio relativo (filtrado por período)
       const promediosPorAsignatura: { [asignatura: string]: number } = {};
       const notasEstudiante = notas.filter(n =>
         n.codigo_estudiantil === est.codigo_estudiantil &&
-        n.porcentaje !== null && n.porcentaje > 0
+        n.porcentaje !== null && n.porcentaje > 0 &&
+        (periodo === "anual" || !periodo || n.periodo === periodo)
       );
       const asignaturasEstudiante = [...new Set(notasEstudiante.map(n => n.asignatura))];
 
