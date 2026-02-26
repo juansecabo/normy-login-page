@@ -385,7 +385,7 @@ export const useEstadisticas = () => {
       }
 
       return {
-        codigo_estudiantil: est.codigo_estudiantil,
+        codigo_estudiantil: String(est.codigo_estudiantil),
         nombre_completo: `${est.apellidos_estudiante} ${est.nombre_estudiante}`,
         grado: est.grado_estudiante,
         salon: est.salon_estudiante,
