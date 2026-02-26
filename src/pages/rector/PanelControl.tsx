@@ -248,7 +248,8 @@ const PanelControl = () => {
       .from("Estudiantes")
       .select("codigo_estudiantil, nombre_estudiante, apellidos_estudiante, nivel_estudiante, grado_estudiante, salon_estudiante")
       .order("apellidos_estudiante")
-      .order("nombre_estudiante");
+      .order("nombre_estudiante")
+      .range(0, 9999);
     if (!error) setEstudiantes(data || []);
     else console.error("Error fetching estudiantes:", error);
     setLoadingEst(false);
@@ -258,7 +259,8 @@ const PanelControl = () => {
     setLoadingInt(true);
     const { data, error } = await supabase
       .from("Internos")
-      .select("codigo, nombres, apellidos, cargo, contrasena, id");
+      .select("codigo, nombres, apellidos, cargo, contrasena, id")
+      .range(0, 9999);
     if (!error) {
       setInternos(
         (data || []).sort((a, b) =>
@@ -273,7 +275,8 @@ const PanelControl = () => {
     setLoadingAsig(true);
     const { data, error } = await supabase
       .from("Asignación Profesores")
-      .select('row_id, nombres, apellidos, id, "Asignatura(s)", "Grado(s)", "Salon(es)"');
+      .select('row_id, nombres, apellidos, id, "Asignatura(s)", "Grado(s)", "Salon(es)"')
+      .range(0, 9999);
     if (!error) {
       setAsignaciones(
         (data || []).sort((a: Asignacion, b: Asignacion) =>
@@ -289,7 +292,8 @@ const PanelControl = () => {
     const { data, error } = await supabase
       .from("Perfiles_Generales")
       .select("*")
-      .order("id");
+      .order("id")
+      .range(0, 9999);
     if (!error) setPerfiles(data || []);
     else console.error("Error fetching perfiles:", error);
     setLoadingPerf(false);
