@@ -1150,7 +1150,11 @@ const PanelControl = () => {
                             <TableCell className="text-sm text-muted-foreground">
                               {p.perfil === "Estudiante"
                                 ? `${p.estudiante_grado || ""} ${p.estudiante_salon || ""}`.trim() || "—"
-                                : (p.padre_estudiante1_grado ? `${p.padre_estudiante1_grado} ${p.padre_estudiante1_salon || ""}` : "—")}
+                                : [
+                                    p.padre_estudiante1_grado && `${p.padre_estudiante1_grado} ${p.padre_estudiante1_salon || ""}`.trim(),
+                                    p.padre_estudiante2_grado && `${p.padre_estudiante2_grado} ${p.padre_estudiante2_salon || ""}`.trim(),
+                                    p.padre_estudiante3_grado && `${p.padre_estudiante3_grado} ${p.padre_estudiante3_salon || ""}`.trim(),
+                                  ].filter(Boolean).join(", ") || "—"}
                             </TableCell>
                             <TableCell className="text-muted-foreground">{p.contrasena || "—"}</TableCell>
                             <TableCell className="text-right space-x-1">
