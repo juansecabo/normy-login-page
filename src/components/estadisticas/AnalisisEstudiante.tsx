@@ -73,13 +73,15 @@ export const AnalisisEstudiante = ({ codigoEstudiante, periodo, titulo }: Analis
               <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center"><User className="w-8 h-8 text-primary" /></div>
               <div><h2 className="text-xl font-bold text-foreground">{estudiante.nombre_completo}</h2><p className="text-muted-foreground">{estudiante.grado} {estudiante.salon}</p></div>
             </div>
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="text-xs text-muted-foreground font-medium">Puesto:</span>
-              <div className="text-center px-4 py-2 bg-muted rounded-lg"><p className="text-xs text-muted-foreground">Salón</p><p className="text-lg font-bold text-foreground">#{posicionSalon}/{estudiantesSalon.length}</p></div>
-              <div className="text-center px-4 py-2 bg-muted rounded-lg"><p className="text-xs text-muted-foreground">Grado</p><p className="text-lg font-bold text-foreground">#{posicionGrado}/{estudiantesGrado.length}</p></div>
-              <div className="text-center px-4 py-2 bg-muted rounded-lg"><p className="text-xs text-muted-foreground">Institución</p><p className="text-lg font-bold text-foreground">#{posicionInst}/{estudiantesInst.length}</p></div>
-          </div>
-          <p className="text-[10px] text-muted-foreground mt-2 text-right">Solo se tienen en cuenta estudiantes con notas registradas</p>
+            <div className="flex flex-col items-end gap-1">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-sm text-muted-foreground font-semibold">Puesto:</span>
+                <div className="text-center px-4 py-2 bg-muted rounded-lg"><p className="text-xs text-muted-foreground">Salón</p><p className="text-lg font-bold text-foreground">#{posicionSalon}/{estudiantesSalon.length}</p></div>
+                <div className="text-center px-4 py-2 bg-muted rounded-lg"><p className="text-xs text-muted-foreground">Grado</p><p className="text-lg font-bold text-foreground">#{posicionGrado}/{estudiantesGrado.length}</p></div>
+                <div className="text-center px-4 py-2 bg-muted rounded-lg"><p className="text-xs text-muted-foreground">Institución</p><p className="text-lg font-bold text-foreground">#{posicionInst}/{estudiantesInst.length}</p></div>
+              </div>
+              <p className="text-[10px] text-muted-foreground">Solo se tienen en cuenta estudiantes con notas registradas</p>
+            </div>
         </div>
       </div>
 
