@@ -111,26 +111,46 @@ export const useEstadisticas = () => {
   };
 
   useEffect(() => {
+    // Función para paginar consultas de Supabase (límite 1000 filas por request)
+    async function fetchAllPages<T>(
+      makeQuery: (from: number, to: number) => PromiseLike<{ data: T[] | null; error: any }>
+    ): Promise<T[]> {
+      const PAGE = 1000;
+      let all: T[] = [];
+      let from = 0;
+      while (true) {
+        const { data, error } = await makeQuery(from, from + PAGE - 1);
+        if (error) throw error;
+        if (!data || data.length === 0) break;
+        all = all.concat(data);
+        if (data.length < PAGE) break;
+        from += PAGE;
+      }
+      return all;
+    }
+
     const fetchData = async () => {
       setLoading(true);
       try {
-        // Obtener todas las notas (excluyendo finales calculados)
-        const { data: notasData, error: notasError } = await supabase
-          .from("Notas")
-          .select("*")
-          .not("nombre_actividad", "in", '("Final Periodo","Final Definitiva")');
+        // Obtener todas las notas (excluyendo finales calculados) — paginado
+        const notasData = await fetchAllPages<NotaCompleta>((from, to) =>
+          supabase
+            .from("Notas")
+            .select("*")
+            .not("nombre_actividad", "in", '("Final Periodo","Final Definitiva")')
+            .range(from, to)
+        );
+        setNotas(notasData);
 
-        if (notasError) throw notasError;
-        setNotas(notasData || []);
-
-        // Obtener todos los estudiantes
-        const { data: estudiantesData, error: estudiantesError } = await supabase
-          .from("Estudiantes")
-          .select("*")
-          .order("apellidos_estudiante", { ascending: true });
-
-        if (estudiantesError) throw estudiantesError;
-        setEstudiantes(estudiantesData || []);
+        // Obtener todos los estudiantes — paginado
+        const estudiantesData = await fetchAllPages<EstudianteInfo>((from, to) =>
+          supabase
+            .from("Estudiantes")
+            .select("*")
+            .order("apellidos_estudiante", { ascending: true })
+            .range(from, to)
+        );
+        setEstudiantes(estudiantesData);
 
         // Obtener asignaciones de profesores para extraer asignaturas por grado/salón
         const { data: asignacionesData, error: asignacionesError } = await supabase

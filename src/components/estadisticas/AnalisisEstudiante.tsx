@@ -20,7 +20,7 @@ export const AnalisisEstudiante = ({ codigoEstudiante, periodo, titulo }: Analis
 
   const todosEstudiantes = getPromediosEstudiantes(periodo);
   const estudiante = todosEstudiantes.find(e => e.codigo_estudiantil === codigoEstudiante);
-  if (!estudiante) return <div className="bg-card rounded-lg shadow-soft p-8 text-center text-muted-foreground">No se encontró información del estudiante</div>;
+  if (!estudiante) return <div className="bg-card rounded-lg shadow-soft p-8 text-center text-muted-foreground">Este estudiante no tiene notas registradas</div>;
 
   const estudiantesSalon = getPromediosEstudiantes(periodo, estudiante.grado, estudiante.salon).sort((a, b) => b.promedio - a.promedio);
   const estudiantesGrado = getPromediosEstudiantes(periodo, estudiante.grado).sort((a, b) => b.promedio - a.promedio);
