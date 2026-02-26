@@ -132,7 +132,11 @@ interface Perfil {
   contrasena: string | null;
 }
 
-// ─── Helper: toggle item in array ────────────────────────────────────────────
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+
+function normalize(str: string): string {
+  return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+}
 
 function toggleItem(arr: string[], item: string): string[] {
   return arr.includes(item) ? arr.filter((v) => v !== item) : [...arr, item];
@@ -780,27 +784,23 @@ const PanelControl = () => {
   // ═══════════════════════════════════════════════════════════════════════════
 
   const filteredEst = estudiantes.filter((e) =>
-    `${e.apellidos_estudiante} ${e.nombre_estudiante} ${e.codigo_estudiantil} ${e.grado_estudiante} ${e.salon_estudiante}`
-      .toLowerCase()
-      .includes(searchEst.toLowerCase())
+    normalize(`${e.apellidos_estudiante} ${e.nombre_estudiante} ${e.codigo_estudiantil} ${e.grado_estudiante} ${e.salon_estudiante}`)
+      .includes(normalize(searchEst))
   );
 
   const filteredInt = internos.filter((i) =>
-    `${i.apellidos} ${i.nombres} ${i.codigo} ${i.cargo}`
-      .toLowerCase()
-      .includes(searchInt.toLowerCase())
+    normalize(`${i.apellidos} ${i.nombres} ${i.codigo} ${i.cargo}`)
+      .includes(normalize(searchInt))
   );
 
   const filteredAsig = asignaciones.filter((a) =>
-    `${a.apellidos} ${a.nombres} ${(a["Asignatura(s)"] || []).join(" ")} ${(a["Grado(s)"] || []).join(" ")}`
-      .toLowerCase()
-      .includes(searchAsig.toLowerCase())
+    normalize(`${a.apellidos} ${a.nombres} ${(a["Asignatura(s)"] || []).join(" ")} ${(a["Grado(s)"] || []).join(" ")}`)
+      .includes(normalize(searchAsig))
   );
 
   const filteredPerf = perfiles.filter((p) =>
-    `${getPerfilDisplayName(p)} ${getPerfilDisplayCode(p)} ${p.perfil} ${p.contrasena || ""}`
-      .toLowerCase()
-      .includes(searchPerf.toLowerCase())
+    normalize(`${getPerfilDisplayName(p)} ${getPerfilDisplayCode(p)} ${p.perfil} ${p.contrasena || ""}`)
+      .includes(normalize(searchPerf))
   );
 
   // Helper: render hijo fields for Asignacion dialog
