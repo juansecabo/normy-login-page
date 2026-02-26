@@ -1149,8 +1149,8 @@ const PanelControl = () => {
                             <TableCell className="font-mono">{getPerfilDisplayCode(p)}</TableCell>
                             <TableCell className="text-sm text-muted-foreground">
                               {p.perfil === "Estudiante"
-                                ? `${p.estudiante_grado || ""} ${p.estudiante_salon || ""}`
-                                : (p.padre_estudiante1_grado ? `H1: ${p.padre_estudiante1_grado} ${p.padre_estudiante1_salon || ""}` : "—")}
+                                ? `${p.estudiante_grado || ""} ${p.estudiante_salon || ""}`.trim() || "—"
+                                : (p.padre_estudiante1_grado ? `${p.padre_estudiante1_grado} ${p.padre_estudiante1_salon || ""}` : "—")}
                             </TableCell>
                             <TableCell className="text-muted-foreground">{p.contrasena || "—"}</TableCell>
                             <TableCell className="text-right space-x-1">
