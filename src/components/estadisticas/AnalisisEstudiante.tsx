@@ -79,6 +79,7 @@ export const AnalisisEstudiante = ({ codigoEstudiante, periodo, titulo }: Analis
               <div className="text-center px-4 py-2 bg-muted rounded-lg"><p className="text-xs text-muted-foreground">Grado</p><p className="text-lg font-bold text-foreground">#{posicionGrado}/{estudiantesGrado.length}</p></div>
               <div className="text-center px-4 py-2 bg-muted rounded-lg"><p className="text-xs text-muted-foreground">Institución</p><p className="text-lg font-bold text-foreground">#{posicionInst}/{estudiantesInst.length}</p></div>
           </div>
+          <p className="text-[10px] text-muted-foreground mt-2 text-right">Solo se tienen en cuenta estudiantes con notas registradas</p>
         </div>
       </div>
 
