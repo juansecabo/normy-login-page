@@ -143,14 +143,14 @@ function toggleItem(arr: string[], item: string): string[] {
 }
 
 // Supabase limits to 1000 rows per request. Paginate to fetch all.
-async function fetchAll<T>(
-  query: { range: (from: number, to: number) => Promise<{ data: T[] | null; error: unknown }> }
+async function fetchAllPages<T>(
+  makeQuery: (from: number, to: number) => PromiseLike<{ data: T[] | null; error: unknown }>
 ): Promise<T[]> {
   const PAGE = 1000;
   let all: T[] = [];
   let from = 0;
   while (true) {
-    const { data } = await query.range(from, from + PAGE - 1);
+    const { data } = await makeQuery(from, from + PAGE - 1);
     if (!data || data.length === 0) break;
     all = all.concat(data);
     if (data.length < PAGE) break;
@@ -261,12 +261,13 @@ const PanelControl = () => {
 
   const fetchEstudiantes = async () => {
     setLoadingEst(true);
-    const data = await fetchAll(
+    const data = await fetchAllPages((from, to) =>
       supabase
         .from("Estudiantes")
         .select("codigo_estudiantil, nombre_estudiante, apellidos_estudiante, nivel_estudiante, grado_estudiante, salon_estudiante")
         .order("apellidos_estudiante")
         .order("nombre_estudiante")
+        .range(from, to)
     );
     setEstudiantes(data);
     setLoadingEst(false);
@@ -274,8 +275,8 @@ const PanelControl = () => {
 
   const fetchInternos = async () => {
     setLoadingInt(true);
-    const data = await fetchAll(
-      supabase.from("Internos").select("codigo, nombres, apellidos, cargo, contrasena, id")
+    const data = await fetchAllPages((from, to) =>
+      supabase.from("Internos").select("codigo, nombres, apellidos, cargo, contrasena, id").range(from, to)
     );
     setInternos(data.sort((a, b) => (a.apellidos || "").localeCompare(b.apellidos || "", "es")));
     setLoadingInt(false);
@@ -283,8 +284,8 @@ const PanelControl = () => {
 
   const fetchAsignaciones = async () => {
     setLoadingAsig(true);
-    const data = await fetchAll<Asignacion>(
-      supabase.from("Asignación Profesores").select('row_id, nombres, apellidos, id, "Asignatura(s)", "Grado(s)", "Salon(es)"')
+    const data = await fetchAllPages<Asignacion>((from, to) =>
+      supabase.from("Asignación Profesores").select('row_id, nombres, apellidos, id, "Asignatura(s)", "Grado(s)", "Salon(es)"').range(from, to)
     );
     setAsignaciones(data.sort((a, b) => (a.apellidos || "").localeCompare(b.apellidos || "", "es")));
     setLoadingAsig(false);
@@ -292,8 +293,8 @@ const PanelControl = () => {
 
   const fetchPerfiles = async () => {
     setLoadingPerf(true);
-    const data = await fetchAll(
-      supabase.from("Perfiles_Generales").select("*").order("id")
+    const data = await fetchAllPages((from, to) =>
+      supabase.from("Perfiles_Generales").select("*").order("id").range(from, to)
     );
     setPerfiles(data);
     setLoadingPerf(false);
