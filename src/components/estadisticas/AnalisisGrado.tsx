@@ -9,7 +9,7 @@ import { TablaEvolucion } from "./TablaEvolucion";
 import { ListaComparativa } from "./ListaComparativa";
 import { IndicadorCompletitud } from "./IndicadorCompletitud";
 import BotonDescarga from "./BotonDescarga";
-import { GraduationCap, Users, Award, AlertTriangle } from "lucide-react";
+import { GraduationCap, Users, Award, AlertTriangle, Loader2 } from "lucide-react";
 
 interface AnalisisGradoProps {
   grado: string;
@@ -21,12 +21,15 @@ export const AnalisisGrado = ({ grado, periodo, titulo }: AnalisisGradoProps) =>
   const contenidoRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
   const {
+    loading,
     getPromediosEstudiantes, getPromediosSalones, getPromediosAsignaturas,
     getDistribucionDesempeno, getTopEstudiantes, getEvolucionPeriodos,
     getPromedioInstitucional, tieneDatosSuficientesParaRiesgo, getEstudiantesEnRiesgo
   } = useEstadisticas();
 
   const { verificarCompletitud } = useCompletitud();
+
+  if (loading) return <div className="flex items-center justify-center h-64"><Loader2 className="w-8 h-8 animate-spin text-primary" /><span className="ml-2 text-muted-foreground">Espere, por favor...</span></div>;
 
   if (!grado) {
     return <div className="bg-card rounded-lg shadow-soft p-8 text-center text-muted-foreground">Selecciona un grado para ver el análisis</div>;

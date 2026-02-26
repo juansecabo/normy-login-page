@@ -9,14 +9,14 @@ import { ListaComparativa } from "./ListaComparativa";
 import { TablaDistribucion } from "./TablaDistribucion";
 import { IndicadorCompletitud } from "./IndicadorCompletitud";
 import BotonDescarga from "./BotonDescarga";
-import { BookOpen, Users, Award, AlertTriangle } from "lucide-react";
+import { BookOpen, Users, Award, AlertTriangle, Loader2 } from "lucide-react";
 
 interface AnalisisAsignaturaProps { asignatura: string; periodo: number | "anual"; grado?: string; salon?: string; titulo?: string; }
 
 export const AnalisisAsignatura = ({ asignatura, periodo, grado, salon, titulo }: AnalisisAsignaturaProps) => {
   const contenidoRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
-  const { getPromediosEstudiantes, getPromediosSalones, getPromediosAsignaturas, getEstudiantesEnRiesgo, getDistribucionDesempeno } = useEstadisticas();
+  const { loading, getPromediosEstudiantes, getPromediosSalones, getPromediosAsignaturas, getEstudiantesEnRiesgo, getDistribucionDesempeno } = useEstadisticas();
   const { verificarCompletitud } = useCompletitud();
 
   if (!asignatura) return <div className="bg-card rounded-lg shadow-soft p-8 text-center text-muted-foreground">Selecciona una asignatura para ver su análisis</div>;
@@ -134,6 +134,8 @@ export const AnalisisAsignatura = ({ asignatura, periodo, grado, salon, titulo }
     if (salonEfectivo) params.set("salon", salonEfectivo);
     navigate(`/rector/estudiantes-riesgo?${params.toString()}`);
   };
+
+  if (loading) return <div className="flex items-center justify-center h-64"><Loader2 className="w-8 h-8 animate-spin text-primary" /><span className="ml-2 text-muted-foreground">Espere, por favor...</span></div>;
 
   if (!promedioAsignatura) {
     return <div className="bg-card rounded-lg shadow-soft p-8 text-center"><AlertTriangle className="w-12 h-12 text-amber-500 mx-auto mb-4" /><h3 className="text-lg font-semibold text-foreground mb-2">Aún no hay notas registradas para {asignatura}</h3><p className="text-muted-foreground">Las estadísticas estarán disponibles cuando se registren notas.</p></div>;

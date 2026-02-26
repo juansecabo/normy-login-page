@@ -9,7 +9,7 @@ import { TablaEvolucion } from "./TablaEvolucion";
 import { ListaComparativa } from "./ListaComparativa";
 import { IndicadorCompletitud } from "./IndicadorCompletitud";
 import BotonDescarga from "./BotonDescarga";
-import { School, Users, Award, AlertTriangle } from "lucide-react";
+import { School, Users, Award, AlertTriangle, Loader2 } from "lucide-react";
 
 interface AnalisisInstitucionalProps {
   periodo: number | "anual";
@@ -20,6 +20,7 @@ export const AnalisisInstitucional = ({ periodo, titulo }: AnalisisInstitucional
   const contenidoRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
   const {
+    loading,
     getPromedioInstitucional,
     getPromediosEstudiantes,
     getPromediosGrados,
@@ -32,6 +33,8 @@ export const AnalisisInstitucional = ({ periodo, titulo }: AnalisisInstitucional
   } = useEstadisticas();
 
   const { verificarCompletitud } = useCompletitud();
+
+  if (loading) return <div className="flex items-center justify-center h-64"><Loader2 className="w-8 h-8 animate-spin text-primary" /><span className="ml-2 text-muted-foreground">Espere, por favor...</span></div>;
 
   const promedioInstitucional = getPromedioInstitucional(periodo);
   const estudiantesTotales = getPromediosEstudiantes(periodo);
