@@ -74,7 +74,7 @@ export const AnalisisEstudiante = ({ codigoEstudiante, periodo, titulo }: Analis
               <div><h2 className="text-xl font-bold text-foreground">{estudiante.nombre_completo}</h2><p className="text-muted-foreground">{estudiante.grado} {estudiante.salon}</p></div>
             </div>
             <div className="flex flex-wrap items-center gap-2">
-              <span className="text-xs text-muted-foreground font-medium">Puesto Actual:</span>
+              <span className="text-xs text-muted-foreground font-medium">Puesto:</span>
               <div className="text-center px-4 py-2 bg-muted rounded-lg"><p className="text-xs text-muted-foreground">Salón</p><p className="text-lg font-bold text-foreground">#{posicionSalon}/{estudiantesSalon.length}</p></div>
               <div className="text-center px-4 py-2 bg-muted rounded-lg"><p className="text-xs text-muted-foreground">Grado</p><p className="text-lg font-bold text-foreground">#{posicionGrado}/{estudiantesGrado.length}</p></div>
               <div className="text-center px-4 py-2 bg-muted rounded-lg"><p className="text-xs text-muted-foreground">Institución</p><p className="text-lg font-bold text-foreground">#{posicionInst}/{estudiantesInst.length}</p></div>
