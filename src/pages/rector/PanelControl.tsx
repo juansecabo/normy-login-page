@@ -142,6 +142,23 @@ function toggleItem(arr: string[], item: string): string[] {
   return arr.includes(item) ? arr.filter((v) => v !== item) : [...arr, item];
 }
 
+// Supabase limits to 1000 rows per request. Paginate to fetch all.
+async function fetchAll<T>(
+  query: { range: (from: number, to: number) => Promise<{ data: T[] | null; error: unknown }> }
+): Promise<T[]> {
+  const PAGE = 1000;
+  let all: T[] = [];
+  let from = 0;
+  while (true) {
+    const { data } = await query.range(from, from + PAGE - 1);
+    if (!data || data.length === 0) break;
+    all = all.concat(data);
+    if (data.length < PAGE) break;
+    from += PAGE;
+  }
+  return all;
+}
+
 // ─── Component ───────────────────────────────────────────────────────────────
 
 const PanelControl = () => {
@@ -244,58 +261,41 @@ const PanelControl = () => {
 
   const fetchEstudiantes = async () => {
     setLoadingEst(true);
-    const { data, error } = await supabase
-      .from("Estudiantes")
-      .select("codigo_estudiantil, nombre_estudiante, apellidos_estudiante, nivel_estudiante, grado_estudiante, salon_estudiante")
-      .order("apellidos_estudiante")
-      .order("nombre_estudiante")
-      .range(0, 9999);
-    if (!error) setEstudiantes(data || []);
-    else console.error("Error fetching estudiantes:", error);
+    const data = await fetchAll(
+      supabase
+        .from("Estudiantes")
+        .select("codigo_estudiantil, nombre_estudiante, apellidos_estudiante, nivel_estudiante, grado_estudiante, salon_estudiante")
+        .order("apellidos_estudiante")
+        .order("nombre_estudiante")
+    );
+    setEstudiantes(data);
     setLoadingEst(false);
   };
 
   const fetchInternos = async () => {
     setLoadingInt(true);
-    const { data, error } = await supabase
-      .from("Internos")
-      .select("codigo, nombres, apellidos, cargo, contrasena, id")
-      .range(0, 9999);
-    if (!error) {
-      setInternos(
-        (data || []).sort((a, b) =>
-          (a.apellidos || "").localeCompare(b.apellidos || "", "es")
-        )
-      );
-    } else console.error("Error fetching internos:", error);
+    const data = await fetchAll(
+      supabase.from("Internos").select("codigo, nombres, apellidos, cargo, contrasena, id")
+    );
+    setInternos(data.sort((a, b) => (a.apellidos || "").localeCompare(b.apellidos || "", "es")));
     setLoadingInt(false);
   };
 
   const fetchAsignaciones = async () => {
     setLoadingAsig(true);
-    const { data, error } = await supabase
-      .from("Asignación Profesores")
-      .select('row_id, nombres, apellidos, id, "Asignatura(s)", "Grado(s)", "Salon(es)"')
-      .range(0, 9999);
-    if (!error) {
-      setAsignaciones(
-        (data || []).sort((a: Asignacion, b: Asignacion) =>
-          (a.apellidos || "").localeCompare(b.apellidos || "", "es")
-        )
-      );
-    } else console.error("Error fetching asignaciones:", error);
+    const data = await fetchAll<Asignacion>(
+      supabase.from("Asignación Profesores").select('row_id, nombres, apellidos, id, "Asignatura(s)", "Grado(s)", "Salon(es)"')
+    );
+    setAsignaciones(data.sort((a, b) => (a.apellidos || "").localeCompare(b.apellidos || "", "es")));
     setLoadingAsig(false);
   };
 
   const fetchPerfiles = async () => {
     setLoadingPerf(true);
-    const { data, error } = await supabase
-      .from("Perfiles_Generales")
-      .select("*")
-      .order("id")
-      .range(0, 9999);
-    if (!error) setPerfiles(data || []);
-    else console.error("Error fetching perfiles:", error);
+    const data = await fetchAll(
+      supabase.from("Perfiles_Generales").select("*").order("id")
+    );
+    setPerfiles(data);
     setLoadingPerf(false);
   };
 
@@ -881,9 +881,9 @@ const PanelControl = () => {
           <Tabs defaultValue="estudiantes">
             <TabsList className="flex w-full mb-6">
               <TabsTrigger value="estudiantes" className="flex-1">Estudiantes</TabsTrigger>
+              <TabsTrigger value="perfiles" className="flex-1">Perfiles registrados</TabsTrigger>
               <TabsTrigger value="internos" className="flex-1">Internos</TabsTrigger>
               <TabsTrigger value="asignaciones" className="flex-1">Asignaciones</TabsTrigger>
-              <TabsTrigger value="perfiles" className="flex-1">Perfiles</TabsTrigger>
             </TabsList>
 
             {/* ════════════════ TAB: ESTUDIANTES ════════════════ */}
@@ -1657,7 +1657,10 @@ const PanelControl = () => {
           <p className="text-sm text-muted-foreground">
             ¿Estás seguro de eliminar el perfil de{" "}
             <strong>{showDeletePerf && getPerfilDisplayName(showDeletePerf)}</strong>
-            {" "}({showDeletePerf?.perfil})?
+            {" "}({showDeletePerf?.perfil}, código: {showDeletePerf && getPerfilDisplayCode(showDeletePerf)})?
+          </p>
+          <p className="text-sm text-destructive font-medium">
+            Este usuario ya no podrá iniciar sesión en la aplicación.
           </p>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowDeletePerf(null)}>
