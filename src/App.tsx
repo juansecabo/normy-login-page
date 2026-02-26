@@ -25,6 +25,7 @@ import TablaNotasReadOnly from "./pages/rector/TablaNotasReadOnly";
 import EstudianteConsolidado from "./pages/rector/EstudianteConsolidado";
 import EstadisticasDashboard from "./pages/rector/EstadisticasDashboard";
 import EstudiantesEnRiesgo from "./pages/rector/EstudiantesEnRiesgo";
+import PanelControl from "./pages/rector/PanelControl";
 
 // Rutas para Profesor
 import EstadisticasProfesor from "./pages/profesor/EstadisticasProfesor";
@@ -77,6 +78,7 @@ const App = () => (
           <Route path="/rector/estudiante-consolidado" element={<EstudianteConsolidado />} />
           <Route path="/rector/estadisticas" element={<EstadisticasDashboard />} />
           <Route path="/rector/estudiantes-riesgo" element={<EstudiantesEnRiesgo />} />
+          <Route path="/rector/panel-control" element={<PanelControl />} />
 
           {/* Rutas para Profesor */}
           <Route path="/profesor/estadisticas" element={<EstadisticasProfesor />} />
