@@ -280,9 +280,30 @@ const ActividadesCalendario = () => {
           return;
         }
 
+        // Notificar automáticamente a estudiantes y padres
+        const session = getSession();
+        const cargo = session.cargo || 'Profesor(a)';
+        try {
+          await fetch('https://n8n.srv966880.hstgr.cloud/webhook/notificar-actividades', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              profesor_nombre: `${profesorNombres} ${profesorApellidos}`.trim(),
+              profesor_cargo: cargo,
+              grado: gradoSeleccionado,
+              salon: salonSeleccionado,
+              asignatura: asignaturaSeleccionada,
+              descripcion: descripcion.trim(),
+              fecha: fechaFormateada,
+            }),
+          });
+        } catch (err) {
+          console.error('Error enviando notificación:', err);
+        }
+
         toast({
           title: "Actividad creada",
-          description: "La actividad se ha creado correctamente",
+          description: "La actividad se ha creado correctamente y se notificó a estudiantes y padres",
         });
       }
 
