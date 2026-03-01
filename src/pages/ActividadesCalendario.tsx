@@ -49,14 +49,29 @@ interface ActividadCalendario {
 
 const diasSemana = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
 
+// For DB storage — YYYY-MM-DD (ISO format, enables correct Supabase .gte/.lte queries)
 const formatearFecha = (date: Date): string => {
-  const dia = diasSemana[date.getDay()];
-  const fechaFormateada = `${date.getDate().toString().padStart(2, '0')}/${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getFullYear()} (${dia})`;
-  return fechaFormateada;
+  const y = date.getFullYear();
+  const m = (date.getMonth() + 1).toString().padStart(2, '0');
+  const d = date.getDate().toString().padStart(2, '0');
+  return `${y}-${m}-${d}`;
 };
 
+// For UI display — "DD/MM/YYYY (día)"
+const mostrarFecha = (fechaStr: string): string => {
+  const date = parsearFecha(fechaStr);
+  if (!date) return fechaStr;
+  const dia = diasSemana[date.getDay()];
+  return `${date.getDate().toString().padStart(2, '0')}/${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getFullYear()} (${dia})`;
+};
+
+// Parses both YYYY-MM-DD and DD/MM/YYYY (día) formats
 const parsearFecha = (fechaStr: string): Date | null => {
-  // Formato esperado: "DD/MM/YYYY (día)"
+  const matchISO = fechaStr.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (matchISO) {
+    const [, year, month, day] = matchISO;
+    return new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+  }
   const match = fechaStr.match(/(\d{2})\/(\d{2})\/(\d{4})/);
   if (match) {
     const [, day, month, year] = match;
@@ -294,7 +309,7 @@ const ActividadesCalendario = () => {
               salon: salonSeleccionado,
               asignatura: asignaturaSeleccionada,
               descripcion: descripcion.trim(),
-              fecha: fechaFormateada,
+              fecha: mostrarFecha(fechaFormateada),
             }),
           });
         } catch (err) {
@@ -427,7 +442,7 @@ const ActividadesCalendario = () => {
                       </p>
                       <p className="text-sm text-primary mt-1 flex items-center gap-1">
                         <Calendar className="h-4 w-4" />
-                        {actividad.fecha_de_presentacion}
+                        {mostrarFecha(actividad.fecha_de_presentacion)}
                       </p>
                     </div>
                     <div className="flex gap-2">
@@ -493,7 +508,7 @@ const ActividadesCalendario = () => {
                     )}
                   >
                     <Calendar className="mr-2 h-4 w-4" />
-                    {fechaSeleccionada ? formatearFecha(fechaSeleccionada) : "Seleccionar fecha"}
+                    {fechaSeleccionada ? mostrarFecha(formatearFecha(fechaSeleccionada)) : "Seleccionar fecha"}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
