@@ -75,6 +75,7 @@ const EnviarComunicado = () => {
   const [historial, setHistorial] = useState<ComunicadoEnviado[]>([]);
   const [loadingHistorial, setLoadingHistorial] = useState(false);
   const [busqueda, setBusqueda] = useState("");
+  const [selectedHistorial, setSelectedHistorial] = useState<ComunicadoEnviado | null>(null);
 
   useEffect(() => {
     const session = getSession();
@@ -655,14 +656,14 @@ const EnviarComunicado = () => {
                     const term = normalize(busqueda);
                     return normalize(c.destinatarios).includes(term) || normalize(c.mensaje).includes(term);
                   }).map((c) => (
-                    <div key={c.id} className="border rounded-lg p-4 space-y-2">
+                    <div key={c.id} className="border rounded-lg p-4 space-y-2 cursor-pointer hover:bg-muted/50 transition-colors" onClick={() => setSelectedHistorial(c)}>
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2 text-xs text-muted-foreground">
                           <Clock className="w-3 h-3" />
                           {formatFecha(c.fecha)}
                         </div>
                         <button
-                          onClick={() => setDeleteId(c.id)}
+                          onClick={(e) => { e.stopPropagation(); setDeleteId(c.id); }}
                           className="text-muted-foreground hover:text-destructive transition-colors"
                           title="Eliminar"
                         >
@@ -771,6 +772,30 @@ const EnviarComunicado = () => {
               Eliminar
             </button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal para ver comunicado completo */}
+      <Dialog open={!!selectedHistorial} onOpenChange={(open) => !open && setSelectedHistorial(null)}>
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+          {selectedHistorial && (
+            <>
+              <DialogHeader>
+                <DialogTitle className="text-base">
+                  Para: {selectedHistorial.destinatarios}
+                </DialogTitle>
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <Clock className="w-3 h-3" />
+                  {formatFecha(selectedHistorial.fecha)}
+                </div>
+              </DialogHeader>
+              {selectedHistorial.mensaje && (
+                <p className="text-sm whitespace-pre-wrap bg-muted p-4 rounded-md">
+                  {selectedHistorial.mensaje}
+                </p>
+              )}
+            </>
+          )}
         </DialogContent>
       </Dialog>
     </div>
