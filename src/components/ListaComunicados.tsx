@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Clock, Search, FileUp } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 interface Comunicado {
   id: number;
@@ -30,6 +31,7 @@ const formatFecha = (fecha: string) => {
 
 const ListaComunicados = ({ comunicados, loading, showDocumentLink = false }: ListaComunicadosProps) => {
   const [busqueda, setBusqueda] = useState("");
+  const [selectedItem, setSelectedItem] = useState<Comunicado | null>(null);
 
   if (loading) {
     return (
@@ -68,7 +70,7 @@ const ListaComunicados = ({ comunicados, loading, showDocumentLink = false }: Li
       </div>
 
       {filtrados.map((c) => (
-        <div key={c.id} className="border rounded-lg p-4 space-y-2">
+        <div key={c.id} className="border rounded-lg p-4 space-y-2 cursor-pointer hover:bg-muted/50 transition-colors" onClick={() => setSelectedItem(c)}>
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
             <Clock className="w-3 h-3" />
             {formatFecha(c.fecha)}
@@ -101,6 +103,41 @@ const ListaComunicados = ({ comunicados, loading, showDocumentLink = false }: Li
           No se encontraron resultados para "{busqueda}"
         </p>
       )}
+
+      <Dialog open={!!selectedItem} onOpenChange={(open) => !open && setSelectedItem(null)}>
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+          {selectedItem && (
+            <>
+              <DialogHeader>
+                <DialogTitle className="text-base">
+                  De: {selectedItem.remitente}
+                </DialogTitle>
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <Clock className="w-3 h-3" />
+                  {formatFecha(selectedItem.fecha)}
+                </div>
+              </DialogHeader>
+              {showDocumentLink && selectedItem.archivo_url && (
+                <a
+                  href={selectedItem.archivo_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 text-sm text-primary hover:underline"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <FileUp className="w-4 h-4 shrink-0" />
+                  Ver documento
+                </a>
+              )}
+              {selectedItem.mensaje && (
+                <p className="text-sm whitespace-pre-wrap bg-muted p-4 rounded-md">
+                  {selectedItem.mensaje}
+                </p>
+              )}
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
