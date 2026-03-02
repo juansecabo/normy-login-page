@@ -132,9 +132,14 @@ export const hasValidSession = (): boolean => {
   return !!codigo;
 };
 
+export const isAdmin = (): boolean => {
+  const { cargo } = getSession();
+  return cargo === 'Administrador';
+};
+
 export const isRectorOrCoordinador = (): boolean => {
   const { cargo } = getSession();
-  return cargo === 'Rector' || cargo === 'Coordinador(a)';
+  return cargo === 'Rector' || cargo === 'Coordinador(a)' || cargo === 'Administrador';
 };
 
 export const isProfesor = (): boolean => {

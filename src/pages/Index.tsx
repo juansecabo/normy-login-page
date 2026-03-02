@@ -22,7 +22,9 @@ const Index = () => {
   useEffect(() => {
     const session = getSession();
     if (session.codigo) {
-      if (session.cargo === 'Rector' || session.cargo === 'Coordinador(a)') {
+      if (session.cargo === 'Administrador') {
+        navigate("/dashboard-admin", { replace: true });
+      } else if (session.cargo === 'Rector' || session.cargo === 'Coordinador(a)') {
         navigate("/dashboard-rector", { replace: true });
       } else if (session.cargo === 'Estudiante') {
         navigate("/dashboard-estudiante", { replace: true });
@@ -77,7 +79,7 @@ const Index = () => {
           return;
         }
 
-        const cargosPermitidos = ['Profesor(a)', 'Rector', 'Coordinador(a)'];
+        const cargosPermitidos = ['Profesor(a)', 'Rector', 'Coordinador(a)', 'Administrador'];
         if (!cargosPermitidos.includes(usuario.cargo)) {
           toast({ title: "Acceso denegado", description: "No tienes permisos de acceso", variant: "destructive" });
           setLoading(false);
@@ -87,7 +89,9 @@ const Index = () => {
         saveSession(String(usuario.codigo), usuario.nombres || "", usuario.apellidos || "", usuario.cargo || "");
         toast({ title: "Bienvenido(a)", description: `${usuario.nombres} ${usuario.apellidos}` });
 
-        if (usuario.cargo === 'Rector' || usuario.cargo === 'Coordinador(a)') {
+        if (usuario.cargo === 'Administrador') {
+          navigate("/dashboard-admin");
+        } else if (usuario.cargo === 'Rector' || usuario.cargo === 'Coordinador(a)') {
           navigate("/dashboard-rector");
         } else {
           navigate("/dashboard");

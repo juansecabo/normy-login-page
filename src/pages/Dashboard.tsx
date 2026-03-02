@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import normyExaminadoraImg from "@/assets/normy-examinadora.webp";
-import { getSession, isProfesor, isRectorOrCoordinador, isEstudiante, isPadreDeFamilia } from "@/hooks/useSession";
+import { getSession, isProfesor, isAdmin, isRectorOrCoordinador, isEstudiante, isPadreDeFamilia } from "@/hooks/useSession";
 import { BarChart3, Megaphone, FileUp } from "lucide-react";
 import HeaderNormy from "@/components/HeaderNormy";
 
@@ -24,7 +24,8 @@ const Dashboard = () => {
 
     // Redirigir al dashboard correcto si no es profesor
     if (!isProfesor()) {
-      if (isRectorOrCoordinador()) navigate("/dashboard-rector", { replace: true });
+      if (isAdmin()) navigate("/dashboard-admin", { replace: true });
+      else if (isRectorOrCoordinador()) navigate("/dashboard-rector", { replace: true });
       else if (isEstudiante()) navigate("/dashboard-estudiante", { replace: true });
       else if (isPadreDeFamilia()) navigate("/dashboard-padre", { replace: true });
       else navigate("/", { replace: true });

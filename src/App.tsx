@@ -8,6 +8,7 @@ import Dashboard from "./pages/Dashboard";
 import DashboardRector from "./pages/DashboardRector";
 import DashboardEstudiante from "./pages/DashboardEstudiante";
 import DashboardPadre from "./pages/DashboardPadre";
+import DashboardAdmin from "./pages/DashboardAdmin";
 import SeleccionarGrado from "./pages/SeleccionarGrado";
 import SeleccionarSalon from "./pages/SeleccionarSalon";
 import TablaNotas from "./pages/TablaNotas";
@@ -32,6 +33,7 @@ import EstadisticasProfesor from "./pages/profesor/EstadisticasProfesor";
 
 // Rutas compartidas
 import EnviarComunicado from "./pages/EnviarComunicado";
+import EnviarComunicadoAdmin from "./pages/EnviarComunicadoAdmin";
 import EnviarDocumento from "./pages/EnviarDocumento";
 
 // Rutas para Estudiante
@@ -62,6 +64,7 @@ const App = () => (
           <Route path="/dashboard-rector" element={<DashboardRector />} />
           <Route path="/dashboard-estudiante" element={<DashboardEstudiante />} />
           <Route path="/dashboard-padre" element={<DashboardPadre />} />
+          <Route path="/dashboard-admin" element={<DashboardAdmin />} />
           <Route path="/seleccionar-grado" element={<SeleccionarGrado />} />
           <Route path="/seleccionar-salon" element={<SeleccionarSalon />} />
           <Route path="/tabla-notas" element={<TablaNotas />} />
@@ -85,6 +88,7 @@ const App = () => (
 
           {/* Rutas compartidas */}
           <Route path="/enviar-comunicado" element={<EnviarComunicado />} />
+          <Route path="/enviar-comunicado-admin" element={<EnviarComunicadoAdmin />} />
           <Route path="/enviar-documento" element={<EnviarDocumento />} />
 
           {/* Rutas para Estudiante */}

@@ -12,7 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { getSession, isRectorOrCoordinador } from "@/hooks/useSession";
+import { getSession, isAdmin, isRectorOrCoordinador } from "@/hooks/useSession";
 import HeaderNormy from "@/components/HeaderNormy";
 import { Loader2, Send, Clock, Trash2, Search, Users, Eye } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -342,7 +342,7 @@ const EnviarComunicado = () => {
     });
   };
 
-  const backLink = isRectorOrCoordinador() ? "/dashboard-rector" : "/dashboard";
+  const backLink = isAdmin() ? "/dashboard-admin" : isRectorOrCoordinador() ? "/dashboard-rector" : "/dashboard";
 
   return (
     <div className="min-h-screen bg-background flex flex-col">

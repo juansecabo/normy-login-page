@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Label } from "@/components/ui/label";
 import {
@@ -12,14 +12,17 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { getSession, isAdmin, isRectorOrCoordinador } from "@/hooks/useSession";
+import { getSession, isAdmin } from "@/hooks/useSession";
 import HeaderNormy from "@/components/HeaderNormy";
-import { Loader2, FileUp, X, Clock, Trash2, Search } from "lucide-react";
+import { Loader2, Send, Clock, Trash2, Search, Users, Eye } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
 const WEBHOOK_URL =
-  "https://n8n.srv966880.hstgr.cloud/webhook/af44e992-4372-48ce-b661-73019d6cab9d";
+  "https://n8n.srv966880.hstgr.cloud/webhook/9bd1a575-84f9-4b7f-989a-b2a3d1814721";
+
+const WEBHOOK_MASIVO_URL =
+  "https://n8n.srv966880.hstgr.cloud/webhook/masivo-personalizado";
 
 const NIVELES_GRADOS: Record<string, string[]> = {
   Preescolar: ["Prejardín", "Jardín", "Transición"],
@@ -30,21 +33,18 @@ const NIVELES_GRADOS: Record<string, string[]> = {
 
 const SALONES = ["1", "2", "3", "4", "5", "6"];
 
-interface DocumentoEnviado {
+interface ComunicadoEnviado {
   id: number;
   remitente: string;
   destinatarios: string;
   mensaje: string;
-  archivo_url: string | null;
   fecha: string;
 }
 
-const EnviarDocumento = () => {
+const EnviarComunicadoAdmin = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const [remitente, setRemitente] = useState("");
   const [codigoRemitente, setCodigoRemitente] = useState("");
   const [enviando, setEnviando] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
@@ -59,15 +59,22 @@ const EnviarDocumento = () => {
   const [estudiantes, setEstudiantes] = useState<{ codigo: string; nombre: string }[]>([]);
   const [loadingEstudiantes, setLoadingEstudiantes] = useState(false);
 
-  // Archivo y mensaje
-  const [archivo, setArchivo] = useState<File | null>(null);
+  // Mensaje
   const [mensaje, setMensaje] = useState("");
 
+  // Masivo personalizado
+  const [datosMasivos, setDatosMasivos] = useState("");
+  const [plantillaMasivo, setPlantillaMasivo] = useState("");
+  const [filasParsed, setFilasParsed] = useState<Record<string, string>[]>([]);
+  const [headersMasivo, setHeadersMasivo] = useState<string[]>([]);
+  const [enviandoMasivo, setEnviandoMasivo] = useState(false);
+  const [showConfirmMasivo, setShowConfirmMasivo] = useState(false);
+
   // Historial
-  const [historial, setHistorial] = useState<DocumentoEnviado[]>([]);
+  const [historial, setHistorial] = useState<ComunicadoEnviado[]>([]);
   const [loadingHistorial, setLoadingHistorial] = useState(false);
   const [busqueda, setBusqueda] = useState("");
-  const [selectedHistorial, setSelectedHistorial] = useState<DocumentoEnviado | null>(null);
+  const [selectedHistorial, setSelectedHistorial] = useState<ComunicadoEnviado | null>(null);
 
   useEffect(() => {
     const session = getSession();
@@ -75,7 +82,10 @@ const EnviarDocumento = () => {
       navigate("/");
       return;
     }
-    setRemitente(`${session.cargo} ${session.nombres} ${session.apellidos}`);
+    if (!isAdmin()) {
+      navigate("/dashboard");
+      return;
+    }
     setCodigoRemitente(session.codigo!);
   }, [navigate]);
 
@@ -112,9 +122,8 @@ const EnviarDocumento = () => {
       .from("Comunicados")
       .select("*")
       .eq("codigo_remitente", codigoRemitente)
-      .eq("tipo", "documento")
       .order("fecha", { ascending: false });
-    setHistorial((data as DocumentoEnviado[]) || []);
+    setHistorial((data as ComunicadoEnviado[]) || []);
     setLoadingHistorial(false);
   };
 
@@ -125,7 +134,6 @@ const EnviarDocumento = () => {
     setDeleteId(null);
   };
 
-  // Reset dependientes al cambiar perfil
   const handlePerfilChange = (value: string) => {
     setPerfil(value);
     setNivel("");
@@ -152,7 +160,6 @@ const EnviarDocumento = () => {
     setEstudiante("");
   };
 
-  // Construir texto de destinatarios
   const buildDestinatarios = (): string => {
     if (estudiante && estudiante !== "Todos") {
       if (perfil === "Estudiantes") {
@@ -186,63 +193,21 @@ const EnviarDocumento = () => {
 
   const destinatariosTexto = buildDestinatarios();
 
-  const canSend = perfil && archivo;
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setArchivo(file);
-    }
-  };
-
-  const handleRemoveFile = () => {
-    setArchivo(null);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
-    }
-  };
+  const canSend = perfil && mensaje.trim();
 
   const handleEnviar = async () => {
     setShowConfirm(false);
     setEnviando(true);
 
     try {
-      if (!archivo) throw new Error("No se seleccionó archivo");
-
-      // 1. Subir archivo a Supabase Storage
-      const timestamp = Date.now();
-      // Sanitizar nombre: quitar acentos y caracteres especiales
-      const nombreLimpio = archivo.name
-        .normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, "")
-        .replace(/[^a-zA-Z0-9._-]/g, "_");
-      const fileName = `${timestamp}_${nombreLimpio}`;
-
-      const { error: uploadError } = await supabase.storage
-        .from("documentos")
-        .upload(fileName, archivo);
-
-      if (uploadError) {
-        throw new Error(`Error subiendo archivo: ${uploadError.message}`);
-      }
-
-      // 2. Obtener URL pública
-      const { data: urlData } = supabase.storage
-        .from("documentos")
-        .getPublicUrl(fileName);
-
-      const archivoUrl = urlData.publicUrl;
-
-      // 3. Enviar al webhook
       const response = await fetch(WEBHOOK_URL, {
         method: "POST",
         mode: "cors",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          remitente,
+          remitente: "Normy",
           destinatarios: destinatariosTexto,
           mensaje: mensaje.trim(),
-          archivo_url: archivoUrl,
           codigo_remitente: codigoRemitente,
           perfil: perfil || null,
           nivel: (nivel && nivel !== "Todos") ? nivel : null,
@@ -257,26 +222,106 @@ const EnviarDocumento = () => {
       }
 
       toast({
-        title: "Documento enviado",
-        description: "El documento se está enviando por WhatsApp.",
+        title: "Comunicado enviado",
+        description: "El comunicado se está enviando por WhatsApp como Normy.",
       });
 
-      // Limpiar solo archivo y mensaje, mantener destinatarios
-      setArchivo(null);
       setMensaje("");
-      if (fileInputRef.current) {
-        fileInputRef.current.value = "";
-      }
     } catch (error) {
-      console.error("Error enviando documento:", error);
-      const errorMsg = error instanceof Error ? error.message : "Error desconocido";
+      console.error("Error enviando comunicado:", error);
       toast({
         title: "Error",
-        description: errorMsg,
+        description: "No se pudo enviar el comunicado. Intenta de nuevo.",
         variant: "destructive",
       });
     } finally {
       setEnviando(false);
+    }
+  };
+
+  const parsearDatos = (texto: string) => {
+    setDatosMasivos(texto);
+    const lineas = texto.split("\n").filter((l) => l.trim());
+    if (lineas.length < 2) {
+      setHeadersMasivo([]);
+      setFilasParsed([]);
+      return;
+    }
+    const headers = lineas[0].split("\t").map((h) => h.trim());
+    setHeadersMasivo(headers);
+    const filas = lineas.slice(1).map((linea) => {
+      const valores = linea.split("\t").map((v) => v.trim());
+      const fila: Record<string, string> = {};
+      headers.forEach((h, i) => {
+        fila[h] = valores[i] || "";
+      });
+      return fila;
+    });
+    setFilasParsed(filas);
+  };
+
+  const resolverPlantilla = (plantilla: string, fila: Record<string, string>) => {
+    return plantilla.replace(/\{([^}]+)\}/g, (match, key) => fila[key.trim()] ?? match);
+  };
+
+  const handleEnviarMasivo = async () => {
+    setShowConfirmMasivo(false);
+    setEnviandoMasivo(true);
+
+    try {
+      if (!headersMasivo.length || !filasParsed.length) {
+        throw new Error("No hay datos para enviar");
+      }
+      if (!plantillaMasivo.trim()) {
+        throw new Error("Escribe una plantilla de mensaje");
+      }
+
+      const colCodigo = headersMasivo[0];
+      const mensajes = filasParsed.map((fila) => ({
+        codigo: fila[colCodigo],
+        mensaje: resolverPlantilla(plantillaMasivo, fila),
+      }));
+
+      const response = await fetch(WEBHOOK_MASIVO_URL, {
+        method: "POST",
+        mode: "cors",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          remitente: "Normy",
+          codigo_remitente: codigoRemitente,
+          mensajes,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Error del servidor: ${response.status}`);
+      }
+
+      await supabase.from("Comunicados").insert({
+        remitente: "Normy",
+        codigo_remitente: codigoRemitente,
+        destinatarios: `Envío masivo personalizado a ${mensajes.length} estudiantes`,
+        mensaje: plantillaMasivo.trim(),
+      });
+
+      toast({
+        title: "Envío masivo iniciado",
+        description: `Se están enviando ${mensajes.length} mensajes personalizados por WhatsApp como Normy.`,
+      });
+
+      setDatosMasivos("");
+      setPlantillaMasivo("");
+      setFilasParsed([]);
+      setHeadersMasivo([]);
+    } catch (error) {
+      console.error("Error enviando masivo:", error);
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "No se pudo enviar. Intenta de nuevo.",
+        variant: "destructive",
+      });
+    } finally {
+      setEnviandoMasivo(false);
     }
   };
 
@@ -291,41 +336,39 @@ const EnviarDocumento = () => {
     });
   };
 
-  const backLink = isAdmin() ? "/dashboard-admin" : isRectorOrCoordinador() ? "/dashboard-rector" : "/dashboard";
-
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      <HeaderNormy backLink={backLink} />
+      <HeaderNormy backLink="/dashboard-admin" />
 
       <main className="flex-1 container mx-auto p-4 md:p-8">
-        {/* Breadcrumb */}
         <div className="bg-card rounded-lg shadow-soft p-4 mb-6 max-w-2xl mx-auto">
           <div className="flex items-center gap-2 text-sm">
-            <button onClick={() => navigate(backLink)} className="text-primary hover:underline">Inicio</button>
-            <span className="text-muted-foreground">→</span>
-            <span className="text-foreground font-medium">Enviar Documento</span>
+            <button onClick={() => navigate("/dashboard-admin")} className="text-primary hover:underline">Inicio</button>
+            <span className="text-muted-foreground">&rarr;</span>
+            <span className="text-foreground font-medium">Enviar Comunicado (Administrador)</span>
           </div>
         </div>
 
         <div className="bg-card rounded-lg shadow-soft p-6 md:p-8 max-w-2xl mx-auto">
+          <p className="text-center text-sm text-muted-foreground mb-4">Los mensajes se envían como <span className="font-semibold text-foreground">Normy</span></p>
+
           <Tabs defaultValue="enviar" onValueChange={(v) => { if (v === "historial") fetchHistorial(); }}>
             <TabsList className="flex w-full">
-              <TabsTrigger value="enviar" className="flex-1 text-xs md:text-sm px-2 md:px-3">Enviar Documento</TabsTrigger>
-              <TabsTrigger value="historial" className="flex-1 text-xs md:text-sm px-2 md:px-3">Documentos Enviados</TabsTrigger>
+              <TabsTrigger value="enviar" className="flex-1 text-xs md:text-sm px-2 md:px-3">Enviar</TabsTrigger>
+              <TabsTrigger value="masivo" className="flex-1 text-xs md:text-sm px-2 md:px-3">Masivo</TabsTrigger>
+              <TabsTrigger value="historial" className="flex-1 text-xs md:text-sm px-2 md:px-3">Historial</TabsTrigger>
             </TabsList>
 
             <TabsContent value="enviar">
               <h2 className="text-2xl font-bold text-foreground mb-6 text-center mt-4">
-                Enviar Documento
+                Enviar Comunicado
               </h2>
 
-              {/* Destinatarios */}
               <div className="space-y-4 mb-6">
                 <h3 className="text-lg font-semibold text-foreground">
                   Destinatarios
                 </h3>
 
-                {/* Perfil */}
                 <div className="space-y-2">
                   <Label>Perfil</Label>
                   <Select value={perfil} onValueChange={handlePerfilChange}>
@@ -344,7 +387,6 @@ const EnviarDocumento = () => {
                   </Select>
                 </div>
 
-                {/* Nivel */}
                 {perfil && (
                   <div className="space-y-2">
                     <Label>Nivel</Label>
@@ -364,7 +406,6 @@ const EnviarDocumento = () => {
                   </div>
                 )}
 
-                {/* Grado - solo si se eligió un nivel específico */}
                 {nivel && nivel !== "Todos" && (
                   <div className="space-y-2">
                     <Label>Grado</Label>
@@ -383,7 +424,6 @@ const EnviarDocumento = () => {
                   </div>
                 )}
 
-                {/* Salón - solo si se eligió grado */}
                 {grado && (
                   <div className="space-y-2">
                     <Label>Salón</Label>
@@ -403,7 +443,6 @@ const EnviarDocumento = () => {
                   </div>
                 )}
 
-                {/* Estudiante - solo si se eligió salón específico */}
                 {salon && salon !== "Todos" && (
                   <div className="space-y-2">
                     <Label>Estudiante</Label>
@@ -423,7 +462,6 @@ const EnviarDocumento = () => {
                   </div>
                 )}
 
-                {/* Preview de destinatarios */}
                 {perfil && (
                   <p className="text-sm text-muted-foreground">
                     Destinatarios:{" "}
@@ -434,50 +472,20 @@ const EnviarDocumento = () => {
                 )}
               </div>
 
-              {/* Archivo */}
               <div className="space-y-2 mb-6">
-                <h3 className="text-lg font-semibold text-foreground">Archivo</h3>
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  onChange={handleFileChange}
-                  className="block w-full text-sm text-foreground file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-primary-foreground hover:file:bg-primary/90 file:cursor-pointer cursor-pointer"
-                />
-                {archivo && (
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted p-3 rounded-md">
-                    <FileUp className="w-4 h-4 shrink-0" />
-                    <span className="truncate flex-1">{archivo.name}</span>
-                    <span className="text-xs shrink-0">
-                      ({(archivo.size / 1024).toFixed(1)} KB)
-                    </span>
-                    <button
-                      onClick={handleRemoveFile}
-                      className="text-destructive hover:text-destructive/80 shrink-0"
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
-                  </div>
-                )}
-              </div>
-
-              {/* Mensaje (opcional) */}
-              <div className="space-y-2 mb-6">
-                <h3 className="text-lg font-semibold text-foreground">
-                  Mensaje <span className="text-sm font-normal text-muted-foreground">(opcional)</span>
-                </h3>
+                <h3 className="text-lg font-semibold text-foreground">Mensaje</h3>
                 <Textarea
                   value={mensaje}
                   onChange={(e) => setMensaje(e.target.value)}
-                  placeholder="Escribe un mensaje para acompañar el documento..."
-                  rows={4}
+                  placeholder="Escribe el comunicado..."
+                  rows={6}
                 />
               </div>
 
-              {/* Botón enviar */}
               <button
                 disabled={!canSend || enviando}
                 onClick={() => setShowConfirm(true)}
-                className="w-full flex items-center justify-center gap-2 p-4 rounded-lg bg-gradient-to-r from-orange-500 to-orange-600 text-white font-bold text-lg transition-all duration-200 hover:shadow-md hover:scale-[1.01] hover:from-orange-600 hover:to-orange-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                className="w-full flex items-center justify-center gap-2 p-4 rounded-lg bg-gradient-to-r from-green-500 to-green-600 text-white font-bold text-lg transition-all duration-200 hover:shadow-md hover:scale-[1.01] hover:from-green-600 hover:to-green-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
               >
                 {enviando ? (
                   <>
@@ -486,8 +494,111 @@ const EnviarDocumento = () => {
                   </>
                 ) : (
                   <>
-                    <FileUp className="w-5 h-5" />
-                    Enviar documento
+                    <Send className="w-5 h-5" />
+                    Enviar comunicado como Normy
+                  </>
+                )}
+              </button>
+            </TabsContent>
+
+            <TabsContent value="masivo">
+              <h2 className="text-2xl font-bold text-foreground mb-6 text-center mt-4">
+                Envío Masivo Personalizado
+              </h2>
+
+              <div className="space-y-2 mb-6">
+                <Label className="text-base font-semibold">1. Pegar datos de Excel</Label>
+                <p className="text-xs text-muted-foreground">
+                  Copia las columnas de Excel y pégalas aquí. La primera fila debe ser los encabezados y la primera columna debe ser el código del estudiante.
+                </p>
+                <Textarea
+                  value={datosMasivos}
+                  onChange={(e) => parsearDatos(e.target.value)}
+                  placeholder={"codigo\tusuario\tcontraseña\n12345\test12345\tPass123!\n12346\test12346\tPass456!"}
+                  rows={5}
+                  className="font-mono text-xs"
+                />
+              </div>
+
+              {filasParsed.length > 0 && (
+                <div className="mb-6 space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Eye className="w-4 h-4 text-muted-foreground" />
+                    <span className="text-sm font-medium">{filasParsed.length} filas detectadas</span>
+                  </div>
+                  <div className="border rounded-md overflow-x-auto max-h-48 overflow-y-auto">
+                    <table className="w-full text-xs">
+                      <thead className="bg-muted sticky top-0">
+                        <tr>
+                          {headersMasivo.map((h) => (
+                            <th key={h} className="px-3 py-2 text-left font-medium text-foreground whitespace-nowrap">{h}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {filasParsed.map((fila, i) => (
+                          <tr key={i} className="border-t">
+                            {headersMasivo.map((h) => (
+                              <td key={h} className="px-3 py-1.5 whitespace-nowrap">{fila[h]}</td>
+                            ))}
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+
+              <div className="space-y-2 mb-6">
+                <Label className="text-base font-semibold">2. Plantilla del mensaje</Label>
+                <p className="text-xs text-muted-foreground">
+                  Usa los nombres de las columnas entre llaves como placeholders. Ej: {"{usuario}"}, {"{contraseña}"}
+                </p>
+                {headersMasivo.length > 0 && (
+                  <div className="flex flex-wrap gap-1 mb-2">
+                    {headersMasivo.map((h) => (
+                      <button
+                        key={h}
+                        type="button"
+                        onClick={() => setPlantillaMasivo((prev) => prev + `{${h}}`)}
+                        className="px-2 py-0.5 text-xs bg-muted rounded-md hover:bg-muted/80 font-mono"
+                      >
+                        {`{${h}}`}
+                      </button>
+                    ))}
+                  </div>
+                )}
+                <Textarea
+                  value={plantillaMasivo}
+                  onChange={(e) => setPlantillaMasivo(e.target.value)}
+                  placeholder="Hola, tu usuario es {usuario} y tu contraseña es {contraseña}. No la compartas con nadie."
+                  rows={4}
+                />
+              </div>
+
+              {plantillaMasivo && filasParsed.length > 0 && (
+                <div className="mb-6 space-y-2">
+                  <Label className="text-base font-semibold">Vista previa (primer estudiante)</Label>
+                  <div className="bg-muted p-3 rounded-md text-sm whitespace-pre-wrap">
+                    {resolverPlantilla(plantillaMasivo, filasParsed[0])}
+                  </div>
+                </div>
+              )}
+
+              <button
+                disabled={!filasParsed.length || !plantillaMasivo.trim() || enviandoMasivo}
+                onClick={() => setShowConfirmMasivo(true)}
+                className="w-full flex items-center justify-center gap-2 p-4 rounded-lg bg-gradient-to-r from-green-500 to-green-600 text-white font-bold text-lg transition-all duration-200 hover:shadow-md hover:scale-[1.01] hover:from-green-600 hover:to-green-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+              >
+                {enviandoMasivo ? (
+                  <>
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                    Enviando...
+                  </>
+                ) : (
+                  <>
+                    <Users className="w-5 h-5" />
+                    Enviar {filasParsed.length} mensajes como Normy
                   </>
                 )}
               </button>
@@ -495,7 +606,7 @@ const EnviarDocumento = () => {
 
             <TabsContent value="historial">
               <h2 className="text-2xl font-bold text-foreground mb-6 text-center mt-4">
-                Documentos Enviados
+                Comunicados Enviados
               </h2>
 
               {loadingHistorial ? (
@@ -505,7 +616,7 @@ const EnviarDocumento = () => {
                 </div>
               ) : historial.length === 0 ? (
                 <p className="text-center text-muted-foreground py-8">
-                  No has enviado documentos aún.
+                  No has enviado comunicados aún.
                 </p>
               ) : (
                 <div className="space-y-4">
@@ -542,23 +653,9 @@ const EnviarDocumento = () => {
                         <span className="font-medium text-foreground">Para:</span>{" "}
                         {c.destinatarios}
                       </p>
-                      {c.archivo_url && (
-                        <a
-                          href={c.archivo_url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex items-center gap-2 text-sm text-primary hover:underline"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          <FileUp className="w-4 h-4 shrink-0" />
-                          Ver documento
-                        </a>
-                      )}
-                      {c.mensaje && (
-                        <p className="text-sm whitespace-pre-wrap bg-muted p-3 rounded-md max-h-32 overflow-y-auto">
-                          {c.mensaje}
-                        </p>
-                      )}
+                      <p className="text-sm whitespace-pre-wrap bg-muted p-3 rounded-md max-h-32 overflow-y-auto">
+                        {c.mensaje}
+                      </p>
                     </div>
                   ))}
                 </div>
@@ -577,7 +674,7 @@ const EnviarDocumento = () => {
               <div className="space-y-3 text-sm text-muted-foreground">
                 <p>
                   <span className="font-medium text-foreground">Remitente:</span>{" "}
-                  {remitente}
+                  Normy (mensaje anónimo)
                 </p>
                 <p>
                   <span className="font-medium text-foreground">
@@ -586,19 +683,11 @@ const EnviarDocumento = () => {
                   {destinatariosTexto}
                 </p>
                 <p>
-                  <span className="font-medium text-foreground">Archivo:</span>{" "}
-                  {archivo?.name}
+                  <span className="font-medium text-foreground">Mensaje:</span>
                 </p>
-                {mensaje.trim() && (
-                  <>
-                    <p>
-                      <span className="font-medium text-foreground">Mensaje:</span>
-                    </p>
-                    <p className="whitespace-pre-wrap bg-muted p-3 rounded-md max-h-48 overflow-y-auto">
-                      {mensaje}
-                    </p>
-                  </>
-                )}
+                <p className="whitespace-pre-wrap bg-muted p-3 rounded-md max-h-48 overflow-y-auto">
+                  {mensaje}
+                </p>
               </div>
             </DialogDescription>
           </DialogHeader>
@@ -613,13 +702,45 @@ const EnviarDocumento = () => {
         </DialogContent>
       </Dialog>
 
+      {/* Diálogo de confirmación masivo */}
+      <Dialog open={showConfirmMasivo} onOpenChange={setShowConfirmMasivo}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirmar envío masivo</DialogTitle>
+            <DialogDescription asChild>
+              <div className="space-y-3 text-sm text-muted-foreground">
+                <p>
+                  Se enviarán <span className="font-bold text-foreground">{filasParsed.length} mensajes personalizados</span> por WhatsApp como Normy.
+                </p>
+                <p>
+                  <span className="font-medium text-foreground">Ejemplo (primer estudiante):</span>
+                </p>
+                {filasParsed.length > 0 && plantillaMasivo && (
+                  <p className="whitespace-pre-wrap bg-muted p-3 rounded-md max-h-48 overflow-y-auto">
+                    {resolverPlantilla(plantillaMasivo, filasParsed[0])}
+                  </p>
+                )}
+              </div>
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <button onClick={() => setShowConfirmMasivo(false)} className="px-4 py-2 rounded-md border text-sm font-medium hover:bg-muted">
+              Cancelar
+            </button>
+            <button onClick={handleEnviarMasivo} className="px-4 py-2 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90">
+              Enviar {filasParsed.length} mensajes
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Diálogo de confirmación de eliminación */}
       <Dialog open={deleteId !== null} onOpenChange={(open) => { if (!open) setDeleteId(null); }}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Eliminar documento</DialogTitle>
+            <DialogTitle>Eliminar comunicado</DialogTitle>
             <DialogDescription>
-              Este documento se eliminará permanentemente y no se podrá recuperar.
+              Este comunicado se eliminará permanentemente y no se podrá recuperar.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
@@ -633,7 +754,7 @@ const EnviarDocumento = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Modal para ver documento completo */}
+      {/* Modal para ver comunicado completo */}
       <Dialog open={!!selectedHistorial} onOpenChange={(open) => !open && setSelectedHistorial(null)}>
         <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
           {selectedHistorial && (
@@ -647,17 +768,6 @@ const EnviarDocumento = () => {
                   {formatFecha(selectedHistorial.fecha)}
                 </div>
               </DialogHeader>
-              {selectedHistorial.archivo_url && (
-                <a
-                  href={selectedHistorial.archivo_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-2 text-sm text-primary hover:underline"
-                >
-                  <FileUp className="w-4 h-4 shrink-0" />
-                  Ver documento
-                </a>
-              )}
               {selectedHistorial.mensaje && (
                 <p className="text-sm whitespace-pre-wrap bg-muted p-4 rounded-md">
                   {selectedHistorial.mensaje}
@@ -671,4 +781,4 @@ const EnviarDocumento = () => {
   );
 };
 
-export default EnviarDocumento;
+export default EnviarComunicadoAdmin;
