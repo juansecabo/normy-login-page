@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getSession, isAdmin } from "@/hooks/useSession";
-import { BookOpen, BarChart3, Megaphone, FileUp, Settings } from "lucide-react";
+import { BookOpen, BarChart3, Megaphone, FileUp, Settings, MessageSquare } from "lucide-react";
 import HeaderNormy from "@/components/HeaderNormy";
 
 const DashboardAdmin = () => {
@@ -48,7 +48,7 @@ const DashboardAdmin = () => {
             ¿Qué deseas consultar?
           </h3>
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-6 max-w-5xl mx-auto">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-6 max-w-5xl mx-auto">
             <button
               onClick={() => navigate("/rector/seleccionar-grado")}
               className="flex flex-col items-center justify-center gap-4 p-8 rounded-lg bg-emerald-100 transition-all duration-200 hover:shadow-md hover:bg-emerald-200"
@@ -87,6 +87,14 @@ const DashboardAdmin = () => {
             >
               <Settings className="w-16 h-16 text-foreground" />
               <span className="font-semibold text-lg text-foreground text-center">Panel de Control</span>
+            </button>
+
+            <button
+              onClick={() => navigate("/admin/sugerencias")}
+              className="flex flex-col items-center justify-center gap-4 p-8 rounded-lg bg-amber-100 transition-all duration-200 hover:shadow-md hover:bg-amber-200"
+            >
+              <MessageSquare className="w-16 h-16 text-foreground" />
+              <span className="font-semibold text-lg text-foreground text-center">Sugerencias</span>
             </button>
           </div>
         </div>

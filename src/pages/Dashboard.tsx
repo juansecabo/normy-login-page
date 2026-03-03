@@ -5,6 +5,7 @@ import normyExaminadoraImg from "@/assets/normy-examinadora.webp";
 import { getSession, isProfesor, isAdmin, isRectorOrCoordinador, isEstudiante, isPadreDeFamilia } from "@/hooks/useSession";
 import { BarChart3, Megaphone, FileUp } from "lucide-react";
 import HeaderNormy from "@/components/HeaderNormy";
+import BuzonSugerencias from "@/components/BuzonSugerencias";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -176,6 +177,8 @@ const Dashboard = () => {
             <span>Estadísticas</span>
           </button>
         </div>
+
+        <BuzonSugerencias />
       </main>
     </div>
   );

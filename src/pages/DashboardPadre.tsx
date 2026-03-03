@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { getSession, isPadreDeFamilia, HijoData } from "@/hooks/useSession";
 import { BookOpen, ClipboardList, BarChart3, Megaphone, FileText } from "lucide-react";
 import HeaderNormy from "@/components/HeaderNormy";
+import BuzonSugerencias from "@/components/BuzonSugerencias";
 import { supabase } from "@/integrations/supabase/client";
 import { getAllLastSeen, countNewItems } from "@/utils/notificaciones";
 
@@ -192,6 +193,8 @@ const DashboardPadre = () => {
             </button>
           </div>
         </div>
+
+        <BuzonSugerencias />
       </main>
     </div>
   );
