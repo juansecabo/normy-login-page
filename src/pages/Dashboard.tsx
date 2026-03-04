@@ -143,7 +143,7 @@ const Dashboard = () => {
         </div>
 
         {/* Botones de acciones */}
-        <div className="grid grid-cols-2 lg:grid-cols-6 gap-3 lg:gap-4 mt-8 max-w-[1400px] mx-auto">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4 mt-8 max-w-[1400px] mx-auto">
           <button
             onClick={() => navigate("/profesor/programar-actividad")}
             className="flex flex-col lg:flex-row items-center justify-center gap-1 lg:gap-3 p-4 lg:p-6 rounded-lg bg-gradient-to-r from-cyan-500 to-sky-600 text-white font-bold text-sm lg:text-base transition-all duration-200 hover:shadow-md hover:scale-[1.02] hover:from-cyan-600 hover:to-sky-500 text-center"
