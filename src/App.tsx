@@ -38,6 +38,7 @@ import EstadisticasProfesor from "./pages/profesor/EstadisticasProfesor";
 import EnviarComunicado from "./pages/EnviarComunicado";
 import EnviarComunicadoAdmin from "./pages/EnviarComunicadoAdmin";
 import EnviarDocumento from "./pages/EnviarDocumento";
+import ManualConvivencia from "./pages/ManualConvivencia";
 
 // Rutas para Estudiante
 import NotasEstudiante from "./pages/estudiante/NotasEstudiante";
@@ -96,6 +97,7 @@ const App = () => (
           <Route path="/enviar-comunicado" element={<EnviarComunicado />} />
           <Route path="/enviar-comunicado-admin" element={<EnviarComunicadoAdmin />} />
           <Route path="/enviar-documento" element={<EnviarDocumento />} />
+          <Route path="/manual-convivencia" element={<ManualConvivencia />} />
 
           {/* Rutas para Estudiante */}
           <Route path="/estudiante/notas" element={<NotasEstudiante />} />

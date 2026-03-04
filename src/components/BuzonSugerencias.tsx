@@ -83,7 +83,7 @@ const BuzonSugerencias = () => {
     <>
       <button
         onClick={() => setOpen(true)}
-        className="flex flex-col items-center gap-2 mt-8 mx-auto transition-all duration-200 hover:scale-105"
+        className="flex flex-col items-center gap-2 transition-all duration-200 hover:scale-105"
       >
         <img
           src="/buzon-de-sugerencias.png"
