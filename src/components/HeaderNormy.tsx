@@ -1,9 +1,11 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
+import { Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import escudoImg from "@/assets/escudo.webp";
 import { clearSession } from "@/hooks/useSession";
 import CambiarContrasenaModal from "@/components/CambiarContrasenaModal";
+import { useInstallPrompt } from "@/hooks/useInstallPrompt";
 
 interface HeaderNormyProps {
   backLink: string;
@@ -12,6 +14,7 @@ interface HeaderNormyProps {
 const HeaderNormy = ({ backLink }: HeaderNormyProps) => {
   const navigate = useNavigate();
   const [showCambiarContrasena, setShowCambiarContrasena] = useState(false);
+  const { canInstall, installApp } = useInstallPrompt();
 
   const handleLogout = () => {
     clearSession();
@@ -31,6 +34,16 @@ const HeaderNormy = ({ backLink }: HeaderNormyProps) => {
             <h1 className="text-base md:text-xl font-bold">Notas Normy</h1>
           </Link>
           <div className="flex items-center gap-1 sm:gap-2">
+            {canInstall && (
+              <button
+                onClick={installApp}
+                className="px-2 sm:px-3 py-1.5 sm:py-2 bg-primary-foreground/20 hover:bg-primary-foreground/30 text-primary-foreground font-medium rounded-lg transition-all duration-200 text-[10px] sm:text-sm flex items-center gap-1"
+              >
+                <Download className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Descargar App</span>
+                <span className="sm:hidden">App</span>
+              </button>
+            )}
             <button
               onClick={() => setShowCambiarContrasena(true)}
               className="px-2 sm:px-3 py-1.5 sm:py-2 bg-primary-foreground/20 hover:bg-primary-foreground/30 text-primary-foreground font-medium rounded-lg transition-all duration-200 text-[10px] sm:text-sm whitespace-nowrap"

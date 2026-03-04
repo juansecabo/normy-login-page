@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, Download, Share } from "lucide-react";
 import escudoImg from "@/assets/escudo.webp";
 import normyImg from "@/assets/normy-placeholder.webp";
 import cailicoLogo from "@/assets/cailico-logo.png";
@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { saveSession, getSession, HijoData } from "@/hooks/useSession";
+import { useInstallPrompt } from "@/hooks/useInstallPrompt";
 
 const Index = () => {
   const [identificacion, setIdentificacion] = useState("");
@@ -17,6 +18,7 @@ const Index = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { canInstall, isIOS, installApp } = useInstallPrompt();
 
   // Si ya hay sesión activa, redirigir sin pedir contraseña
   useEffect(() => {
@@ -310,6 +312,25 @@ const Index = () => {
               {loading ? "Verificando..." : "Ingresar"}
             </Button>
           </form>
+
+          {/* Botón instalar app */}
+          {canInstall && (
+            <button
+              onClick={installApp}
+              className="w-full flex items-center justify-center gap-2 py-2.5 text-sm font-medium text-primary hover:bg-primary/5 rounded-lg transition-colors"
+            >
+              <Download className="w-4 h-4" />
+              Descargar Aplicación
+            </button>
+          )}
+          {isIOS && (
+            <div className="text-center text-xs text-muted-foreground bg-secondary/50 rounded-lg p-3">
+              <p className="flex items-center justify-center gap-1 font-medium mb-1">
+                <Share className="w-3.5 h-3.5" /> Instalar en iPhone/iPad
+              </p>
+              <p>Toca <strong>Compartir</strong> y luego <strong>"Agregar a pantalla de inicio"</strong></p>
+            </div>
+          )}
 
           {/* Desarrollado por */}
           <div className="text-center pt-4 space-y-2">
