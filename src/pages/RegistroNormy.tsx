@@ -42,6 +42,13 @@ interface Perfil {
   padre_estudiante1_codigo: number | null;
   padre_estudiante2_codigo: number | null;
   padre_estudiante3_codigo: number | null;
+  padre_nombre: string | null;
+  numero_de_telefono: string | null;
+}
+
+interface ParentInfo {
+  padre_nombre: string;
+  telefono: string;
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -104,7 +111,7 @@ const RegistroNormy = () => {
         fetchAllPages<Perfil>((from, to) =>
           supabase
             .from("Perfiles_Generales")
-            .select("perfil, estudiante_codigo, padre_estudiante1_codigo, padre_estudiante2_codigo, padre_estudiante3_codigo")
+            .select("perfil, estudiante_codigo, padre_estudiante1_codigo, padre_estudiante2_codigo, padre_estudiante3_codigo, padre_nombre, numero_de_telefono")
             .range(from, to)
         ),
       ]);
@@ -126,16 +133,20 @@ const RegistroNormy = () => {
     return set;
   }, [perfiles]);
 
-  const padreCodigosRegistrados = useMemo(() => {
-    const set = new Set<number>();
+  const padreInfoPorCodigo = useMemo(() => {
+    const map = new Map<number, ParentInfo>();
     for (const p of perfiles) {
       if (p.perfil === "Padre de familia") {
-        if (p.padre_estudiante1_codigo) set.add(p.padre_estudiante1_codigo);
-        if (p.padre_estudiante2_codigo) set.add(p.padre_estudiante2_codigo);
-        if (p.padre_estudiante3_codigo) set.add(p.padre_estudiante3_codigo);
+        const info: ParentInfo = {
+          padre_nombre: p.padre_nombre || "Sin nombre",
+          telefono: p.numero_de_telefono || "Sin teléfono",
+        };
+        if (p.padre_estudiante1_codigo) map.set(p.padre_estudiante1_codigo, info);
+        if (p.padre_estudiante2_codigo) map.set(p.padre_estudiante2_codigo, info);
+        if (p.padre_estudiante3_codigo) map.set(p.padre_estudiante3_codigo, info);
       }
     }
-    return set;
+    return map;
   }, [perfiles]);
 
   // Filtered students
@@ -157,9 +168,11 @@ const RegistroNormy = () => {
     [filtered, estudianteCodigosRegistrados]
   );
   const padRegistrados = useMemo(
-    () => filtered.filter((e) => padreCodigosRegistrados.has(e.codigo_estudiantil)).length,
-    [filtered, padreCodigosRegistrados]
+    () => filtered.filter((e) => padreInfoPorCodigo.has(e.codigo_estudiantil)).length,
+    [filtered, padreInfoPorCodigo]
   );
+
+  const [selectedParent, setSelectedParent] = useState<{ nombre: string; telefono: string; estudiante: string } | null>(null);
 
   const total = filtered.length;
   const estPct = total > 0 ? Math.round((estRegistrados / total) * 100) : 0;
@@ -323,7 +336,7 @@ const RegistroNormy = () => {
                       </TableRow>
                     ) : (
                       filtered.map((e, i) => {
-                        const registrado = padreCodigosRegistrados.has(e.codigo_estudiantil);
+                        const parentInfo = padreInfoPorCodigo.get(e.codigo_estudiantil);
                         return (
                           <TableRow key={e.codigo_estudiantil}>
                             <TableCell className="text-muted-foreground">{i + 1}</TableCell>
@@ -334,12 +347,22 @@ const RegistroNormy = () => {
                             <TableCell>{e.grado_estudiante}</TableCell>
                             <TableCell>{e.salon_estudiante}</TableCell>
                             <TableCell className="text-center">
-                              <Badge className={registrado
-                                ? "bg-green-500 hover:bg-green-600 text-white"
-                                : "bg-red-500 hover:bg-red-600 text-white"
-                              }>
-                                {registrado ? "Registrado" : "No registrado"}
-                              </Badge>
+                              {parentInfo ? (
+                                <button
+                                  onClick={() => setSelectedParent({
+                                    nombre: parentInfo.padre_nombre,
+                                    telefono: parentInfo.telefono,
+                                    estudiante: `${e.apellidos_estudiante}, ${e.nombre_estudiante}`,
+                                  })}
+                                  className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-green-500 hover:bg-green-600 text-white cursor-pointer transition-colors"
+                                >
+                                  Ver info
+                                </button>
+                              ) : (
+                                <Badge className="bg-red-500 hover:bg-red-600 text-white">
+                                  No registrado
+                                </Badge>
+                              )}
                             </TableCell>
                           </TableRow>
                         );
@@ -351,6 +374,27 @@ const RegistroNormy = () => {
             </div>
           </TabsContent>
         </Tabs>
+
+        {/* Parent info popup */}
+        {selectedParent && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center">
+            <div className="absolute inset-0 bg-black/50" onClick={() => setSelectedParent(null)} />
+            <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-sm mx-4 p-6">
+              <h3 className="text-lg font-bold text-gray-900 mb-4">Info del padre</h3>
+              <div className="space-y-3 text-sm text-gray-700">
+                <p><span className="font-medium">Estudiante:</span> {selectedParent.estudiante}</p>
+                <p><span className="font-medium">Padre:</span> {selectedParent.nombre}</p>
+                <p><span className="font-medium">Teléfono:</span> {selectedParent.telefono}</p>
+              </div>
+              <button
+                onClick={() => setSelectedParent(null)}
+                className="mt-5 w-full px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium rounded-lg transition-colors"
+              >
+                Cerrar
+              </button>
+            </div>
+          </div>
+        )}
       </main>
     </div>
   );
