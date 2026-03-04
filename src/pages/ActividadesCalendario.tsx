@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
-import { Plus, Pencil, Trash2, ArrowLeft, Calendar } from "lucide-react";
+import { Plus, Pencil, Trash2, Calendar } from "lucide-react";
 import { getSession } from "@/hooks/useSession";
 import HeaderNormy from "@/components/HeaderNormy";
 import {
@@ -188,10 +188,6 @@ const ActividadesCalendario = () => {
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleVolverNotas = () => {
-    navigate("/tabla-notas");
   };
 
   const handleAbrirModalCrear = () => {
@@ -382,35 +378,48 @@ const ActividadesCalendario = () => {
 
       {/* Main Content */}
       <main className="flex-1 container mx-auto p-4 md:p-8">
-        {/* Header de página */}
-        <div className="bg-card rounded-lg shadow-soft p-4 md:p-6 mb-6">
-          <div className="flex flex-col gap-4">
-            <div>
-              <h2 className="text-xl md:text-2xl font-bold text-foreground flex items-center gap-2">
-                <Calendar className="h-5 w-5 md:h-6 md:w-6 text-primary" />
-                Actividades Asignadas
-              </h2>
-              <p className="text-sm md:text-base text-muted-foreground mt-1">
-                {asignaturaSeleccionada} - {gradoSeleccionado} {salonSeleccionado}
-              </p>
-            </div>
-            <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
-              <Button
-                variant="outline"
-                onClick={handleVolverNotas}
-                className="gap-2 text-sm"
+        {/* Breadcrumb + Actions */}
+        <div className="bg-card rounded-lg shadow-soft p-4 mb-6">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div className="flex flex-wrap items-center gap-2 text-sm">
+              <button
+                onClick={() => navigate("/dashboard")}
+                className="text-primary hover:underline"
               >
-                <ArrowLeft className="h-4 w-4" />
-                Volver a Notas
-              </Button>
-              <Button
-                onClick={handleAbrirModalCrear}
-                className="gap-2 text-sm"
+                Asignaturas
+              </button>
+              <span className="text-muted-foreground">→</span>
+              <button
+                onClick={() => navigate("/seleccionar-grado")}
+                className="text-primary hover:underline"
               >
-                <Plus className="h-4 w-4" />
-                Agregar Actividad
-              </Button>
+                {asignaturaSeleccionada}
+              </button>
+              <span className="text-muted-foreground">→</span>
+              <button
+                onClick={() => navigate("/seleccionar-salon")}
+                className="text-primary hover:underline"
+              >
+                {gradoSeleccionado}
+              </button>
+              <span className="text-muted-foreground">→</span>
+              <button
+                onClick={() => navigate("/tabla-notas")}
+                className="text-primary hover:underline"
+              >
+                {salonSeleccionado}
+              </button>
+              <span className="text-muted-foreground">→</span>
+              <span className="text-foreground font-medium">Actividades Asignadas</span>
             </div>
+            <Button
+              onClick={handleAbrirModalCrear}
+              size="sm"
+              className="gap-2"
+            >
+              <Plus className="h-4 w-4" />
+              Agregar Actividad
+            </Button>
           </div>
         </div>
 
