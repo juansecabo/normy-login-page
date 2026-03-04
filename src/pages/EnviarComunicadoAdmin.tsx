@@ -383,11 +383,19 @@ const EnviarComunicadoAdmin = () => {
                       <SelectItem value="Estudiantes y Padres de familia">
                         Estudiantes y Padres de familia
                       </SelectItem>
+                      <SelectItem value="Profesores">Profesores</SelectItem>
+                      <SelectItem value="Coordinadores">Coordinadores</SelectItem>
+                      <SelectItem value="Todo el personal interno">
+                        Todo el personal interno
+                      </SelectItem>
+                      <SelectItem value="Toda la comunidad">
+                        Toda la comunidad
+                      </SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
 
-                {perfil && (
+                {perfil && !['Profesores', 'Coordinadores', 'Todo el personal interno', 'Toda la comunidad'].includes(perfil) && (
                   <div className="space-y-2">
                     <Label>Nivel</Label>
                     <Select value={nivel} onValueChange={handleNivelChange}>
