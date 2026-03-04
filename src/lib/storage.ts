@@ -1,7 +1,7 @@
 import { supabase } from "@/integrations/supabase/client";
 
 const BUCKET_NAME = "normy-archivos";
-const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB (Supabase default limit)
 
 /**
  * Sanitizes a filename for safe storage:
@@ -59,7 +59,7 @@ export interface ArchivoSubido {
 export const subirArchivo = async (file: File): Promise<ArchivoSubido> => {
   // Validate file size
   if (file.size > MAX_FILE_SIZE) {
-    throw new Error(`El archivo "${file.name}" excede el límite de 5MB`);
+    throw new Error(`El archivo "${file.name}" excede el límite de 50MB`);
   }
 
   // Sanitize and make unique

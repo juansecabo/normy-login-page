@@ -574,41 +574,6 @@ const ActividadesCalendario = () => {
             </div>
 
             <div className="space-y-2">
-              <Label>Fecha de presentación</Label>
-              <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "w-full justify-start text-left font-normal",
-                      !fechaSeleccionada && "text-muted-foreground"
-                    )}
-                  >
-                    <Calendar className="mr-2 h-4 w-4" />
-                    {fechaSeleccionada ? mostrarFecha(formatearFecha(fechaSeleccionada)) : "Seleccionar fecha"}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <CalendarComponent
-                    mode="single"
-                    selected={fechaSeleccionada}
-                    onSelect={(date) => {
-                      setFechaSeleccionada(date);
-                      setPopoverOpen(false);
-                    }}
-                    disabled={(date) => {
-                      const hoy = new Date();
-                      hoy.setHours(0, 0, 0, 0);
-                      return date < hoy;
-                    }}
-                    initialFocus
-                    locale={es}
-                    className="pointer-events-auto"
-                  />
-                </PopoverContent>
-              </Popover>
-            </div>
-            <div className="space-y-2">
               <Label>Archivo adjunto (opcional)</Label>
               {/* Show existing file when editing */}
               {actividadEditando && archivoUrlExistente && !quitarArchivo && !archivoSeleccionado && (
@@ -651,7 +616,7 @@ const ActividadesCalendario = () => {
               {!archivoSeleccionado && (!archivoUrlExistente || quitarArchivo) && (
                 <label className="flex items-center gap-2 p-3 border-2 border-dashed border-muted-foreground/30 rounded-md cursor-pointer hover:border-primary/50 transition-colors">
                   <Paperclip className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm text-muted-foreground">Seleccionar archivo (máx. 5MB)</span>
+                  <span className="text-sm text-muted-foreground">Seleccionar archivo</span>
                   <input
                     type="file"
                     className="hidden"
@@ -659,14 +624,6 @@ const ActividadesCalendario = () => {
                     onChange={(e) => {
                       const file = e.target.files?.[0];
                       if (file) {
-                        if (file.size > 5 * 1024 * 1024) {
-                          toast({
-                            title: "Archivo muy grande",
-                            description: "El archivo no puede exceder 5MB",
-                            variant: "destructive",
-                          });
-                          return;
-                        }
                         setArchivoSeleccionado(file);
                         setQuitarArchivo(false);
                       }
@@ -674,6 +631,42 @@ const ActividadesCalendario = () => {
                   />
                 </label>
               )}
+            </div>
+
+            <div className="space-y-2">
+              <Label>Fecha de presentación</Label>
+              <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-full justify-start text-left font-normal",
+                      !fechaSeleccionada && "text-muted-foreground"
+                    )}
+                  >
+                    <Calendar className="mr-2 h-4 w-4" />
+                    {fechaSeleccionada ? mostrarFecha(formatearFecha(fechaSeleccionada)) : "Seleccionar fecha"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <CalendarComponent
+                    mode="single"
+                    selected={fechaSeleccionada}
+                    onSelect={(date) => {
+                      setFechaSeleccionada(date);
+                      setPopoverOpen(false);
+                    }}
+                    disabled={(date) => {
+                      const hoy = new Date();
+                      hoy.setHours(0, 0, 0, 0);
+                      return date < hoy;
+                    }}
+                    initialFocus
+                    locale={es}
+                    className="pointer-events-auto"
+                  />
+                </PopoverContent>
+              </Popover>
             </div>
           </div>
           <DialogFooter>
