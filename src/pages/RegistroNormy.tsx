@@ -354,7 +354,7 @@ const RegistroNormy = () => {
                             </TableCell>
                             <TableCell className="whitespace-nowrap">{e.grado_estudiante}</TableCell>
                             <TableCell>{e.salon_estudiante}</TableCell>
-                            <TableCell className="whitespace-nowrap">
+                            <TableCell>
                               <Badge className={`w-20 justify-center ${parentInfo
                                 ? "bg-green-500 hover:bg-green-600 text-white"
                                 : "bg-red-500 hover:bg-red-600 text-white"
