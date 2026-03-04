@@ -131,46 +131,46 @@ const DashboardEstudiante = () => {
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-6 max-w-4xl mx-auto">
             <button
               onClick={() => navigate("/estudiante/notas")}
-              className="relative flex flex-col items-center justify-center gap-4 p-6 rounded-lg bg-gradient-to-br from-emerald-400 to-emerald-600 shadow-md transition-all duration-200 hover:shadow-lg hover:scale-[1.03]"
+              className="relative flex flex-col items-center justify-center gap-4 p-6 rounded-lg bg-emerald-100 shadow-md transition-all duration-200 hover:shadow-lg hover:scale-[1.03] hover:bg-emerald-200"
             >
               <Badge count={badges.notas} />
-              <BookOpen className="w-12 h-12 text-white" />
-              <span className="font-semibold text-white">Notas</span>
+              <BookOpen className="w-12 h-12 text-foreground" />
+              <span className="font-semibold text-foreground">Notas</span>
             </button>
 
             <button
               onClick={() => navigate("/estudiante/actividades")}
-              className="relative flex flex-col items-center justify-center gap-4 p-6 rounded-lg bg-gradient-to-br from-orange-400 to-orange-600 shadow-md transition-all duration-200 hover:shadow-lg hover:scale-[1.03]"
+              className="relative flex flex-col items-center justify-center gap-4 p-6 rounded-lg bg-green-100 shadow-md transition-all duration-200 hover:shadow-lg hover:scale-[1.03] hover:bg-green-200"
             >
               <Badge count={badges.actividades} />
-              <ClipboardList className="w-12 h-12 text-white" />
-              <span className="font-semibold text-white text-center">Actividades</span>
+              <ClipboardList className="w-12 h-12 text-foreground" />
+              <span className="font-semibold text-foreground text-center">Actividades</span>
             </button>
 
             <button
               onClick={() => navigate("/estudiante/estadisticas")}
-              className="flex flex-col items-center justify-center gap-4 p-6 rounded-lg bg-gradient-to-br from-blue-400 to-blue-600 shadow-md transition-all duration-200 hover:shadow-lg hover:scale-[1.03]"
+              className="flex flex-col items-center justify-center gap-4 p-6 rounded-lg bg-teal-100 shadow-md transition-all duration-200 hover:shadow-lg hover:scale-[1.03] hover:bg-teal-200"
             >
-              <BarChart3 className="w-12 h-12 text-white" />
-              <span className="font-semibold text-white text-center">Estadísticas</span>
+              <BarChart3 className="w-12 h-12 text-foreground" />
+              <span className="font-semibold text-foreground text-center">Estadísticas</span>
             </button>
 
             <button
               onClick={() => navigate("/estudiante/comunicados")}
-              className="relative flex flex-col items-center justify-center gap-4 p-6 rounded-lg bg-gradient-to-br from-purple-400 to-purple-600 shadow-md transition-all duration-200 hover:shadow-lg hover:scale-[1.03]"
+              className="relative flex flex-col items-center justify-center gap-4 p-6 rounded-lg bg-lime-100 shadow-md transition-all duration-200 hover:shadow-lg hover:scale-[1.03] hover:bg-lime-200"
             >
               <Badge count={badges.comunicados} />
-              <Megaphone className="w-12 h-12 text-white" />
-              <span className="font-semibold text-white text-center">Comunicados</span>
+              <Megaphone className="w-12 h-12 text-foreground" />
+              <span className="font-semibold text-foreground text-center">Comunicados</span>
             </button>
 
             <button
               onClick={() => navigate("/estudiante/documentos")}
-              className="relative flex flex-col items-center justify-center gap-4 p-6 rounded-lg bg-gradient-to-br from-cyan-400 to-cyan-600 shadow-md transition-all duration-200 hover:shadow-lg hover:scale-[1.03]"
+              className="relative flex flex-col items-center justify-center gap-4 p-6 rounded-lg bg-cyan-100 shadow-md transition-all duration-200 hover:shadow-lg hover:scale-[1.03] hover:bg-cyan-200"
             >
               <Badge count={badges.documentos} />
-              <FileText className="w-12 h-12 text-white" />
-              <span className="font-semibold text-white text-center">Documentos</span>
+              <FileText className="w-12 h-12 text-foreground" />
+              <span className="font-semibold text-foreground text-center">Documentos</span>
             </button>
           </div>
         </div>
