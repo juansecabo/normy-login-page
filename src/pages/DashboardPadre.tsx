@@ -201,7 +201,7 @@ const DashboardPadre = () => {
             className="flex flex-col items-center gap-2 transition-all duration-200 hover:scale-105"
           >
             <img
-              src="/manual-de-convivencia.png"
+              src="/manual-de-convivencia.webp"
               alt="Manual de Convivencia"
               className="w-20 h-20 object-contain"
             />

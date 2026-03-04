@@ -86,7 +86,7 @@ const BuzonSugerencias = () => {
         className="flex flex-col items-center gap-2 transition-all duration-200 hover:scale-105"
       >
         <img
-          src="/buzon-de-sugerencias.png"
+          src="/buzon-de-sugerencias.webp"
           alt="Buzón de Sugerencias"
           className="w-20 h-20 object-contain"
         />
