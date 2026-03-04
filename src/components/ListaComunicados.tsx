@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Clock, Search, FileUp } from "lucide-react";
+import { Clock, Search, FileUp, Download } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
@@ -27,6 +27,25 @@ const formatFecha = (fecha: string) => {
     hour: "2-digit",
     minute: "2-digit",
   });
+};
+
+const descargarArchivo = async (url: string, e: React.MouseEvent) => {
+  e.preventDefault();
+  e.stopPropagation();
+  try {
+    const res = await fetch(url);
+    const blob = await res.blob();
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    const nombre = decodeURIComponent(url.split("/").pop() || "documento");
+    a.download = nombre;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(a.href);
+  } catch {
+    window.open(url, "_blank");
+  }
 };
 
 const ListaComunicados = ({ comunicados, loading, showDocumentLink = false }: ListaComunicadosProps) => {
@@ -80,15 +99,25 @@ const ListaComunicados = ({ comunicados, loading, showDocumentLink = false }: Li
             {c.remitente}
           </p>
           {showDocumentLink && c.archivo_url && (
-            <a
-              href={c.archivo_url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-2 text-sm text-primary hover:underline"
-            >
-              <FileUp className="w-4 h-4 shrink-0" />
-              Ver documento
-            </a>
+            <div className="flex items-center gap-3">
+              <a
+                href={c.archivo_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 text-sm text-primary hover:underline"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <FileUp className="w-4 h-4 shrink-0" />
+                Ver documento
+              </a>
+              <button
+                onClick={(e) => descargarArchivo(c.archivo_url!, e)}
+                className="flex items-center gap-1 text-sm text-emerald-600 hover:underline"
+              >
+                <Download className="w-4 h-4 shrink-0" />
+                Descargar
+              </button>
+            </div>
           )}
           {c.mensaje && (
             <p className="text-sm whitespace-pre-wrap bg-muted p-3 rounded-md max-h-32 overflow-y-auto">
@@ -118,16 +147,25 @@ const ListaComunicados = ({ comunicados, loading, showDocumentLink = false }: Li
                 </div>
               </DialogHeader>
               {showDocumentLink && selectedItem.archivo_url && (
-                <a
-                  href={selectedItem.archivo_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-2 text-sm text-primary hover:underline"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <FileUp className="w-4 h-4 shrink-0" />
-                  Ver documento
-                </a>
+                <div className="flex items-center gap-3">
+                  <a
+                    href={selectedItem.archivo_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 text-sm text-primary hover:underline"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <FileUp className="w-4 h-4 shrink-0" />
+                    Ver documento
+                  </a>
+                  <button
+                    onClick={(e) => descargarArchivo(selectedItem.archivo_url!, e)}
+                    className="flex items-center gap-1 text-sm text-emerald-600 hover:underline"
+                  >
+                    <Download className="w-4 h-4 shrink-0" />
+                    Descargar
+                  </button>
+                </div>
               )}
               {selectedItem.mensaje && (
                 <p className="text-sm whitespace-pre-wrap bg-muted p-4 rounded-md">
