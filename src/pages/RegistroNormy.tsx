@@ -354,11 +354,11 @@ const RegistroNormy = () => {
                             </TableCell>
                             <TableCell>{e.grado_estudiante}</TableCell>
                             <TableCell>{e.salon_estudiante}</TableCell>
-                            <TableCell className="text-center relative">
-                              <Badge className={`w-20 justify-center ${parentInfo
+                            <TableCell className="text-center whitespace-nowrap">
+                              <Badge className={parentInfo
                                 ? "bg-green-500 hover:bg-green-600 text-white"
                                 : "bg-red-500 hover:bg-red-600 text-white"
-                              }`}>
+                              }>
                                 {parentInfo ? "Registrado" : "No registrado"}
                               </Badge>
                               {parentInfo && (
@@ -367,7 +367,7 @@ const RegistroNormy = () => {
                                     padres: parentInfo,
                                     estudiante: `${e.apellidos_estudiante}, ${e.nombre_estudiante}`,
                                   })}
-                                  className="absolute ml-2 text-xs text-primary hover:underline font-medium whitespace-nowrap"
+                                  className="ml-2 text-xs text-primary hover:underline font-medium"
                                 >
                                   Ver info
                                 </button>
