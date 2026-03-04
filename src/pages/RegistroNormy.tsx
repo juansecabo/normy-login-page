@@ -267,14 +267,14 @@ const RegistroNormy = () => {
               </div>
 
               <div className="overflow-x-auto">
-                <Table>
+                <Table style={{ tableLayout: "auto" }}>
                   <TableHeader>
                     <TableRow>
                       <TableHead className="w-12">#</TableHead>
-                      <TableHead>Nombre</TableHead>
-                      <TableHead>Grado</TableHead>
-                      <TableHead>Salón</TableHead>
-                      <TableHead className="text-center">Estado</TableHead>
+                      <TableHead className="whitespace-nowrap">Nombre</TableHead>
+                      <TableHead className="whitespace-nowrap">Grado</TableHead>
+                      <TableHead className="whitespace-nowrap">Salón</TableHead>
+                      <TableHead className="text-center whitespace-nowrap">Estado</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -290,16 +290,16 @@ const RegistroNormy = () => {
                         return (
                           <TableRow key={e.codigo_estudiantil}>
                             <TableCell className="text-muted-foreground">{i + 1}</TableCell>
-                            <TableCell className="font-medium">
+                            <TableCell className="font-medium whitespace-nowrap">
                               {e.apellidos_estudiante}, {e.nombre_estudiante}
                             </TableCell>
-                            <TableCell>{e.grado_estudiante}</TableCell>
+                            <TableCell className="whitespace-nowrap">{e.grado_estudiante}</TableCell>
                             <TableCell>{e.salon_estudiante}</TableCell>
                             <TableCell className="text-center">
-                              <Badge className={registrado
+                              <Badge className={`w-20 justify-center ${registrado
                                 ? "bg-green-500 hover:bg-green-600 text-white"
                                 : "bg-red-500 hover:bg-red-600 text-white"
-                              }>
+                              }`}>
                                 {registrado ? "Registrado" : "No registrado"}
                               </Badge>
                             </TableCell>
@@ -326,14 +326,14 @@ const RegistroNormy = () => {
               </div>
 
               <div className="overflow-x-auto">
-                <Table>
+                <Table style={{ tableLayout: "auto" }}>
                   <TableHeader>
                     <TableRow>
                       <TableHead className="w-12">#</TableHead>
-                      <TableHead>Nombre del estudiante</TableHead>
-                      <TableHead>Grado</TableHead>
-                      <TableHead>Salón</TableHead>
-                      <TableHead className="text-center">Padre en Normy</TableHead>
+                      <TableHead className="whitespace-nowrap">Nombre del estudiante</TableHead>
+                      <TableHead className="whitespace-nowrap">Grado</TableHead>
+                      <TableHead className="whitespace-nowrap">Salón</TableHead>
+                      <TableHead className="whitespace-nowrap">Padre en Normy</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -349,16 +349,16 @@ const RegistroNormy = () => {
                         return (
                           <TableRow key={e.codigo_estudiantil}>
                             <TableCell className="text-muted-foreground">{i + 1}</TableCell>
-                            <TableCell className="font-medium">
+                            <TableCell className="font-medium whitespace-nowrap">
                               {e.apellidos_estudiante}, {e.nombre_estudiante}
                             </TableCell>
-                            <TableCell>{e.grado_estudiante}</TableCell>
+                            <TableCell className="whitespace-nowrap">{e.grado_estudiante}</TableCell>
                             <TableCell>{e.salon_estudiante}</TableCell>
-                            <TableCell className="text-center whitespace-nowrap">
-                              <Badge className={parentInfo
+                            <TableCell className="whitespace-nowrap">
+                              <Badge className={`w-20 justify-center ${parentInfo
                                 ? "bg-green-500 hover:bg-green-600 text-white"
                                 : "bg-red-500 hover:bg-red-600 text-white"
-                              }>
+                              }`}>
                                 {parentInfo ? "Registrado" : "No registrado"}
                               </Badge>
                               {parentInfo && (
