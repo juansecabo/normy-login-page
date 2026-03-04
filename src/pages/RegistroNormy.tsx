@@ -1,0 +1,359 @@
+import { useEffect, useState, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import { getSession, isProfesor, isRectorOrCoordinador, isAdmin } from "@/hooks/useSession";
+import HeaderNormy from "@/components/HeaderNormy";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
+} from "@/components/ui/table";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
+import { Loader2, Search } from "lucide-react";
+
+// ─── Constants ────────────────────────────────────────────────────────────────
+
+const GRADOS = [
+  "Prejardín", "Jardín", "Transición",
+  "Primero", "Segundo", "Tercero", "Cuarto", "Quinto",
+  "Sexto", "Séptimo", "Octavo", "Noveno",
+  "Décimo", "Undécimo",
+];
+
+const SALONES = ["1", "2", "3", "4", "5", "6"];
+
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+interface Estudiante {
+  codigo_estudiantil: number;
+  nombre_estudiante: string;
+  apellidos_estudiante: string;
+  grado_estudiante: string;
+  salon_estudiante: string;
+}
+
+interface Perfil {
+  perfil: string;
+  estudiante_codigo: number | null;
+  padre_estudiante1_codigo: number | null;
+  padre_estudiante2_codigo: number | null;
+  padre_estudiante3_codigo: number | null;
+}
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+function normalize(str: string): string {
+  return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+}
+
+async function fetchAllPages<T>(
+  makeQuery: (from: number, to: number) => PromiseLike<{ data: T[] | null; error: unknown }>
+): Promise<T[]> {
+  const PAGE = 1000;
+  let all: T[] = [];
+  let from = 0;
+  while (true) {
+    const { data } = await makeQuery(from, from + PAGE - 1);
+    if (!data || data.length === 0) break;
+    all = all.concat(data);
+    if (data.length < PAGE) break;
+    from += PAGE;
+  }
+  return all;
+}
+
+// ─── Component ────────────────────────────────────────────────────────────────
+
+const RegistroNormy = () => {
+  const navigate = useNavigate();
+
+  // Auth
+  useEffect(() => {
+    const session = getSession();
+    if (!session.codigo) { navigate("/"); return; }
+    if (!isProfesor() && !isRectorOrCoordinador()) { navigate("/dashboard"); return; }
+  }, [navigate]);
+
+  const backLink = isAdmin() ? "/dashboard-admin" : isRectorOrCoordinador() ? "/dashboard-rector" : "/dashboard";
+
+  // State
+  const [estudiantes, setEstudiantes] = useState<Estudiante[]>([]);
+  const [perfiles, setPerfiles] = useState<Perfil[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [gradoFilter, setGradoFilter] = useState("todos");
+  const [salonFilter, setSalonFilter] = useState("todos");
+  const [search, setSearch] = useState("");
+
+  // Fetch data
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      const [est, perf] = await Promise.all([
+        fetchAllPages<Estudiante>((from, to) =>
+          supabase
+            .from("Estudiantes")
+            .select("codigo_estudiantil, nombre_estudiante, apellidos_estudiante, grado_estudiante, salon_estudiante")
+            .order("apellidos_estudiante")
+            .order("nombre_estudiante")
+            .range(from, to)
+        ),
+        fetchAllPages<Perfil>((from, to) =>
+          supabase
+            .from("Perfiles_Generales")
+            .select("perfil, estudiante_codigo, padre_estudiante1_codigo, padre_estudiante2_codigo, padre_estudiante3_codigo")
+            .range(from, to)
+        ),
+      ]);
+      setEstudiantes(est);
+      setPerfiles(perf);
+      setLoading(false);
+    };
+    fetchData();
+  }, []);
+
+  // Build lookup sets
+  const estudianteCodigosRegistrados = useMemo(() => {
+    const set = new Set<number>();
+    for (const p of perfiles) {
+      if (p.perfil === "Estudiante" && p.estudiante_codigo) {
+        set.add(p.estudiante_codigo);
+      }
+    }
+    return set;
+  }, [perfiles]);
+
+  const padreCodigosRegistrados = useMemo(() => {
+    const set = new Set<number>();
+    for (const p of perfiles) {
+      if (p.perfil === "Padre de familia") {
+        if (p.padre_estudiante1_codigo) set.add(p.padre_estudiante1_codigo);
+        if (p.padre_estudiante2_codigo) set.add(p.padre_estudiante2_codigo);
+        if (p.padre_estudiante3_codigo) set.add(p.padre_estudiante3_codigo);
+      }
+    }
+    return set;
+  }, [perfiles]);
+
+  // Filtered students
+  const filtered = useMemo(() => {
+    return estudiantes.filter((e) => {
+      if (gradoFilter !== "todos" && e.grado_estudiante !== gradoFilter) return false;
+      if (salonFilter !== "todos" && e.salon_estudiante !== salonFilter) return false;
+      if (search) {
+        const hay = normalize(`${e.apellidos_estudiante} ${e.nombre_estudiante} ${e.codigo_estudiantil}`);
+        if (!hay.includes(normalize(search))) return false;
+      }
+      return true;
+    });
+  }, [estudiantes, gradoFilter, salonFilter, search]);
+
+  // Stats
+  const estRegistrados = useMemo(
+    () => filtered.filter((e) => estudianteCodigosRegistrados.has(e.codigo_estudiantil)).length,
+    [filtered, estudianteCodigosRegistrados]
+  );
+  const padRegistrados = useMemo(
+    () => filtered.filter((e) => padreCodigosRegistrados.has(e.codigo_estudiantil)).length,
+    [filtered, padreCodigosRegistrados]
+  );
+
+  const total = filtered.length;
+  const estPct = total > 0 ? Math.round((estRegistrados / total) * 100) : 0;
+  const padPct = total > 0 ? Math.round((padRegistrados / total) * 100) : 0;
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col">
+        <HeaderNormy backLink={backLink} />
+        <main className="flex-1 flex items-center justify-center">
+          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        </main>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-background flex flex-col">
+      <HeaderNormy backLink={backLink} />
+
+      <main className="flex-1 container mx-auto p-4 lg:p-8">
+        <h2 className="text-2xl font-bold text-foreground text-center mb-6">
+          Registro en Normy
+        </h2>
+
+        {/* Filters */}
+        <div className="flex flex-col sm:flex-row gap-3 mb-6 max-w-4xl mx-auto">
+          <Select value={gradoFilter} onValueChange={(v) => { setGradoFilter(v); setSalonFilter("todos"); }}>
+            <SelectTrigger className="w-full sm:w-48">
+              <SelectValue placeholder="Grado" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="todos">Todos los grados</SelectItem>
+              {GRADOS.map((g) => (
+                <SelectItem key={g} value={g}>{g}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Select value={salonFilter} onValueChange={setSalonFilter}>
+            <SelectTrigger className="w-full sm:w-40">
+              <SelectValue placeholder="Salón" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="todos">Todos los salones</SelectItem>
+              {SALONES.map((s) => (
+                <SelectItem key={s} value={s}>Salón {s}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              placeholder="Buscar por nombre o código..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-9"
+            />
+          </div>
+        </div>
+
+        {/* Tabs */}
+        <Tabs defaultValue="estudiantes" className="max-w-4xl mx-auto">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="estudiantes">Estudiantes</TabsTrigger>
+            <TabsTrigger value="padres">Padres</TabsTrigger>
+          </TabsList>
+
+          {/* Tab Estudiantes */}
+          <TabsContent value="estudiantes">
+            <div className="bg-card rounded-lg shadow-soft p-4 lg:p-6">
+              <div className="mb-4">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium text-foreground">
+                    {estRegistrados} de {total} registrados ({estPct}%)
+                  </span>
+                </div>
+                <Progress value={estPct} className="h-3" />
+              </div>
+
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-12">#</TableHead>
+                      <TableHead>Nombre</TableHead>
+                      <TableHead>Código</TableHead>
+                      <TableHead>Grado</TableHead>
+                      <TableHead>Salón</TableHead>
+                      <TableHead className="text-center">Estado</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filtered.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                          No se encontraron estudiantes
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      filtered.map((e, i) => {
+                        const registrado = estudianteCodigosRegistrados.has(e.codigo_estudiantil);
+                        return (
+                          <TableRow key={e.codigo_estudiantil}>
+                            <TableCell className="text-muted-foreground">{i + 1}</TableCell>
+                            <TableCell className="font-medium">
+                              {e.apellidos_estudiante}, {e.nombre_estudiante}
+                            </TableCell>
+                            <TableCell>{e.codigo_estudiantil}</TableCell>
+                            <TableCell>{e.grado_estudiante}</TableCell>
+                            <TableCell>{e.salon_estudiante}</TableCell>
+                            <TableCell className="text-center">
+                              <Badge className={registrado
+                                ? "bg-green-500 hover:bg-green-600 text-white"
+                                : "bg-red-500 hover:bg-red-600 text-white"
+                              }>
+                                {registrado ? "Registrado" : "No registrado"}
+                              </Badge>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+            </div>
+          </TabsContent>
+
+          {/* Tab Padres */}
+          <TabsContent value="padres">
+            <div className="bg-card rounded-lg shadow-soft p-4 lg:p-6">
+              <div className="mb-4">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium text-foreground">
+                    {padRegistrados} de {total} con padre registrado ({padPct}%)
+                  </span>
+                </div>
+                <Progress value={padPct} className="h-3" />
+              </div>
+
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-12">#</TableHead>
+                      <TableHead>Nombre del estudiante</TableHead>
+                      <TableHead>Código</TableHead>
+                      <TableHead>Grado</TableHead>
+                      <TableHead>Salón</TableHead>
+                      <TableHead className="text-center">Padre en Normy</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filtered.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                          No se encontraron estudiantes
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      filtered.map((e, i) => {
+                        const registrado = padreCodigosRegistrados.has(e.codigo_estudiantil);
+                        return (
+                          <TableRow key={e.codigo_estudiantil}>
+                            <TableCell className="text-muted-foreground">{i + 1}</TableCell>
+                            <TableCell className="font-medium">
+                              {e.apellidos_estudiante}, {e.nombre_estudiante}
+                            </TableCell>
+                            <TableCell>{e.codigo_estudiantil}</TableCell>
+                            <TableCell>{e.grado_estudiante}</TableCell>
+                            <TableCell>{e.salon_estudiante}</TableCell>
+                            <TableCell className="text-center">
+                              <Badge className={registrado
+                                ? "bg-green-500 hover:bg-green-600 text-white"
+                                : "bg-red-500 hover:bg-red-600 text-white"
+                              }>
+                                {registrado ? "Registrado" : "No registrado"}
+                              </Badge>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+            </div>
+          </TabsContent>
+        </Tabs>
+      </main>
+    </div>
+  );
+};
+
+export default RegistroNormy;

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getSession, isAdmin, isRectorOrCoordinador } from "@/hooks/useSession";
-import { BookOpen, BarChart3, Megaphone, FileUp, Settings } from "lucide-react";
+import { BookOpen, BarChart3, Megaphone, FileUp, Settings, UserCheck } from "lucide-react";
 import HeaderNormy from "@/components/HeaderNormy";
 
 const DashboardRector = () => {
@@ -59,7 +59,7 @@ const DashboardRector = () => {
             ¿Qué deseas consultar?
           </h3>
           
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-6 max-w-5xl mx-auto">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 gap-6 max-w-4xl mx-auto">
             <button
               onClick={() => navigate("/rector/seleccionar-grado")}
               className="flex flex-col items-center justify-center gap-4 p-8 rounded-lg bg-emerald-100 transition-all duration-200 hover:shadow-md hover:bg-emerald-200"
@@ -98,6 +98,14 @@ const DashboardRector = () => {
             >
               <Settings className="w-16 h-16 text-foreground" />
               <span className="font-semibold text-lg text-foreground text-center">Panel de Control</span>
+            </button>
+
+            <button
+              onClick={() => navigate("/registro-normy")}
+              className="flex flex-col items-center justify-center gap-4 p-8 rounded-lg bg-cyan-100 transition-all duration-200 hover:shadow-md hover:bg-cyan-200"
+            >
+              <UserCheck className="w-16 h-16 text-foreground" />
+              <span className="font-semibold text-lg text-foreground text-center">Registro en Normy</span>
             </button>
           </div>
         </div>
