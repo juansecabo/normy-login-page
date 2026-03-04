@@ -358,26 +358,24 @@ const RegistroNormy = () => {
                             <TableCell>{e.codigo_estudiantil}</TableCell>
                             <TableCell>{e.grado_estudiante}</TableCell>
                             <TableCell>{e.salon_estudiante}</TableCell>
-                            <TableCell className="text-center">
-                              <span className="inline-flex items-center gap-2">
-                                <Badge className={`w-28 justify-center ${parentInfo
-                                  ? "bg-green-500 hover:bg-green-600 text-white"
-                                  : "bg-red-500 hover:bg-red-600 text-white"
-                                }`}>
-                                  {parentInfo ? "Registrado" : "No registrado"}
-                                </Badge>
-                                {parentInfo && (
-                                  <button
-                                    onClick={() => setSelectedParents({
-                                      padres: parentInfo,
-                                      estudiante: `${e.apellidos_estudiante}, ${e.nombre_estudiante}`,
-                                    })}
-                                    className="text-xs text-primary hover:underline font-medium"
-                                  >
-                                    Ver info
-                                  </button>
-                                )}
-                              </span>
+                            <TableCell className="text-center relative">
+                              <Badge className={parentInfo
+                                ? "bg-green-500 hover:bg-green-600 text-white"
+                                : "bg-red-500 hover:bg-red-600 text-white"
+                              }>
+                                {parentInfo ? "Registrado" : "No registrado"}
+                              </Badge>
+                              {parentInfo && (
+                                <button
+                                  onClick={() => setSelectedParents({
+                                    padres: parentInfo,
+                                    estudiante: `${e.apellidos_estudiante}, ${e.nombre_estudiante}`,
+                                  })}
+                                  className="absolute ml-2 text-xs text-primary hover:underline font-medium whitespace-nowrap"
+                                >
+                                  Ver info
+                                </button>
+                              )}
                             </TableCell>
                           </TableRow>
                         );
