@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ClipboardList, X } from "lucide-react";
+import { ClipboardList, X, Paperclip } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { getSession, isEstudiante } from "@/hooks/useSession";
 import HeaderNormy from "@/components/HeaderNormy";
@@ -16,6 +16,7 @@ interface ActividadCalendario {
   Asignatura: string;
   Descripción: string;
   fecha_de_presentacion: string;
+  archivo_url: string | null;
 }
 
 const parsearFecha = (fechaStr: string): Date | null => {
@@ -218,6 +219,17 @@ const CalendarioEstudiante = () => {
                               <p className="text-sm text-muted-foreground mt-1">
                                 Prof. {actividad.Nombres} {actividad.Apellidos}
                               </p>
+                              {actividad.archivo_url && (
+                                <a
+                                  href={actividad.archivo_url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="inline-flex items-center gap-1 text-sm text-blue-600 hover:underline mt-1"
+                                >
+                                  <Paperclip className="h-3.5 w-3.5" />
+                                  Ver documento adjunto
+                                </a>
+                              )}
                               <div className="flex gap-2 mt-3">
                                 <button
                                   onClick={() => toggleMarca(actividad.column_id, 'hecho')}

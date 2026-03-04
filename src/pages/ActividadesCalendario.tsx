@@ -2,7 +2,8 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
-import { Plus, Pencil, Trash2, ArrowLeft, Calendar } from "lucide-react";
+import { Plus, Pencil, Trash2, ArrowLeft, Calendar, Paperclip, FileText, X } from "lucide-react";
+import { subirArchivo } from "@/lib/storage";
 import { getSession } from "@/hooks/useSession";
 import HeaderNormy from "@/components/HeaderNormy";
 import {
@@ -45,6 +46,7 @@ interface ActividadCalendario {
   Salon: string;
   Descripción: string;
   fecha_de_presentacion: string;
+  archivo_url: string | null;
 }
 
 const diasSemana = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
@@ -98,6 +100,12 @@ const ActividadesCalendario = () => {
   const [fechaSeleccionada, setFechaSeleccionada] = useState<Date | undefined>(undefined);
   const [actividadEditando, setActividadEditando] = useState<ActividadCalendario | null>(null);
   const [popoverOpen, setPopoverOpen] = useState(false);
+
+  // File attachment state
+  const [archivoSeleccionado, setArchivoSeleccionado] = useState<File | null>(null);
+  const [archivoUrlExistente, setArchivoUrlExistente] = useState<string | null>(null);
+  const [quitarArchivo, setQuitarArchivo] = useState(false);
+  const [subiendoArchivo, setSubiendoArchivo] = useState(false);
 
   // Delete dialog state
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -194,6 +202,9 @@ const ActividadesCalendario = () => {
     setDescripcion("");
     setFechaSeleccionada(undefined);
     setActividadEditando(null);
+    setArchivoSeleccionado(null);
+    setArchivoUrlExistente(null);
+    setQuitarArchivo(false);
     setModalOpen(true);
   };
 
@@ -202,6 +213,9 @@ const ActividadesCalendario = () => {
     const fecha = parsearFecha(actividad.fecha_de_presentacion);
     setFechaSeleccionada(fecha || undefined);
     setActividadEditando(actividad);
+    setArchivoSeleccionado(null);
+    setArchivoUrlExistente(actividad.archivo_url || null);
+    setQuitarArchivo(false);
     setModalOpen(true);
   };
 
@@ -242,14 +256,40 @@ const ActividadesCalendario = () => {
     const fechaFormateada = formatearFecha(fechaSeleccionada);
 
     try {
+      // Upload file if selected
+      let archivoUrl: string | null = null;
+      if (archivoSeleccionado) {
+        setSubiendoArchivo(true);
+        try {
+          const resultado = await subirArchivo(archivoSeleccionado);
+          archivoUrl = resultado.url;
+        } catch (err: any) {
+          toast({
+            title: "Error al subir archivo",
+            description: err.message || "No se pudo subir el archivo",
+            variant: "destructive",
+          });
+          setSubiendoArchivo(false);
+          return;
+        }
+        setSubiendoArchivo(false);
+      }
+
       if (actividadEditando) {
         // Editar actividad existente
+        const updateData: Record<string, unknown> = {
+          Descripción: descripcion.trim(),
+          fecha_de_presentacion: fechaFormateada,
+        };
+        if (archivoUrl) {
+          updateData.archivo_url = archivoUrl;
+        } else if (quitarArchivo) {
+          updateData.archivo_url = null;
+        }
+
         const { error } = await supabase
           .from('Calendario Actividades')
-          .update({
-            Descripción: descripcion.trim(),
-            fecha_de_presentacion: fechaFormateada,
-          })
+          .update(updateData)
           .eq('column_id', actividadEditando.column_id);
 
         if (error) {
@@ -268,18 +308,23 @@ const ActividadesCalendario = () => {
         });
       } else {
         // Crear nueva actividad
+        const insertData: Record<string, unknown> = {
+          id_profesor: profesorIdReal,
+          Nombres: profesorNombres,
+          Apellidos: profesorApellidos,
+          Asignatura: asignaturaSeleccionada,
+          Grado: gradoSeleccionado,
+          Salon: salonSeleccionado,
+          Descripción: descripcion.trim(),
+          fecha_de_presentacion: fechaFormateada,
+        };
+        if (archivoUrl) {
+          insertData.archivo_url = archivoUrl;
+        }
+
         const { error } = await supabase
           .from('Calendario Actividades')
-          .insert({
-            id_profesor: profesorIdReal,
-            Nombres: profesorNombres,
-            Apellidos: profesorApellidos,
-            Asignatura: asignaturaSeleccionada,
-            Grado: gradoSeleccionado,
-            Salon: salonSeleccionado,
-            Descripción: descripcion.trim(),
-            fecha_de_presentacion: fechaFormateada,
-          });
+          .insert(insertData);
 
         if (error) {
           console.error('Error creando actividad:', error);
@@ -306,6 +351,7 @@ const ActividadesCalendario = () => {
               asignatura: asignaturaSeleccionada,
               descripcion: descripcion.trim(),
               fecha: mostrarFecha(fechaFormateada),
+              ...(archivoUrl ? { archivo_url: archivoUrl } : {}),
             }),
           });
         } catch (err) {
@@ -464,6 +510,17 @@ const ActividadesCalendario = () => {
                         <Calendar className="h-4 w-4" />
                         {mostrarFecha(actividad.fecha_de_presentacion)}
                       </p>
+                      {actividad.archivo_url && (
+                        <a
+                          href={actividad.archivo_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-sm text-blue-600 hover:underline mt-1 flex items-center gap-1"
+                        >
+                          <Paperclip className="h-3.5 w-3.5" />
+                          Documento adjunto
+                        </a>
+                      )}
                     </div>
                     <div className="flex gap-2">
                       <Button
@@ -551,13 +608,80 @@ const ActividadesCalendario = () => {
                 </PopoverContent>
               </Popover>
             </div>
+            <div className="space-y-2">
+              <Label>Archivo adjunto (opcional)</Label>
+              {/* Show existing file when editing */}
+              {actividadEditando && archivoUrlExistente && !quitarArchivo && !archivoSeleccionado && (
+                <div className="flex items-center gap-2 p-2 bg-muted rounded-md text-sm">
+                  <FileText className="h-4 w-4 text-blue-600 shrink-0" />
+                  <a
+                    href={archivoUrlExistente}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-600 hover:underline truncate flex-1"
+                  >
+                    Documento adjunto actual
+                  </a>
+                  <button
+                    type="button"
+                    onClick={() => setQuitarArchivo(true)}
+                    className="text-muted-foreground hover:text-destructive"
+                    title="Quitar archivo"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+              )}
+              {/* Show selected new file */}
+              {archivoSeleccionado && (
+                <div className="flex items-center gap-2 p-2 bg-muted rounded-md text-sm">
+                  <FileText className="h-4 w-4 text-blue-600 shrink-0" />
+                  <span className="truncate flex-1">{archivoSeleccionado.name}</span>
+                  <button
+                    type="button"
+                    onClick={() => setArchivoSeleccionado(null)}
+                    className="text-muted-foreground hover:text-destructive"
+                    title="Quitar archivo"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+              )}
+              {/* File input */}
+              {!archivoSeleccionado && (!archivoUrlExistente || quitarArchivo) && (
+                <label className="flex items-center gap-2 p-3 border-2 border-dashed border-muted-foreground/30 rounded-md cursor-pointer hover:border-primary/50 transition-colors">
+                  <Paperclip className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-sm text-muted-foreground">Seleccionar archivo (máx. 5MB)</span>
+                  <input
+                    type="file"
+                    className="hidden"
+                    accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.jpg,.jpeg,.png"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        if (file.size > 5 * 1024 * 1024) {
+                          toast({
+                            title: "Archivo muy grande",
+                            description: "El archivo no puede exceder 5MB",
+                            variant: "destructive",
+                          });
+                          return;
+                        }
+                        setArchivoSeleccionado(file);
+                        setQuitarArchivo(false);
+                      }
+                    }}
+                  />
+                </label>
+              )}
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setModalOpen(false)}>
               Cancelar
             </Button>
-            <Button onClick={handleGuardarActividad}>
-              Guardar Actividad
+            <Button onClick={handleGuardarActividad} disabled={subiendoArchivo}>
+              {subiendoArchivo ? "Subiendo archivo..." : "Guardar Actividad"}
             </Button>
           </DialogFooter>
         </DialogContent>
