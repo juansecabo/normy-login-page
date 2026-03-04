@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
-import { Plus, Pencil, Trash2, Calendar } from "lucide-react";
+import { Plus, Pencil, Trash2, ArrowLeft, Calendar } from "lucide-react";
 import { getSession } from "@/hooks/useSession";
 import HeaderNormy from "@/components/HeaderNormy";
 import {
@@ -82,9 +82,9 @@ const parsearFecha = (fechaStr: string): Date | null => {
 
 const ActividadesCalendario = () => {
   const navigate = useNavigate();
-  const [asignaturaSeleccionada, setAsignaturaSeleccionada] = useState("");
-  const [gradoSeleccionado, setGradoSeleccionado] = useState("");
-  const [salonSeleccionado, setSalonSeleccionado] = useState("");
+  const [asignaturaSeleccionada, setAsignaturaSeleccionada] = useState(() => localStorage.getItem("asignaturaSeleccionada") || "");
+  const [gradoSeleccionado, setGradoSeleccionado] = useState(() => localStorage.getItem("gradoSeleccionado") || "");
+  const [salonSeleccionado, setSalonSeleccionado] = useState(() => localStorage.getItem("salonSeleccionado") || "");
   const [profesorCodigo, setProfesorCodigo] = useState("");
   const [profesorIdReal, setProfesorIdReal] = useState(""); // ID real (celular) del profesor
   const [profesorNombres, setProfesorNombres] = useState("");
@@ -412,14 +412,25 @@ const ActividadesCalendario = () => {
               <span className="text-muted-foreground">→</span>
               <span className="text-foreground font-medium">Actividades Asignadas</span>
             </div>
-            <Button
-              onClick={handleAbrirModalCrear}
-              size="sm"
-              className="gap-2"
-            >
-              <Plus className="h-4 w-4" />
-              Agregar Actividad
-            </Button>
+            <div className="flex flex-wrap gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => navigate("/tabla-notas")}
+                className="gap-2"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                Volver a Notas
+              </Button>
+              <Button
+                onClick={handleAbrirModalCrear}
+                size="sm"
+                className="gap-2"
+              >
+                <Plus className="h-4 w-4" />
+                Agregar Actividad
+              </Button>
+            </div>
           </div>
         </div>
 
