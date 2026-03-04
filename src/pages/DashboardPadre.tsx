@@ -150,7 +150,7 @@ const DashboardPadre = () => {
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-6 max-w-4xl mx-auto">
             <button
               onClick={() => navigate("/padre/notas")}
-              className="relative flex flex-col items-center justify-center gap-4 p-6 rounded-lg bg-emerald-100 shadow-md transition-all duration-200 hover:shadow-lg hover:scale-[1.03] hover:bg-emerald-200"
+              className="relative flex flex-col items-center justify-center gap-4 p-6 rounded-lg bg-emerald-100 shadow-[0_4px_12px_rgba(0,0,0,0.15)] border border-emerald-200 transition-all duration-200 hover:shadow-[0_6px_16px_rgba(0,0,0,0.2)] hover:scale-[1.03] hover:bg-emerald-200"
             >
               <Badge count={badges.notas} />
               <BookOpen className="w-12 h-12 text-foreground" />
@@ -159,7 +159,7 @@ const DashboardPadre = () => {
 
             <button
               onClick={() => navigate("/padre/actividades")}
-              className="relative flex flex-col items-center justify-center gap-4 p-6 rounded-lg bg-green-100 shadow-md transition-all duration-200 hover:shadow-lg hover:scale-[1.03] hover:bg-green-200"
+              className="relative flex flex-col items-center justify-center gap-4 p-6 rounded-lg bg-green-100 shadow-[0_4px_12px_rgba(0,0,0,0.15)] border border-green-200 transition-all duration-200 hover:shadow-[0_6px_16px_rgba(0,0,0,0.2)] hover:scale-[1.03] hover:bg-green-200"
             >
               <Badge count={badges.actividades} />
               <ClipboardList className="w-12 h-12 text-foreground" />
@@ -168,7 +168,7 @@ const DashboardPadre = () => {
 
             <button
               onClick={() => navigate("/padre/estadisticas")}
-              className="flex flex-col items-center justify-center gap-4 p-6 rounded-lg bg-teal-100 shadow-md transition-all duration-200 hover:shadow-lg hover:scale-[1.03] hover:bg-teal-200"
+              className="flex flex-col items-center justify-center gap-4 p-6 rounded-lg bg-teal-100 shadow-[0_4px_12px_rgba(0,0,0,0.15)] border border-teal-200 transition-all duration-200 hover:shadow-[0_6px_16px_rgba(0,0,0,0.2)] hover:scale-[1.03] hover:bg-teal-200"
             >
               <BarChart3 className="w-12 h-12 text-foreground" />
               <span className="font-semibold text-foreground text-center">Estadísticas</span>
@@ -176,7 +176,7 @@ const DashboardPadre = () => {
 
             <button
               onClick={() => navigate("/padre/comunicados")}
-              className="relative flex flex-col items-center justify-center gap-4 p-6 rounded-lg bg-lime-100 shadow-md transition-all duration-200 hover:shadow-lg hover:scale-[1.03] hover:bg-lime-200"
+              className="relative flex flex-col items-center justify-center gap-4 p-6 rounded-lg bg-lime-100 shadow-[0_4px_12px_rgba(0,0,0,0.15)] border border-lime-200 transition-all duration-200 hover:shadow-[0_6px_16px_rgba(0,0,0,0.2)] hover:scale-[1.03] hover:bg-lime-200"
             >
               <Badge count={badges.comunicados} />
               <Megaphone className="w-12 h-12 text-foreground" />
@@ -185,7 +185,7 @@ const DashboardPadre = () => {
 
             <button
               onClick={() => navigate("/padre/documentos")}
-              className="relative flex flex-col items-center justify-center gap-4 p-6 rounded-lg bg-cyan-100 shadow-md transition-all duration-200 hover:shadow-lg hover:scale-[1.03] hover:bg-cyan-200"
+              className="relative flex flex-col items-center justify-center gap-4 p-6 rounded-lg bg-cyan-100 shadow-[0_4px_12px_rgba(0,0,0,0.15)] border border-cyan-200 transition-all duration-200 hover:shadow-[0_6px_16px_rgba(0,0,0,0.2)] hover:scale-[1.03] hover:bg-cyan-200"
             >
               <Badge count={badges.documentos} />
               <FileText className="w-12 h-12 text-foreground" />
