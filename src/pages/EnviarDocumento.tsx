@@ -387,10 +387,7 @@ const EnviarDocumento = () => {
                       value={estudiante}
                       onValueChange={setEstudiante}
                       placeholder={loadingEstudiantes ? "Cargando..." : "Todos los estudiantes"}
-                      options={[
-                        { value: "Todos", label: "Todos los estudiantes" },
-                        ...estudiantes.map((e) => ({ value: e.codigo, label: e.nombre })),
-                      ]}
+                      options={estudiantes.map((e) => ({ value: e.codigo, label: e.nombre }))}
                     />
                   </div>
                 )}
