@@ -199,17 +199,18 @@ const CalendarioPadre = () => {
                                 <p className="text-sm text-muted-foreground mt-1">
                                   Prof. {actividad.Nombres} {actividad.Apellidos}
                                 </p>
-                                {actividad.archivo_url && (
+                                {actividad.archivo_url && actividad.archivo_url.split('\n').filter(Boolean).map((url, i) => (
                                   <a
-                                    href={actividad.archivo_url}
+                                    key={i}
+                                    href={url}
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className="inline-flex items-center gap-1 text-sm text-blue-600 hover:underline mt-1"
                                   >
                                     <Paperclip className="h-3.5 w-3.5" />
-                                    Ver documento adjunto
+                                    Ver documento{actividad.archivo_url!.includes('\n') ? ` ${i + 1}` : ' adjunto'}
                                   </a>
-                                )}
+                                ))}
                               </div>
                             ))}
                           </div>

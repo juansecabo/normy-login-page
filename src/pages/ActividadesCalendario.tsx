@@ -101,10 +101,9 @@ const ActividadesCalendario = () => {
   const [actividadEditando, setActividadEditando] = useState<ActividadCalendario | null>(null);
   const [popoverOpen, setPopoverOpen] = useState(false);
 
-  // File attachment state
-  const [archivoSeleccionado, setArchivoSeleccionado] = useState<File | null>(null);
-  const [archivoUrlExistente, setArchivoUrlExistente] = useState<string | null>(null);
-  const [quitarArchivo, setQuitarArchivo] = useState(false);
+  // File attachment state (multiple files)
+  const [archivosSeleccionados, setArchivosSeleccionados] = useState<File[]>([]);
+  const [urlsExistentes, setUrlsExistentes] = useState<string[]>([]);
   const [subiendoArchivo, setSubiendoArchivo] = useState(false);
 
   // Delete dialog state
@@ -202,9 +201,8 @@ const ActividadesCalendario = () => {
     setDescripcion("");
     setFechaSeleccionada(undefined);
     setActividadEditando(null);
-    setArchivoSeleccionado(null);
-    setArchivoUrlExistente(null);
-    setQuitarArchivo(false);
+    setArchivosSeleccionados([]);
+    setUrlsExistentes([]);
     setModalOpen(true);
   };
 
@@ -213,9 +211,8 @@ const ActividadesCalendario = () => {
     const fecha = parsearFecha(actividad.fecha_de_presentacion);
     setFechaSeleccionada(fecha || undefined);
     setActividadEditando(actividad);
-    setArchivoSeleccionado(null);
-    setArchivoUrlExistente(actividad.archivo_url || null);
-    setQuitarArchivo(false);
+    setArchivosSeleccionados([]);
+    setUrlsExistentes(actividad.archivo_url ? actividad.archivo_url.split('\n').filter(Boolean) : []);
     setModalOpen(true);
   };
 
@@ -256,13 +253,15 @@ const ActividadesCalendario = () => {
     const fechaFormateada = formatearFecha(fechaSeleccionada);
 
     try {
-      // Upload file if selected
-      let archivoUrl: string | null = null;
-      if (archivoSeleccionado) {
+      // Upload new files if any
+      const nuevasUrls: string[] = [];
+      if (archivosSeleccionados.length > 0) {
         setSubiendoArchivo(true);
         try {
-          const resultado = await subirArchivo(archivoSeleccionado);
-          archivoUrl = resultado.url;
+          for (const file of archivosSeleccionados) {
+            const resultado = await subirArchivo(file);
+            nuevasUrls.push(resultado.url);
+          }
         } catch (err: any) {
           toast({
             title: "Error al subir archivo",
@@ -275,17 +274,17 @@ const ActividadesCalendario = () => {
         setSubiendoArchivo(false);
       }
 
+      // Combine existing URLs (that weren't removed) + newly uploaded
+      const todasUrls = [...urlsExistentes, ...nuevasUrls];
+      const archivoUrlFinal = todasUrls.length > 0 ? todasUrls.join('\n') : null;
+
       if (actividadEditando) {
         // Editar actividad existente
         const updateData: Record<string, unknown> = {
           Descripción: descripcion.trim(),
           fecha_de_presentacion: fechaFormateada,
+          archivo_url: archivoUrlFinal,
         };
-        if (archivoUrl) {
-          updateData.archivo_url = archivoUrl;
-        } else if (quitarArchivo) {
-          updateData.archivo_url = null;
-        }
 
         const { error } = await supabase
           .from('Calendario Actividades')
@@ -318,8 +317,8 @@ const ActividadesCalendario = () => {
           Descripción: descripcion.trim(),
           fecha_de_presentacion: fechaFormateada,
         };
-        if (archivoUrl) {
-          insertData.archivo_url = archivoUrl;
+        if (archivoUrlFinal) {
+          insertData.archivo_url = archivoUrlFinal;
         }
 
         const { error } = await supabase
@@ -351,7 +350,7 @@ const ActividadesCalendario = () => {
               asignatura: asignaturaSeleccionada,
               descripcion: descripcion.trim(),
               fecha: mostrarFecha(fechaFormateada),
-              ...(archivoUrl ? { archivo_url: archivoUrl } : {}),
+              ...(archivoUrlFinal ? { archivo_url: archivoUrlFinal } : {}),
             }),
           });
         } catch (err) {
@@ -510,17 +509,18 @@ const ActividadesCalendario = () => {
                         <Calendar className="h-4 w-4" />
                         {mostrarFecha(actividad.fecha_de_presentacion)}
                       </p>
-                      {actividad.archivo_url && (
+                      {actividad.archivo_url && actividad.archivo_url.split('\n').filter(Boolean).map((url, i) => (
                         <a
-                          href={actividad.archivo_url}
+                          key={i}
+                          href={url}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="text-sm text-blue-600 hover:underline mt-1 flex items-center gap-1"
                         >
                           <Paperclip className="h-3.5 w-3.5" />
-                          Documento adjunto
+                          Documento adjunto{actividad.archivo_url!.includes('\n') ? ` ${i + 1}` : ''}
                         </a>
-                      )}
+                      ))}
                     </div>
                     <div className="flex gap-2">
                       <Button
@@ -574,63 +574,63 @@ const ActividadesCalendario = () => {
             </div>
 
             <div className="space-y-2">
-              <Label>Archivo adjunto (opcional)</Label>
-              {/* Show existing file when editing */}
-              {actividadEditando && archivoUrlExistente && !quitarArchivo && !archivoSeleccionado && (
-                <div className="flex items-center gap-2 p-2 bg-muted rounded-md text-sm">
+              <Label>Archivos adjuntos (opcional)</Label>
+              {/* Show existing URLs */}
+              {urlsExistentes.map((url, i) => (
+                <div key={`existing-${i}`} className="flex items-center gap-2 p-2 bg-muted rounded-md text-sm">
                   <FileText className="h-4 w-4 text-blue-600 shrink-0" />
                   <a
-                    href={archivoUrlExistente}
+                    href={url}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-blue-600 hover:underline truncate flex-1"
                   >
-                    Documento adjunto actual
+                    Archivo {i + 1}
                   </a>
                   <button
                     type="button"
-                    onClick={() => setQuitarArchivo(true)}
+                    onClick={() => setUrlsExistentes(prev => prev.filter((_, j) => j !== i))}
                     className="text-muted-foreground hover:text-destructive"
                     title="Quitar archivo"
                   >
                     <X className="h-4 w-4" />
                   </button>
                 </div>
-              )}
-              {/* Show selected new file */}
-              {archivoSeleccionado && (
-                <div className="flex items-center gap-2 p-2 bg-muted rounded-md text-sm">
+              ))}
+              {/* Show selected new files */}
+              {archivosSeleccionados.map((file, i) => (
+                <div key={`new-${i}`} className="flex items-center gap-2 p-2 bg-muted rounded-md text-sm">
                   <FileText className="h-4 w-4 text-blue-600 shrink-0" />
-                  <span className="truncate flex-1">{archivoSeleccionado.name}</span>
+                  <span className="truncate flex-1">{file.name}</span>
                   <button
                     type="button"
-                    onClick={() => setArchivoSeleccionado(null)}
+                    onClick={() => setArchivosSeleccionados(prev => prev.filter((_, j) => j !== i))}
                     className="text-muted-foreground hover:text-destructive"
                     title="Quitar archivo"
                   >
                     <X className="h-4 w-4" />
                   </button>
                 </div>
-              )}
-              {/* File input */}
-              {!archivoSeleccionado && (!archivoUrlExistente || quitarArchivo) && (
-                <label className="flex items-center gap-2 p-3 border-2 border-dashed border-muted-foreground/30 rounded-md cursor-pointer hover:border-primary/50 transition-colors">
-                  <Paperclip className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm text-muted-foreground">Seleccionar archivo</span>
-                  <input
-                    type="file"
-                    className="hidden"
-                    accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.jpg,.jpeg,.png"
-                    onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      if (file) {
-                        setArchivoSeleccionado(file);
-                        setQuitarArchivo(false);
-                      }
-                    }}
-                  />
-                </label>
-              )}
+              ))}
+              {/* File input — always available to add more */}
+              <label className="flex items-center gap-2 p-3 border-2 border-dashed border-muted-foreground/30 rounded-md cursor-pointer hover:border-primary/50 transition-colors">
+                <Paperclip className="h-4 w-4 text-muted-foreground" />
+                <span className="text-sm text-muted-foreground">
+                  {(urlsExistentes.length + archivosSeleccionados.length) > 0 ? 'Agregar otro archivo' : 'Seleccionar archivo'}
+                </span>
+                <input
+                  type="file"
+                  className="hidden"
+                  accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.jpg,.jpeg,.png"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      setArchivosSeleccionados(prev => [...prev, file]);
+                    }
+                    e.target.value = '';
+                  }}
+                />
+              </label>
             </div>
 
             <div className="space-y-2">
