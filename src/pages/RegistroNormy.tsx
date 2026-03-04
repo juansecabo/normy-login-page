@@ -134,16 +134,20 @@ const RegistroNormy = () => {
   }, [perfiles]);
 
   const padreInfoPorCodigo = useMemo(() => {
-    const map = new Map<number, ParentInfo>();
+    const map = new Map<number, ParentInfo[]>();
     for (const p of perfiles) {
       if (p.perfil === "Padre de familia") {
         const info: ParentInfo = {
           padre_nombre: p.padre_nombre || "Sin nombre",
           telefono: p.numero_de_telefono || "Sin teléfono",
         };
-        if (p.padre_estudiante1_codigo) map.set(p.padre_estudiante1_codigo, info);
-        if (p.padre_estudiante2_codigo) map.set(p.padre_estudiante2_codigo, info);
-        if (p.padre_estudiante3_codigo) map.set(p.padre_estudiante3_codigo, info);
+        for (const cod of [p.padre_estudiante1_codigo, p.padre_estudiante2_codigo, p.padre_estudiante3_codigo]) {
+          if (cod) {
+            const arr = map.get(cod) || [];
+            arr.push(info);
+            map.set(cod, arr);
+          }
+        }
       }
     }
     return map;
@@ -172,7 +176,7 @@ const RegistroNormy = () => {
     [filtered, padreInfoPorCodigo]
   );
 
-  const [selectedParent, setSelectedParent] = useState<{ nombre: string; telefono: string; estudiante: string } | null>(null);
+  const [selectedParents, setSelectedParents] = useState<{ padres: ParentInfo[]; estudiante: string } | null>(null);
 
   const total = filtered.length;
   const estPct = total > 0 ? Math.round((estRegistrados / total) * 100) : 0;
@@ -348,16 +352,20 @@ const RegistroNormy = () => {
                             <TableCell>{e.salon_estudiante}</TableCell>
                             <TableCell className="text-center">
                               {parentInfo ? (
-                                <button
-                                  onClick={() => setSelectedParent({
-                                    nombre: parentInfo.padre_nombre,
-                                    telefono: parentInfo.telefono,
-                                    estudiante: `${e.apellidos_estudiante}, ${e.nombre_estudiante}`,
-                                  })}
-                                  className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-green-500 hover:bg-green-600 text-white cursor-pointer transition-colors"
-                                >
-                                  Ver info
-                                </button>
+                                <span className="inline-flex items-center gap-2">
+                                  <Badge className="bg-green-500 hover:bg-green-600 text-white">
+                                    Registrado
+                                  </Badge>
+                                  <button
+                                    onClick={() => setSelectedParents({
+                                      padres: parentInfo,
+                                      estudiante: `${e.apellidos_estudiante}, ${e.nombre_estudiante}`,
+                                    })}
+                                    className="text-xs text-primary hover:underline font-medium"
+                                  >
+                                    Ver info
+                                  </button>
+                                </span>
                               ) : (
                                 <Badge className="bg-red-500 hover:bg-red-600 text-white">
                                   No registrado
@@ -376,18 +384,25 @@ const RegistroNormy = () => {
         </Tabs>
 
         {/* Parent info popup */}
-        {selectedParent && (
+        {selectedParents && (
           <div className="fixed inset-0 z-50 flex items-center justify-center">
-            <div className="absolute inset-0 bg-black/50" onClick={() => setSelectedParent(null)} />
+            <div className="absolute inset-0 bg-black/50" onClick={() => setSelectedParents(null)} />
             <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-sm mx-4 p-6">
-              <h3 className="text-lg font-bold text-gray-900 mb-4">Info del padre</h3>
-              <div className="space-y-3 text-sm text-gray-700">
-                <p><span className="font-medium">Estudiante:</span> {selectedParent.estudiante}</p>
-                <p><span className="font-medium">Padre:</span> {selectedParent.nombre}</p>
-                <p><span className="font-medium">Teléfono:</span> {selectedParent.telefono}</p>
+              <h3 className="text-lg font-bold text-gray-900 mb-1">Info del padre</h3>
+              <p className="text-sm text-gray-500 mb-4">{selectedParents.estudiante}</p>
+              <div className="space-y-4">
+                {selectedParents.padres.map((p, i) => (
+                  <div key={i} className="space-y-1 text-sm text-gray-700">
+                    {selectedParents.padres.length > 1 && (
+                      <p className="font-semibold text-gray-900">Padre {i + 1}</p>
+                    )}
+                    <p><span className="font-medium">Nombre:</span> {p.padre_nombre}</p>
+                    <p><span className="font-medium">Teléfono:</span> {p.telefono}</p>
+                  </div>
+                ))}
               </div>
               <button
-                onClick={() => setSelectedParent(null)}
+                onClick={() => setSelectedParents(null)}
                 className="mt-5 w-full px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium rounded-lg transition-colors"
               >
                 Cerrar
