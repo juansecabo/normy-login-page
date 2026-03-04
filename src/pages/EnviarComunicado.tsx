@@ -1,13 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -380,39 +373,25 @@ const EnviarComunicado = () => {
                 {/* Perfil */}
                 <div className="space-y-2">
                   <Label>Perfil</Label>
-                  <Select value={perfil} onValueChange={handlePerfilChange}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecciona el perfil" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Estudiantes">Estudiantes</SelectItem>
-                      <SelectItem value="Padres de familia">
-                        Padres de familia
-                      </SelectItem>
-                      <SelectItem value="Estudiantes y Padres de familia">
-                        Estudiantes y Padres de familia
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <select value={perfil} onChange={(e) => handlePerfilChange(e.target.value)} className="w-full p-3 rounded-md border border-input bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring">
+                    <option value="">Selecciona el perfil</option>
+                    <option value="Estudiantes">Estudiantes</option>
+                    <option value="Padres de familia">Padres de familia</option>
+                    <option value="Estudiantes y Padres de familia">Estudiantes y Padres de familia</option>
+                  </select>
                 </div>
 
                 {/* Nivel */}
                 {perfil && (
                   <div className="space-y-2">
                     <Label>Nivel</Label>
-                    <Select value={nivel} onValueChange={handleNivelChange}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecciona el nivel" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Todos">Todos los niveles</SelectItem>
-                        {Object.keys(NIVELES_GRADOS).map((n) => (
-                          <SelectItem key={n} value={n}>
-                            {n}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <select value={nivel} onChange={(e) => handleNivelChange(e.target.value)} className="w-full p-3 rounded-md border border-input bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring">
+                      <option value="">Selecciona el nivel</option>
+                      <option value="Todos">Todos los niveles</option>
+                      {Object.keys(NIVELES_GRADOS).map((n) => (
+                        <option key={n} value={n}>{n}</option>
+                      ))}
+                    </select>
                   </div>
                 )}
 
@@ -420,18 +399,12 @@ const EnviarComunicado = () => {
                 {nivel && nivel !== "Todos" && (
                   <div className="space-y-2">
                     <Label>Grado</Label>
-                    <Select value={grado} onValueChange={handleGradoChange}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecciona el grado" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {NIVELES_GRADOS[nivel]?.map((g) => (
-                          <SelectItem key={g} value={g}>
-                            {g}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <select value={grado} onChange={(e) => handleGradoChange(e.target.value)} className="w-full p-3 rounded-md border border-input bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring">
+                      <option value="">Selecciona el grado</option>
+                      {NIVELES_GRADOS[nivel]?.map((g) => (
+                        <option key={g} value={g}>{g}</option>
+                      ))}
+                    </select>
                   </div>
                 )}
 
@@ -439,19 +412,13 @@ const EnviarComunicado = () => {
                 {grado && (
                   <div className="space-y-2">
                     <Label>Salón</Label>
-                    <Select value={salon} onValueChange={handleSalonChange}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecciona el salón" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Todos">Todos</SelectItem>
-                        {SALONES.map((s) => (
-                          <SelectItem key={s} value={s}>
-                            {s}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <select value={salon} onChange={(e) => handleSalonChange(e.target.value)} className="w-full p-3 rounded-md border border-input bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring">
+                      <option value="">Selecciona el salón</option>
+                      <option value="Todos">Todos</option>
+                      {SALONES.map((s) => (
+                        <option key={s} value={s}>{s}</option>
+                      ))}
+                    </select>
                   </div>
                 )}
 
@@ -459,19 +426,13 @@ const EnviarComunicado = () => {
                 {salon && salon !== "Todos" && (
                   <div className="space-y-2">
                     <Label>Estudiante</Label>
-                    <Select value={estudiante} onValueChange={setEstudiante}>
-                      <SelectTrigger>
-                        <SelectValue placeholder={loadingEstudiantes ? "Cargando..." : "Todos los estudiantes"} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Todos">Todos</SelectItem>
-                        {estudiantes.map((e) => (
-                          <SelectItem key={e.codigo} value={e.codigo}>
-                            {e.nombre}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <select value={estudiante} onChange={(e) => setEstudiante(e.target.value)} className="w-full p-3 rounded-md border border-input bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring">
+                      <option value="">{loadingEstudiantes ? "Cargando..." : "Todos los estudiantes"}</option>
+                      <option value="Todos">Todos</option>
+                      {estudiantes.map((e) => (
+                        <option key={e.codigo} value={e.codigo}>{e.nombre}</option>
+                      ))}
+                    </select>
                   </div>
                 )}
 
