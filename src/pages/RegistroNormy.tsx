@@ -351,11 +351,14 @@ const RegistroNormy = () => {
                             <TableCell>{e.grado_estudiante}</TableCell>
                             <TableCell>{e.salon_estudiante}</TableCell>
                             <TableCell className="text-center">
-                              {parentInfo ? (
-                                <span className="inline-flex items-center gap-2">
-                                  <Badge className="bg-green-500 hover:bg-green-600 text-white">
-                                    Registrado
-                                  </Badge>
+                              <span className="inline-flex items-center gap-2 justify-center">
+                                <Badge className={`w-28 justify-center ${parentInfo
+                                  ? "bg-green-500 hover:bg-green-600 text-white"
+                                  : "bg-red-500 hover:bg-red-600 text-white"
+                                }`}>
+                                  {parentInfo ? "Registrado" : "No registrado"}
+                                </Badge>
+                                {parentInfo && (
                                   <button
                                     onClick={() => setSelectedParents({
                                       padres: parentInfo,
@@ -365,12 +368,8 @@ const RegistroNormy = () => {
                                   >
                                     Ver info
                                   </button>
-                                </span>
-                              ) : (
-                                <Badge className="bg-red-500 hover:bg-red-600 text-white">
-                                  No registrado
-                                </Badge>
-                              )}
+                                )}
+                              </span>
                             </TableCell>
                           </TableRow>
                         );
