@@ -272,7 +272,6 @@ const RegistroNormy = () => {
                     <TableRow>
                       <TableHead className="w-12">#</TableHead>
                       <TableHead>Nombre</TableHead>
-                      <TableHead>Código</TableHead>
                       <TableHead>Grado</TableHead>
                       <TableHead>Salón</TableHead>
                       <TableHead className="text-center">Estado</TableHead>
@@ -281,7 +280,7 @@ const RegistroNormy = () => {
                   <TableBody>
                     {filtered.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                        <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
                           No se encontraron estudiantes
                         </TableCell>
                       </TableRow>
@@ -294,7 +293,6 @@ const RegistroNormy = () => {
                             <TableCell className="font-medium">
                               {e.apellidos_estudiante}, {e.nombre_estudiante}
                             </TableCell>
-                            <TableCell>{e.codigo_estudiantil}</TableCell>
                             <TableCell>{e.grado_estudiante}</TableCell>
                             <TableCell>{e.salon_estudiante}</TableCell>
                             <TableCell className="text-center">
@@ -333,7 +331,6 @@ const RegistroNormy = () => {
                     <TableRow>
                       <TableHead className="w-12">#</TableHead>
                       <TableHead>Nombre del estudiante</TableHead>
-                      <TableHead>Código</TableHead>
                       <TableHead>Grado</TableHead>
                       <TableHead>Salón</TableHead>
                       <TableHead className="text-center">Padre en Normy</TableHead>
@@ -342,7 +339,7 @@ const RegistroNormy = () => {
                   <TableBody>
                     {filtered.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                        <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
                           No se encontraron estudiantes
                         </TableCell>
                       </TableRow>
@@ -355,14 +352,13 @@ const RegistroNormy = () => {
                             <TableCell className="font-medium">
                               {e.apellidos_estudiante}, {e.nombre_estudiante}
                             </TableCell>
-                            <TableCell>{e.codigo_estudiantil}</TableCell>
                             <TableCell>{e.grado_estudiante}</TableCell>
                             <TableCell>{e.salon_estudiante}</TableCell>
                             <TableCell className="text-center relative">
-                              <Badge className={parentInfo
+                              <Badge className={`w-20 justify-center ${parentInfo
                                 ? "bg-green-500 hover:bg-green-600 text-white"
                                 : "bg-red-500 hover:bg-red-600 text-white"
-                              }>
+                              }`}>
                                 {parentInfo ? "Registrado" : "No registrado"}
                               </Badge>
                               {parentInfo && (
