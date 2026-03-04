@@ -113,7 +113,6 @@ const ProgramarActividad = () => {
   const [popoverOpen, setPopoverOpen] = useState(false);
   const [archivosSeleccionados, setArchivosSeleccionados] = useState<File[]>([]);
   const [guardando, setGuardando] = useState(false);
-  const [confirmarOpen, setConfirmarOpen] = useState(false);
 
   // Actividades Programadas tab
   const [actAsignatura, setActAsignatura] = useState("");
@@ -303,8 +302,7 @@ const ProgramarActividad = () => {
     setActSalon("");
   };
 
-  // ===== Programar submit with confirmation =====
-  const handleConfirmarProgramar = () => {
+  const handleProgramar = async () => {
     if (!salonSeleccionado) {
       toast({ title: "Error", description: "Selecciona un salón", variant: "destructive" });
       return;
@@ -325,11 +323,6 @@ const ProgramarActividad = () => {
       toast({ title: "Fecha inválida", description: "No se puede programar actividades en fechas pasadas.", variant: "destructive" });
       return;
     }
-    setConfirmarOpen(true);
-  };
-
-  const handleProgramar = async () => {
-    setConfirmarOpen(false);
     setGuardando(true);
 
     try {
@@ -501,14 +494,6 @@ const ProgramarActividad = () => {
 
   const selectClassName = "w-full p-3 rounded-md border border-input bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring";
 
-  const buildConfirmDescription = () => {
-    let tipo = "";
-    if (tipoSeleccionado && tipoSeleccionado !== "Otro") {
-      tipo = `${tipoSeleccionado}: `;
-    }
-    return `${tipo}${descripcion.trim()}`;
-  };
-
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <HeaderNormy backLink="/dashboard" />
@@ -641,7 +626,7 @@ const ProgramarActividad = () => {
 
                       {/* 8. Botón Programar */}
                       <Button
-                        onClick={handleConfirmarProgramar}
+                        onClick={handleProgramar}
                         disabled={guardando || !salonSeleccionado || !descripcion.trim() || !fechaSeleccionada}
                         className="w-full mt-4"
                         size="lg"
@@ -739,30 +724,6 @@ const ProgramarActividad = () => {
           </TabsContent>
         </Tabs>
       </main>
-
-      {/* Confirmation dialog for programming */}
-      <AlertDialog open={confirmarOpen} onOpenChange={setConfirmarOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Confirmar programación</AlertDialogTitle>
-            <AlertDialogDescription asChild>
-              <div className="space-y-2 text-sm">
-                <p><strong>Asignatura:</strong> {asignaturaSeleccionada}</p>
-                <p><strong>Grado:</strong> {gradoSeleccionado} &mdash; <strong>Salón:</strong> {salonSeleccionado}</p>
-                <p><strong>Descripción:</strong> {buildConfirmDescription()}</p>
-                <p><strong>Fecha:</strong> {fechaSeleccionada ? mostrarFecha(formatearFecha(fechaSeleccionada)) : ""}</p>
-                {archivosSeleccionados.length > 0 && (
-                  <p><strong>Archivos:</strong> {archivosSeleccionados.length} archivo(s)</p>
-                )}
-              </div>
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={handleProgramar}>Confirmar</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
 
       {/* Edit activity modal */}
       <Dialog open={editModalOpen} onOpenChange={setEditModalOpen}>
