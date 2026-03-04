@@ -198,6 +198,14 @@ const RegistroNormy = () => {
       <HeaderNormy backLink={backLink} />
 
       <main className="flex-1 container mx-auto p-4 lg:p-8">
+        <div className="bg-card rounded-lg shadow-soft p-4 mb-6 max-w-4xl mx-auto">
+          <div className="flex flex-wrap items-center gap-2 text-sm">
+            <button onClick={() => navigate(backLink)} className="text-primary hover:underline">Inicio</button>
+            <span className="text-muted-foreground">&rarr;</span>
+            <span className="text-foreground font-medium">Registro en Normy</span>
+          </div>
+        </div>
+
         <h2 className="text-2xl font-bold text-foreground text-center mb-6">
           Registro en Normy
         </h2>
