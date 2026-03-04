@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Label } from "@/components/ui/label";
+import ResponsiveSelect from "@/components/ResponsiveSelect";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -373,25 +374,31 @@ const EnviarComunicado = () => {
                 {/* Perfil */}
                 <div className="space-y-2">
                   <Label>Perfil</Label>
-                  <select value={perfil} onChange={(e) => handlePerfilChange(e.target.value)} className="w-full p-3 rounded-md border border-input bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring">
-                    <option value="">Selecciona el perfil</option>
-                    <option value="Estudiantes">Estudiantes</option>
-                    <option value="Padres de familia">Padres de familia</option>
-                    <option value="Estudiantes y Padres de familia">Estudiantes y Padres de familia</option>
-                  </select>
+                  <ResponsiveSelect
+                    value={perfil}
+                    onValueChange={handlePerfilChange}
+                    placeholder="Selecciona el perfil"
+                    options={[
+                      { value: "Estudiantes", label: "Estudiantes" },
+                      { value: "Padres de familia", label: "Padres de familia" },
+                      { value: "Estudiantes y Padres de familia", label: "Estudiantes y Padres de familia" },
+                    ]}
+                  />
                 </div>
 
                 {/* Nivel */}
                 {perfil && (
                   <div className="space-y-2">
                     <Label>Nivel</Label>
-                    <select value={nivel} onChange={(e) => handleNivelChange(e.target.value)} className="w-full p-3 rounded-md border border-input bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring">
-                      <option value="">Selecciona el nivel</option>
-                      <option value="Todos">Todos los niveles</option>
-                      {Object.keys(NIVELES_GRADOS).map((n) => (
-                        <option key={n} value={n}>{n}</option>
-                      ))}
-                    </select>
+                    <ResponsiveSelect
+                      value={nivel}
+                      onValueChange={handleNivelChange}
+                      placeholder="Selecciona el nivel"
+                      options={[
+                        { value: "Todos", label: "Todos los niveles" },
+                        ...Object.keys(NIVELES_GRADOS).map((n) => ({ value: n, label: n })),
+                      ]}
+                    />
                   </div>
                 )}
 
@@ -399,12 +406,12 @@ const EnviarComunicado = () => {
                 {nivel && nivel !== "Todos" && (
                   <div className="space-y-2">
                     <Label>Grado</Label>
-                    <select value={grado} onChange={(e) => handleGradoChange(e.target.value)} className="w-full p-3 rounded-md border border-input bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring">
-                      <option value="">Selecciona el grado</option>
-                      {NIVELES_GRADOS[nivel]?.map((g) => (
-                        <option key={g} value={g}>{g}</option>
-                      ))}
-                    </select>
+                    <ResponsiveSelect
+                      value={grado}
+                      onValueChange={handleGradoChange}
+                      placeholder="Selecciona el grado"
+                      options={(NIVELES_GRADOS[nivel] || []).map((g) => ({ value: g, label: g }))}
+                    />
                   </div>
                 )}
 
@@ -412,13 +419,15 @@ const EnviarComunicado = () => {
                 {grado && (
                   <div className="space-y-2">
                     <Label>Salón</Label>
-                    <select value={salon} onChange={(e) => handleSalonChange(e.target.value)} className="w-full p-3 rounded-md border border-input bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring">
-                      <option value="">Selecciona el salón</option>
-                      <option value="Todos">Todos</option>
-                      {SALONES.map((s) => (
-                        <option key={s} value={s}>{s}</option>
-                      ))}
-                    </select>
+                    <ResponsiveSelect
+                      value={salon}
+                      onValueChange={handleSalonChange}
+                      placeholder="Selecciona el salón"
+                      options={[
+                        { value: "Todos", label: "Todos" },
+                        ...SALONES.map((s) => ({ value: s, label: s })),
+                      ]}
+                    />
                   </div>
                 )}
 
@@ -426,12 +435,12 @@ const EnviarComunicado = () => {
                 {salon && salon !== "Todos" && (
                   <div className="space-y-2">
                     <Label>Estudiante</Label>
-                    <select value={estudiante} onChange={(e) => setEstudiante(e.target.value)} className="w-full p-3 rounded-md border border-input bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring">
-                      <option value="">{loadingEstudiantes ? "Cargando..." : "Todos los estudiantes"}</option>
-                      {estudiantes.map((e) => (
-                        <option key={e.codigo} value={e.codigo}>{e.nombre}</option>
-                      ))}
-                    </select>
+                    <ResponsiveSelect
+                      value={estudiante}
+                      onValueChange={setEstudiante}
+                      placeholder={loadingEstudiantes ? "Cargando..." : "Todos los estudiantes"}
+                      options={estudiantes.map((e) => ({ value: e.codigo, label: e.nombre }))}
+                    />
                   </div>
                 )}
 

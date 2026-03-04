@@ -5,6 +5,7 @@ import { subirArchivo } from "@/lib/storage";
 import { getSession, isProfesor } from "@/hooks/useSession";
 import HeaderNormy from "@/components/HeaderNormy";
 import { Button } from "@/components/ui/button";
+import ResponsiveSelect from "@/components/ResponsiveSelect";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
@@ -492,8 +493,6 @@ const ProgramarActividad = () => {
     }
   };
 
-  const selectClassName = "w-full p-3 rounded-md border border-input bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring";
-
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <HeaderNormy backLink="/dashboard" />
@@ -528,20 +527,24 @@ const ProgramarActividad = () => {
                   {/* 1. Asignatura */}
                   <div className="space-y-2">
                     <Label>Asignatura</Label>
-                    <select value={asignaturaSeleccionada} onChange={(e) => handleAsignaturaChange(e.target.value)} className={selectClassName}>
-                      <option value="">Seleccionar asignatura</option>
-                      {asignaturas.map((a) => <option key={a} value={a}>{a}</option>)}
-                    </select>
+                    <ResponsiveSelect
+                      value={asignaturaSeleccionada}
+                      onValueChange={handleAsignaturaChange}
+                      placeholder="Seleccionar asignatura"
+                      options={asignaturas.map((a) => ({ value: a, label: a }))}
+                    />
                   </div>
 
                   {/* 2. Grado */}
                   {asignaturaSeleccionada && (
                     <div className="space-y-2">
                       <Label>Grado</Label>
-                      <select value={gradoSeleccionado} onChange={(e) => handleGradoChange(e.target.value)} className={selectClassName}>
-                        <option value="">Seleccionar grado</option>
-                        {grados.map((g) => <option key={g} value={g}>{g}</option>)}
-                      </select>
+                      <ResponsiveSelect
+                        value={gradoSeleccionado}
+                        onValueChange={handleGradoChange}
+                        placeholder="Seleccionar grado"
+                        options={grados.map((g) => ({ value: g, label: g }))}
+                      />
                     </div>
                   )}
 
@@ -551,19 +554,23 @@ const ProgramarActividad = () => {
                       {/* 3. Salón */}
                       <div className="space-y-2">
                         <Label>Salón</Label>
-                        <select value={salonSeleccionado} onChange={(e) => handleSalonChange(e.target.value)} className={selectClassName}>
-                          <option value="">Seleccionar salón</option>
-                          {salones.map((s) => <option key={s} value={s}>{s}</option>)}
-                        </select>
+                        <ResponsiveSelect
+                          value={salonSeleccionado}
+                          onValueChange={handleSalonChange}
+                          placeholder="Seleccionar salón"
+                          options={salones.map((s) => ({ value: s, label: s }))}
+                        />
                       </div>
 
                       {/* 4. Tipo (opcional) */}
                       <div className="space-y-2">
                         <Label>Tipo de actividad (opcional)</Label>
-                        <select value={tipoSeleccionado} onChange={(e) => setTipoSeleccionado(e.target.value)} className={selectClassName}>
-                          <option value="">Sin tipo específico</option>
-                          {TIPOS_ACTIVIDAD.map((t) => <option key={t} value={t}>{t}</option>)}
-                        </select>
+                        <ResponsiveSelect
+                          value={tipoSeleccionado}
+                          onValueChange={setTipoSeleccionado}
+                          placeholder="Sin tipo específico"
+                          options={TIPOS_ACTIVIDAD.map((t) => ({ value: t, label: t }))}
+                        />
                       </div>
 
                       {/* 5. Descripción */}
@@ -654,24 +661,32 @@ const ProgramarActividad = () => {
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <div className="space-y-2">
                       <Label>Asignatura</Label>
-                      <select value={actAsignatura} onChange={(e) => handleActAsignaturaChange(e.target.value)} className={selectClassName}>
-                        <option value="">Seleccionar</option>
-                        {asignaturas.map((a) => <option key={a} value={a}>{a}</option>)}
-                      </select>
+                      <ResponsiveSelect
+                        value={actAsignatura}
+                        onValueChange={handleActAsignaturaChange}
+                        placeholder="Seleccionar"
+                        options={asignaturas.map((a) => ({ value: a, label: a }))}
+                      />
                     </div>
                     <div className="space-y-2">
                       <Label>Grado</Label>
-                      <select value={actGrado} onChange={(e) => handleActGradoChange(e.target.value)} className={selectClassName} disabled={!actAsignatura}>
-                        <option value="">Seleccionar</option>
-                        {actGrados.map((g) => <option key={g} value={g}>{g}</option>)}
-                      </select>
+                      <ResponsiveSelect
+                        value={actGrado}
+                        onValueChange={handleActGradoChange}
+                        placeholder="Seleccionar"
+                        options={actGrados.map((g) => ({ value: g, label: g }))}
+                        disabled={!actAsignatura}
+                      />
                     </div>
                     <div className="space-y-2">
                       <Label>Salón</Label>
-                      <select value={actSalon} onChange={(e) => setActSalon(e.target.value)} className={selectClassName} disabled={!actGrado}>
-                        <option value="">Seleccionar</option>
-                        {actSalones.map((s) => <option key={s} value={s}>{s}</option>)}
-                      </select>
+                      <ResponsiveSelect
+                        value={actSalon}
+                        onValueChange={setActSalon}
+                        placeholder="Seleccionar"
+                        options={actSalones.map((s) => ({ value: s, label: s }))}
+                        disabled={!actGrado}
+                      />
                     </div>
                   </div>
 
