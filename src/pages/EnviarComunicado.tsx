@@ -428,7 +428,6 @@ const EnviarComunicado = () => {
                     <Label>Estudiante</Label>
                     <select value={estudiante} onChange={(e) => setEstudiante(e.target.value)} className="w-full p-3 rounded-md border border-input bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring">
                       <option value="">{loadingEstudiantes ? "Cargando..." : "Todos los estudiantes"}</option>
-                      <option value="Todos">Todos</option>
                       {estudiantes.map((e) => (
                         <option key={e.codigo} value={e.codigo}>{e.nombre}</option>
                       ))}
