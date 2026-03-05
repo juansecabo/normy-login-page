@@ -204,6 +204,7 @@ const RegistroNormy = () => {
             <span className="text-muted-foreground">&rarr;</span>
             <span className="text-foreground font-medium">Registro en Normy</span>
           </div>
+          <p className="text-sm text-muted-foreground mt-2">Revisa qué estudiantes y padres están registrados o no con Normy.</p>
         </div>
 
         <h2 className="text-2xl font-bold text-foreground text-center mb-6">

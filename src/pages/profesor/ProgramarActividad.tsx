@@ -507,6 +507,7 @@ const ProgramarActividad = () => {
             <span className="text-muted-foreground">→</span>
             <span className="text-foreground font-medium">Programar Actividad</span>
           </div>
+          <p className="text-sm text-muted-foreground mt-2">Programa las tareas, evaluaciones, exposiciones y demás actividades académicas de tus estudiantes.</p>
         </div>
 
         <Tabs defaultValue="programar" className="max-w-3xl mx-auto">

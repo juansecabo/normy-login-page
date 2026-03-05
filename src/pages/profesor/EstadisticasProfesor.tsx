@@ -157,6 +157,7 @@ const EstadisticasProfesor = () => {
             <span className="text-muted-foreground">→</span>
             <span className="text-foreground font-medium">Estadísticas</span>
           </div>
+          <p className="text-sm text-muted-foreground mt-2">Revisa cuál es la situación actual de tus estudiantes.</p>
         </div>
 
         {isLoading ? (

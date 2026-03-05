@@ -350,6 +350,7 @@ const EnviarComunicado = () => {
             <span className="text-muted-foreground">→</span>
             <span className="text-foreground font-medium">Enviar Comunicado</span>
           </div>
+          <p className="text-sm text-muted-foreground mt-2">Envía un mensaje a cualquier grupo o individuo dentro de la institución.</p>
         </div>
 
         <div className="bg-card rounded-lg shadow-soft p-6 md:p-8 max-w-2xl mx-auto">
