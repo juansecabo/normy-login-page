@@ -350,8 +350,8 @@ const EnviarComunicado = () => {
             <span className="text-muted-foreground">→</span>
             <span className="text-foreground font-medium">Enviar Comunicado</span>
           </div>
-          <p className="text-sm text-muted-foreground mt-2">Envía un mensaje a cualquier grupo o individuo dentro de la institución.</p>
         </div>
+        <p className="text-sm text-muted-foreground max-w-2xl mx-auto mb-6">Envía un mensaje a cualquier grupo o individuo dentro de la institución.</p>
 
         <div className="bg-card rounded-lg shadow-soft p-6 md:p-8 max-w-2xl mx-auto">
           <Tabs defaultValue="enviar" onValueChange={(v) => { if (v === "historial") fetchHistorial(); }}>
