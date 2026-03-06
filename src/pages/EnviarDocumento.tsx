@@ -300,7 +300,7 @@ const EnviarDocumento = () => {
             <span className="text-foreground font-medium">Enviar Documento</span>
           </div>
         </div>
-        <p className="text-sm text-muted-foreground max-w-2xl mx-auto mb-6 ">Envía un documento a cualquier grupo o individuo dentro de la institución.</p>
+        <p className="text-sm text-muted-foreground max-w-2xl mx-auto mb-6 text-center">Envía un documento a cualquier grupo o individuo dentro de la institución.</p>
 
         <div className="bg-card rounded-lg shadow-soft p-6 md:p-8 max-w-2xl mx-auto">
           <Tabs defaultValue="enviar" onValueChange={(v) => { if (v === "historial") fetchHistorial(); }}>
