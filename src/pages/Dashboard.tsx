@@ -171,7 +171,7 @@ const Dashboard = () => {
           </button>
           <button
             onClick={() => navigate("/profesor/estadisticas")}
-            className="flex flex-col lg:flex-row items-center justify-center gap-1 lg:gap-3 p-4 lg:p-6 rounded-lg bg-gradient-to-r from-blue-500 to-blue-600 text-white font-bold text-sm lg:text-base transition-all duration-200 hover:shadow-md hover:scale-[1.02] hover:from-blue-600 hover:to-blue-500 text-center"
+            className="flex flex-col lg:flex-row items-center justify-center gap-1 lg:gap-3 p-4 lg:p-6 rounded-lg bg-gradient-to-r from-orange-500 to-orange-600 text-white font-bold text-sm lg:text-base transition-all duration-200 hover:shadow-md hover:scale-[1.02] hover:from-orange-600 hover:to-orange-500 text-center"
           >
             <BarChart3 className="w-5 h-5 lg:w-6 lg:h-6 shrink-0" />
             <span>Estadísticas</span>
