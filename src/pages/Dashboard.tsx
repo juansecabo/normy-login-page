@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import normyExaminadoraImg from "@/assets/normy-examinadora.webp";
 import { getSession, isProfesor, isAdmin, isRectorOrCoordinador, isEstudiante, isPadreDeFamilia } from "@/hooks/useSession";
-import { BarChart3, Megaphone, FileUp, UserCheck, CalendarPlus } from "lucide-react";
+import { BarChart3, Megaphone, UserCheck, CalendarPlus } from "lucide-react";
 import HeaderNormy from "@/components/HeaderNormy";
 import BuzonSugerencias from "@/components/BuzonSugerencias";
 
@@ -157,13 +157,6 @@ const Dashboard = () => {
           >
             <Megaphone className="w-5 h-5 lg:w-6 lg:h-6 shrink-0" />
             <span>Enviar Comunicado</span>
-          </button>
-          <button
-            onClick={() => navigate("/enviar-documento")}
-            className="flex flex-col lg:flex-row items-center justify-center gap-1 lg:gap-3 p-4 lg:p-6 rounded-lg bg-gradient-to-r from-orange-500 to-orange-600 text-white font-bold text-sm lg:text-base transition-all duration-200 hover:shadow-md hover:scale-[1.02] hover:from-orange-600 hover:to-orange-500 text-center"
-          >
-            <FileUp className="w-5 h-5 lg:w-6 lg:h-6 shrink-0" />
-            <span>Enviar Documento</span>
           </button>
           <button
             onClick={() => navigate("/normy-examinadora")}

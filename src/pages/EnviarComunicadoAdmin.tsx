@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Label } from "@/components/ui/label";
 import {
@@ -14,7 +14,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { getSession, isAdmin } from "@/hooks/useSession";
 import HeaderNormy from "@/components/HeaderNormy";
-import { Loader2, Send, Clock, Trash2, Search, Users, Eye } from "lucide-react";
+import { Loader2, Send, Clock, Trash2, Search, Users, Eye, Paperclip, X, FileText } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -38,6 +38,7 @@ interface ComunicadoEnviado {
   remitente: string;
   destinatarios: string;
   mensaje: string;
+  archivo_url: string | null;
   fecha: string;
 }
 
@@ -59,8 +60,10 @@ const EnviarComunicadoAdmin = () => {
   const [estudiantes, setEstudiantes] = useState<{ codigo: string; nombre: string }[]>([]);
   const [loadingEstudiantes, setLoadingEstudiantes] = useState(false);
 
-  // Mensaje
+  // Mensaje y archivos
   const [mensaje, setMensaje] = useState("");
+  const [archivosSeleccionados, setArchivosSeleccionados] = useState<File[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Masivo personalizado
   const [datosMasivos, setDatosMasivos] = useState("");
@@ -200,6 +203,35 @@ const EnviarComunicadoAdmin = () => {
     setEnviando(true);
 
     try {
+      // Upload files if any
+      let archivoUrl: string | null = null;
+      if (archivosSeleccionados.length > 0) {
+        const urls: string[] = [];
+        for (const archivo of archivosSeleccionados) {
+          const timestamp = Date.now();
+          const nombreLimpio = archivo.name
+            .normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "")
+            .replace(/[^a-zA-Z0-9._-]/g, "_");
+          const fileName = `${timestamp}_${nombreLimpio}`;
+
+          const { error: uploadError } = await supabase.storage
+            .from("documentos")
+            .upload(fileName, archivo);
+
+          if (uploadError) {
+            throw new Error(`Error subiendo archivo: ${uploadError.message}`);
+          }
+
+          const { data: urlData } = supabase.storage
+            .from("documentos")
+            .getPublicUrl(fileName);
+
+          urls.push(urlData.publicUrl);
+        }
+        archivoUrl = urls.join("\n");
+      }
+
       const response = await fetch(WEBHOOK_URL, {
         method: "POST",
         mode: "cors",
@@ -214,6 +246,7 @@ const EnviarComunicadoAdmin = () => {
           grado: grado || null,
           salon: (salon && salon !== "Todos") ? salon : null,
           codigo_estudiantil: (estudiante && estudiante !== "Todos") ? estudiante : null,
+          ...(archivoUrl ? { archivo_url: archivoUrl } : {}),
         }),
       });
 
@@ -227,11 +260,14 @@ const EnviarComunicadoAdmin = () => {
       });
 
       setMensaje("");
+      setArchivosSeleccionados([]);
+      if (fileInputRef.current) fileInputRef.current.value = "";
     } catch (error) {
       console.error("Error enviando comunicado:", error);
+      const errorMsg = error instanceof Error ? error.message : "No se pudo enviar el comunicado. Intenta de nuevo.";
       toast({
         title: "Error",
-        description: "No se pudo enviar el comunicado. Intenta de nuevo.",
+        description: errorMsg,
         variant: "destructive",
       });
     } finally {
@@ -490,6 +526,54 @@ const EnviarComunicadoAdmin = () => {
                 />
               </div>
 
+              {/* Archivos adjuntos */}
+              <div className="space-y-2 mb-6">
+                <h3 className="text-lg font-semibold text-foreground">
+                  Archivos adjuntos <span className="text-sm font-normal text-muted-foreground">(opcional)</span>
+                </h3>
+                {archivosSeleccionados.length > 0 && (
+                  <div className="space-y-2">
+                    {archivosSeleccionados.map((file, i) => (
+                      <div key={i} className="flex items-center gap-2 p-2 bg-muted rounded-md text-sm overflow-hidden">
+                        <FileText className="h-4 w-4 text-blue-600 shrink-0" />
+                        <span className="truncate">{file.name}</span>
+                        <span className="text-xs text-muted-foreground shrink-0">
+                          ({(file.size / 1024).toFixed(1)} KB)
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => setArchivosSeleccionados(prev => prev.filter((_, idx) => idx !== i))}
+                          className="text-muted-foreground hover:text-destructive shrink-0 ml-auto"
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="flex items-center gap-2 px-4 py-2 rounded-md border text-sm font-medium hover:bg-muted transition-colors"
+                >
+                  <Paperclip className="w-4 h-4" />
+                  Adjuntar archivos
+                </button>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  className="hidden"
+                  multiple
+                  onChange={(e) => {
+                    const files = e.target.files;
+                    if (files && files.length > 0) {
+                      setArchivosSeleccionados(prev => [...prev, ...Array.from(files)]);
+                    }
+                    e.target.value = '';
+                  }}
+                />
+              </div>
+
               <button
                 disabled={!canSend || enviando}
                 onClick={() => setShowConfirm(true)}
@@ -661,9 +745,28 @@ const EnviarComunicadoAdmin = () => {
                         <span className="font-medium text-foreground">Para:</span>{" "}
                         {c.destinatarios}
                       </p>
-                      <p className="text-sm whitespace-pre-wrap bg-muted p-3 rounded-md max-h-32 overflow-y-auto">
-                        {c.mensaje}
-                      </p>
+                      {c.archivo_url && (
+                        <div className="flex flex-wrap gap-2">
+                          {c.archivo_url.split("\n").filter(u => u.trim()).map((url, i) => (
+                            <a
+                              key={i}
+                              href={url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex items-center gap-1 text-xs text-primary hover:underline"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <FileText className="w-3 h-3 shrink-0" />
+                              Archivo {i + 1}
+                            </a>
+                          ))}
+                        </div>
+                      )}
+                      {c.mensaje && (
+                        <p className="text-sm whitespace-pre-wrap bg-muted p-3 rounded-md max-h-32 overflow-y-auto">
+                          {c.mensaje}
+                        </p>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -696,6 +799,12 @@ const EnviarComunicadoAdmin = () => {
                 <p className="whitespace-pre-wrap bg-muted p-3 rounded-md max-h-48 overflow-y-auto">
                   {mensaje}
                 </p>
+                {archivosSeleccionados.length > 0 && (
+                  <p>
+                    <span className="font-medium text-foreground">Archivos adjuntos:</span>{" "}
+                    {archivosSeleccionados.length} archivo{archivosSeleccionados.length > 1 ? "s" : ""}
+                  </p>
+                )}
               </div>
             </DialogDescription>
           </DialogHeader>
@@ -776,6 +885,22 @@ const EnviarComunicadoAdmin = () => {
                   {formatFecha(selectedHistorial.fecha)}
                 </div>
               </DialogHeader>
+              {selectedHistorial.archivo_url && (
+                <div className="space-y-1">
+                  {selectedHistorial.archivo_url.split("\n").filter(u => u.trim()).map((url, i) => (
+                    <a
+                      key={i}
+                      href={url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-2 text-sm text-primary hover:underline"
+                    >
+                      <FileText className="w-4 h-4 shrink-0" />
+                      Archivo adjunto {i + 1}
+                    </a>
+                  ))}
+                </div>
+              )}
               {selectedHistorial.mensaje && (
                 <p className="text-sm whitespace-pre-wrap bg-muted p-4 rounded-md">
                   {selectedHistorial.mensaje}
