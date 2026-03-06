@@ -89,7 +89,6 @@ const Index = () => {
         }
 
         saveSession(String(usuario.codigo), usuario.nombres || "", usuario.apellidos || "", usuario.cargo || "");
-        toast({ title: "Bienvenido(a)", description: `${usuario.nombres} ${usuario.apellidos}` });
 
         if (usuario.cargo === 'Administrador') {
           navigate("/dashboard-admin");
@@ -136,7 +135,6 @@ const Index = () => {
         const apellidos = estData?.apellidos_estudiante || perfilEstudiante.estudiante_apellidos || '';
 
         saveSession(idInput, nombre, apellidos, 'Estudiante', nivel, grado, salon);
-        toast({ title: "Bienvenido(a)", description: `${nombre} ${apellidos}` });
         navigate("/dashboard-estudiante");
         return;
       }
@@ -202,7 +200,6 @@ const Index = () => {
 
         const nombrePadre = perfilPadre.padre_nombre || '';
         saveSession(idInput, nombrePadre, '', 'Padre de familia', null, null, null, hijos);
-        toast({ title: "Bienvenido(a)", description: nombrePadre });
         navigate("/dashboard-padre");
         return;
       }
