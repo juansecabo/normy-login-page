@@ -15,6 +15,11 @@ import { supabase } from "@/integrations/supabase/client";
 const WEBHOOK_URL =
   "https://n8n.srv966880.hstgr.cloud/webhook/ae459f1c-7e94-45f4-9909-aaddc82a7552";
 
+const WEBHOOK_RECTOR_URL =
+  "https://n8n.srv966880.hstgr.cloud/webhook/enviar-comunicado-rector-coordinadores";
+
+const PERFILES_INTERNOS = ['Profesores', 'Coordinadores', 'Todo el personal interno', 'Toda la comunidad'];
+
 const WEBHOOK_MASIVO_URL =
   "https://n8n.srv966880.hstgr.cloud/webhook/masivo-personalizado";
 
@@ -41,6 +46,7 @@ const EnviarComunicado = () => {
 
   const [remitente, setRemitente] = useState("");
   const [codigoRemitente, setCodigoRemitente] = useState("");
+  const [cargo, setCargo] = useState("");
   const [enviando, setEnviando] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [deleteId, setDeleteId] = useState<number | null>(null);
@@ -79,6 +85,7 @@ const EnviarComunicado = () => {
     }
     setRemitente(`${session.cargo} ${session.nombres} ${session.apellidos}`);
     setCodigoRemitente(session.codigo!);
+    setCargo(session.cargo || "");
   }, [navigate]);
 
   // Fetch estudiantes cuando cambia grado + salón
@@ -195,7 +202,8 @@ const EnviarComunicado = () => {
     setEnviando(true);
 
     try {
-      const response = await fetch(WEBHOOK_URL, {
+      const webhookUrl = PERFILES_INTERNOS.includes(perfil) ? WEBHOOK_RECTOR_URL : WEBHOOK_URL;
+      const response = await fetch(webhookUrl, {
         method: "POST",
         mode: "cors",
         headers: { "Content-Type": "application/json" },
@@ -383,10 +391,12 @@ const EnviarComunicado = () => {
                       { value: "Estudiantes", label: "Estudiantes" },
                       { value: "Padres de familia", label: "Padres de familia" },
                       { value: "Estudiantes y Padres de familia", label: "Estudiantes y Padres de familia" },
-                      { value: "Profesores", label: "Profesores" },
-                      { value: "Coordinadores", label: "Coordinadores" },
-                      { value: "Todo el personal interno", label: "Todo el personal interno" },
-                      { value: "Toda la comunidad", label: "Toda la comunidad" },
+                      ...(['Rector', 'Coordinador(a)'].includes(cargo) ? [
+                        { value: "Profesores", label: "Profesores" },
+                        { value: "Coordinadores", label: "Coordinadores" },
+                        { value: "Todo el personal interno", label: "Todo el personal interno" },
+                        { value: "Toda la comunidad", label: "Toda la comunidad" },
+                      ] : []),
                     ]}
                   />
                 </div>
