@@ -351,7 +351,7 @@ const EnviarComunicado = () => {
             <span className="text-foreground font-medium">Enviar Comunicado</span>
           </div>
         </div>
-        <p className="text-sm text-muted-foreground max-w-2xl mx-auto mb-6">Envía un mensaje a cualquier grupo o individuo dentro de la institución.</p>
+        <p className="text-sm text-muted-foreground max-w-2xl mx-auto mb-6 text-center">Envía un mensaje a cualquier grupo o individuo dentro de la institución.</p>
 
         <div className="bg-card rounded-lg shadow-soft p-6 md:p-8 max-w-2xl mx-auto">
           <Tabs defaultValue="enviar" onValueChange={(v) => { if (v === "historial") fetchHistorial(); }}>
@@ -383,12 +383,16 @@ const EnviarComunicado = () => {
                       { value: "Estudiantes", label: "Estudiantes" },
                       { value: "Padres de familia", label: "Padres de familia" },
                       { value: "Estudiantes y Padres de familia", label: "Estudiantes y Padres de familia" },
+                      { value: "Profesores", label: "Profesores" },
+                      { value: "Coordinadores", label: "Coordinadores" },
+                      { value: "Todo el personal interno", label: "Todo el personal interno" },
+                      { value: "Toda la comunidad", label: "Toda la comunidad" },
                     ]}
                   />
                 </div>
 
                 {/* Nivel */}
-                {perfil && (
+                {perfil && !['Profesores', 'Coordinadores', 'Todo el personal interno', 'Toda la comunidad'].includes(perfil) && (
                   <div className="space-y-2">
                     <Label>Nivel</Label>
                     <ResponsiveSelect
