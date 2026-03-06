@@ -196,7 +196,7 @@ const EnviarComunicadoAdmin = () => {
 
   const destinatariosTexto = buildDestinatarios();
 
-  const canSend = perfil && mensaje.trim();
+  const canSend = perfil && (mensaje.trim() || archivosSeleccionados.length > 0);
 
   const handleEnviar = async () => {
     setShowConfirm(false);
