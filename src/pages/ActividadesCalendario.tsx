@@ -552,7 +552,7 @@ const ActividadesCalendario = () => {
 
       {/* Modal Crear/Editar Actividad */}
       <Dialog open={modalOpen} onOpenChange={setModalOpen}>
-        <DialogContent className="sm:max-w-[500px] overflow-hidden">
+        <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
             <DialogTitle>
               {actividadEditando ? "Editar Actividad" : "Agregar Actividad"}
@@ -573,24 +573,24 @@ const ActividadesCalendario = () => {
               </p>
             </div>
 
-            <div className="space-y-2 overflow-hidden">
+            <div className="space-y-2">
               <Label>Archivos adjuntos (opcional)</Label>
               {/* Show existing URLs */}
               {urlsExistentes.map((url, i) => (
-                <div key={`existing-${i}`} className="flex items-center gap-2 p-2 bg-muted rounded-md text-sm">
+                <div key={`existing-${i}`} className="flex items-center gap-2 p-2 bg-muted rounded-md text-sm overflow-hidden">
                   <FileText className="h-4 w-4 text-blue-600 shrink-0" />
                   <a
                     href={url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-blue-600 hover:underline truncate flex-1"
+                    className="text-blue-600 hover:underline truncate"
                   >
                     Archivo {i + 1}
                   </a>
                   <button
                     type="button"
                     onClick={() => setUrlsExistentes(prev => prev.filter((_, j) => j !== i))}
-                    className="text-muted-foreground hover:text-destructive"
+                    className="text-muted-foreground hover:text-destructive shrink-0"
                     title="Quitar archivo"
                   >
                     <X className="h-4 w-4" />
@@ -599,13 +599,13 @@ const ActividadesCalendario = () => {
               ))}
               {/* Show selected new files */}
               {archivosSeleccionados.map((file, i) => (
-                <div key={`new-${i}`} className="flex items-center gap-2 p-2 bg-muted rounded-md text-sm min-w-0">
+                <div key={`new-${i}`} className="flex items-center gap-2 p-2 bg-muted rounded-md text-sm overflow-hidden">
                   <FileText className="h-4 w-4 text-blue-600 shrink-0" />
-                  <span className="truncate flex-1 min-w-0">{file.name}</span>
+                  <span className="truncate">{file.name}</span>
                   <button
                     type="button"
                     onClick={() => setArchivosSeleccionados(prev => prev.filter((_, j) => j !== i))}
-                    className="text-muted-foreground hover:text-destructive"
+                    className="text-muted-foreground hover:text-destructive shrink-0"
                     title="Quitar archivo"
                   >
                     <X className="h-4 w-4" />
