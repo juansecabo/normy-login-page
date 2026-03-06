@@ -202,7 +202,7 @@ const EnviarComunicado = () => {
     setEnviando(true);
 
     try {
-      const webhookUrl = PERFILES_INTERNOS.includes(perfil) ? WEBHOOK_RECTOR_URL : WEBHOOK_URL;
+      const webhookUrl = ['Rector', 'Coordinador(a)'].includes(cargo) ? WEBHOOK_RECTOR_URL : WEBHOOK_URL;
       const response = await fetch(webhookUrl, {
         method: "POST",
         mode: "cors",
