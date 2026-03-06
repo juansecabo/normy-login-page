@@ -558,7 +558,7 @@ const ActividadesCalendario = () => {
               {actividadEditando ? "Editar Actividad" : "Agregar Actividad"}
             </DialogTitle>
           </DialogHeader>
-          <div className="space-y-4 py-4 overflow-hidden">
+          <div className="space-y-4 py-4 min-w-0">
             <div className="space-y-2">
               <Label htmlFor="descripcion">Descripción de la actividad</Label>
               <Textarea
