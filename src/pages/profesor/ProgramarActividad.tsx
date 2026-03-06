@@ -591,9 +591,9 @@ const ProgramarActividad = () => {
                       <div className="space-y-2">
                         <Label>Archivos adjuntos (opcional)</Label>
                         {archivosSeleccionados.map((file, i) => (
-                          <div key={i} className="flex items-center gap-2 p-2 bg-muted rounded-md text-sm">
+                          <div key={i} className="flex items-center gap-2 p-2 bg-muted rounded-md text-sm min-w-0">
                             <FileText className="h-4 w-4 text-blue-600 shrink-0" />
-                            <span className="truncate flex-1">{file.name}</span>
+                            <span className="truncate flex-1 min-w-0">{file.name}</span>
                             <button type="button" onClick={() => setArchivosSeleccionados(prev => prev.filter((_, j) => j !== i))} className="text-muted-foreground hover:text-destructive" title="Quitar archivo">
                               <X className="h-4 w-4" />
                             </button>
@@ -604,7 +604,7 @@ const ProgramarActividad = () => {
                           <span className="text-sm text-muted-foreground">
                             {archivosSeleccionados.length > 0 ? 'Agregar otro archivo' : 'Seleccionar archivo'}
                           </span>
-                          <input type="file" className="hidden" accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.jpg,.jpeg,.png" onChange={(e) => { const file = e.target.files?.[0]; if (file) setArchivosSeleccionados(prev => [...prev, file]); e.target.value = ''; }} />
+                          <input type="file" className="hidden" multiple accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.jpg,.jpeg,.png" onChange={(e) => { const files = e.target.files; if (files && files.length > 0) setArchivosSeleccionados(prev => [...prev, ...Array.from(files)]); e.target.value = ''; }} />
                         </label>
                       </div>
 
@@ -771,9 +771,9 @@ const ProgramarActividad = () => {
                 </div>
               ))}
               {editArchivos.map((file, i) => (
-                <div key={`new-${i}`} className="flex items-center gap-2 p-2 bg-muted rounded-md text-sm">
+                <div key={`new-${i}`} className="flex items-center gap-2 p-2 bg-muted rounded-md text-sm min-w-0">
                   <FileText className="h-4 w-4 text-blue-600 shrink-0" />
-                  <span className="truncate flex-1">{file.name}</span>
+                  <span className="truncate flex-1 min-w-0">{file.name}</span>
                   <button type="button" onClick={() => setEditArchivos(prev => prev.filter((_, j) => j !== i))} className="text-muted-foreground hover:text-destructive" title="Quitar archivo">
                     <X className="h-4 w-4" />
                   </button>
@@ -784,7 +784,7 @@ const ProgramarActividad = () => {
                 <span className="text-sm text-muted-foreground">
                   {(editUrlsExistentes.length + editArchivos.length) > 0 ? 'Agregar otro archivo' : 'Seleccionar archivo'}
                 </span>
-                <input type="file" className="hidden" accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.jpg,.jpeg,.png" onChange={(e) => { const file = e.target.files?.[0]; if (file) setEditArchivos(prev => [...prev, file]); e.target.value = ''; }} />
+                <input type="file" className="hidden" multiple accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.jpg,.jpeg,.png" onChange={(e) => { const files = e.target.files; if (files && files.length > 0) setEditArchivos(prev => [...prev, ...Array.from(files)]); e.target.value = ''; }} />
               </label>
             </div>
 

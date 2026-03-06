@@ -599,9 +599,9 @@ const ActividadesCalendario = () => {
               ))}
               {/* Show selected new files */}
               {archivosSeleccionados.map((file, i) => (
-                <div key={`new-${i}`} className="flex items-center gap-2 p-2 bg-muted rounded-md text-sm">
+                <div key={`new-${i}`} className="flex items-center gap-2 p-2 bg-muted rounded-md text-sm min-w-0">
                   <FileText className="h-4 w-4 text-blue-600 shrink-0" />
-                  <span className="truncate flex-1">{file.name}</span>
+                  <span className="truncate flex-1 min-w-0">{file.name}</span>
                   <button
                     type="button"
                     onClick={() => setArchivosSeleccionados(prev => prev.filter((_, j) => j !== i))}
@@ -621,11 +621,12 @@ const ActividadesCalendario = () => {
                 <input
                   type="file"
                   className="hidden"
+                  multiple
                   accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.jpg,.jpeg,.png"
                   onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    if (file) {
-                      setArchivosSeleccionados(prev => [...prev, file]);
+                    const files = e.target.files;
+                    if (files && files.length > 0) {
+                      setArchivosSeleccionados(prev => [...prev, ...Array.from(files)]);
                     }
                     e.target.value = '';
                   }}
