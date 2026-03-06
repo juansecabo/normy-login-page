@@ -552,7 +552,7 @@ const ActividadesCalendario = () => {
 
       {/* Modal Crear/Editar Actividad */}
       <Dialog open={modalOpen} onOpenChange={setModalOpen}>
-        <DialogContent className="sm:max-w-[500px]">
+        <DialogContent className="sm:max-w-[500px] overflow-hidden">
           <DialogHeader>
             <DialogTitle>
               {actividadEditando ? "Editar Actividad" : "Agregar Actividad"}
@@ -573,7 +573,7 @@ const ActividadesCalendario = () => {
               </p>
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-2 overflow-hidden">
               <Label>Archivos adjuntos (opcional)</Label>
               {/* Show existing URLs */}
               {urlsExistentes.map((url, i) => (
