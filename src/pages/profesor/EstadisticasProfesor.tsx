@@ -158,7 +158,7 @@ const EstadisticasProfesor = () => {
             <span className="text-foreground font-medium">Estadísticas</span>
           </div>
         </div>
-        <p className="text-sm text-muted-foreground mb-6">Revisa cuál es la situación actual de tus estudiantes.</p>
+        <p className="text-sm text-muted-foreground mb-6 text-center">Revisa cuál es la situación actual de tus estudiantes.</p>
 
         {isLoading ? (
           <div className="flex items-center justify-center h-64">

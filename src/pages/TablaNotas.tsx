@@ -508,12 +508,26 @@ const TablaNotas = () => {
       // EDITAR actividad existente
       const nombreAntiguo = actividadEditando.nombre;
       const nombreNuevo = nombreActividad.trim();
-      const salonesAEditar = crearParaTodosSalones && salonesConActividad.length > 0
-        ? [salonSeleccionado, ...salonesConActividad]
-        : [salonSeleccionado];
-
-      // Actualizar en tabla "Nombre de Actividades" (el trigger de Supabase actualizará "Notas" automáticamente)
       const session = getSession();
+
+      // Re-query salones con actividad al momento de guardar (por robustez)
+      let salonesOtros = salonesConActividad;
+      if (crearParaTodosSalones && salonesConActividad.length === 0) {
+        const { data: freshData } = await supabase
+          .from('Nombre de Actividades')
+          .select('salon')
+          .eq('codigo_profesor', session.codigo)
+          .eq('asignatura', asignaturaSeleccionada)
+          .eq('grado', gradoSeleccionado)
+          .eq('periodo', actividadEditando.periodo)
+          .eq('nombre_actividad', nombreAntiguo)
+          .neq('salon', salonSeleccionado);
+        salonesOtros = freshData?.map(r => r.salon) || [];
+      }
+
+      const salonesAEditar = crearParaTodosSalones && salonesOtros.length > 0
+        ? [salonSeleccionado, ...salonesOtros]
+        : [salonSeleccionado];
       try {
         const { error } = await supabase
           .from('Nombre de Actividades')
@@ -3169,7 +3183,7 @@ const TablaNotas = () => {
                 Porcentaje usado: {getPorcentajeUsadoParaModal()}% / 100%
               </p>
             </div>
-            {(actividadEditando ? salonesConActividad.length > 0 : otrosSalones.length > 0) && (
+            {(actividadEditando ? (salonesConActividad.length > 0 || otrosSalones.length > 0) : otrosSalones.length > 0) && (
               <div className="flex items-start space-x-2">
                 <Checkbox
                   id="crearParaTodos"
@@ -3181,7 +3195,11 @@ const TablaNotas = () => {
                     {actividadEditando ? "Aplicar cambios en todos los salones de este grado" : "Crear en todos los salones de este grado"}
                   </Label>
                   <p className="text-xs text-muted-foreground">
-                    {actividadEditando ? "También se modificará en: " : "También se creará en: "}{(actividadEditando ? salonesConActividad : otrosSalones).join(', ')}
+                    {actividadEditando
+                      ? salonesConActividad.length > 0
+                        ? "También se modificará en: " + salonesConActividad.join(', ')
+                        : "Se modificará en los demás salones donde exista esta actividad"
+                      : "También se creará en: " + otrosSalones.join(', ')}
                   </p>
                 </div>
               </div>
