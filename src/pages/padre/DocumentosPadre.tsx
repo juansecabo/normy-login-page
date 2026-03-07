@@ -39,7 +39,7 @@ const DocumentosPadre = () => {
         const { data, error } = await supabase
           .from('Comunicados')
           .select('*')
-          .eq('tipo', 'documento')
+          .not('archivo_url', 'is', null)
           .in('perfil', ['Padres de familia', 'Estudiantes y Padres de familia'])
           .order('fecha', { ascending: false });
 
