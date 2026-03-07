@@ -28,6 +28,7 @@ import EstudianteConsolidado from "./pages/rector/EstudianteConsolidado";
 import EstadisticasDashboard from "./pages/rector/EstadisticasDashboard";
 import EstudiantesEnRiesgo from "./pages/rector/EstudiantesEnRiesgo";
 import PanelControl from "./pages/rector/PanelControl";
+import UsoNormy from "./pages/rector/UsoNormy";
 
 // Rutas para Admin
 import Sugerencias from "./pages/admin/Sugerencias";
@@ -97,6 +98,7 @@ const App = () => (
           <Route path="/rector/estadisticas" element={<EstadisticasDashboard />} />
           <Route path="/rector/estudiantes-riesgo" element={<EstudiantesEnRiesgo />} />
           <Route path="/rector/panel-control" element={<PanelControl />} />
+          <Route path="/rector/uso-normy" element={<UsoNormy />} />
 
           {/* Rutas para Admin */}
           <Route path="/admin/sugerencias" element={<Sugerencias />} />

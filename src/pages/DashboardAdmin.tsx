@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getSession, isAdmin } from "@/hooks/useSession";
-import { BookOpen, BarChart3, Megaphone, Settings, MessageSquare, UserCheck } from "lucide-react";
+import { BookOpen, BarChart3, Megaphone, Settings, MessageSquare, UserCheck, Activity } from "lucide-react";
 import HeaderNormy from "@/components/HeaderNormy";
 
 const DashboardAdmin = () => {
@@ -87,6 +87,14 @@ const DashboardAdmin = () => {
             >
               <MessageSquare className="w-16 h-16 text-foreground" />
               <span className="font-semibold text-lg text-foreground text-center">Sugerencias</span>
+            </button>
+
+            <button
+              onClick={() => navigate("/rector/uso-normy")}
+              className="flex flex-col items-center justify-center gap-4 p-8 rounded-lg bg-orange-100 transition-all duration-200 hover:shadow-md hover:bg-orange-200"
+            >
+              <Activity className="w-16 h-16 text-foreground" />
+              <span className="font-semibold text-lg text-foreground text-center">Uso de Normy</span>
             </button>
 
             <button

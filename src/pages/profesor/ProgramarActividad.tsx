@@ -370,6 +370,26 @@ const ProgramarActividad = () => {
         return;
       }
 
+      // Increment persistent activity counter
+      try {
+        const { data: uso } = await supabase
+          .from('Uso_Profesores')
+          .select('actividades_programadas')
+          .eq('profesor_id', profesorIdReal)
+          .maybeSingle();
+
+        if (uso) {
+          await supabase.from('Uso_Profesores')
+            .update({ actividades_programadas: (uso.actividades_programadas || 0) + 1 })
+            .eq('profesor_id', profesorIdReal);
+        } else {
+          await supabase.from('Uso_Profesores')
+            .insert({ profesor_id: profesorIdReal, actividades_programadas: 1 });
+        }
+      } catch (e) {
+        console.error('Error incrementando contador:', e);
+      }
+
       // Fire & forget webhook notification
       try {
         await fetch('https://n8n.srv966880.hstgr.cloud/webhook/notificar-actividades', {
