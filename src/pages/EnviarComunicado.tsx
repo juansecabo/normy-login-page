@@ -61,6 +61,11 @@ const EnviarComunicado = () => {
   const [estudiantes, setEstudiantes] = useState<{ codigo: string; nombre: string }[]>([]);
   const [loadingEstudiantes, setLoadingEstudiantes] = useState(false);
 
+  // Internos (para selección individual)
+  const [internos, setInternos] = useState<{ codigo: string; nombre: string }[]>([]);
+  const [internoSeleccionado, setInternoSeleccionado] = useState("");
+  const [loadingInternos, setLoadingInternos] = useState(false);
+
   // Mensaje y archivos
   const [mensaje, setMensaje] = useState("");
   const [archivosSeleccionados, setArchivosSeleccionados] = useState<File[]>([]);
@@ -118,6 +123,40 @@ const EnviarComunicado = () => {
     fetchEstudiantes();
   }, [grado, salon]);
 
+  // Fetch internos cuando se selecciona un perfil interno
+  useEffect(() => {
+    if (!PERFILES_INTERNOS.includes(perfil)) {
+      setInternos([]);
+      setInternoSeleccionado("");
+      return;
+    }
+    const fetchInternos = async () => {
+      setLoadingInternos(true);
+      let query = supabase
+        .from("Internos")
+        .select("codigo, nombres, apellidos, cargo")
+        .order("apellidos", { ascending: true })
+        .order("nombres", { ascending: true });
+
+      if (perfil === "Profesores") {
+        query = query.eq("cargo", "Profesor(a)");
+      } else if (perfil === "Coordinadores") {
+        query = query.eq("cargo", "Coordinador(a)");
+      }
+      // "Todo el personal interno" y "Toda la comunidad" → todos los internos
+
+      const { data } = await query;
+      setInternos(
+        data?.map((i) => ({
+          codigo: String(i.codigo),
+          nombre: `${i.apellidos} ${i.nombres}`,
+        })) || []
+      );
+      setLoadingInternos(false);
+    };
+    fetchInternos();
+  }, [perfil]);
+
   const fetchHistorial = async () => {
     setLoadingHistorial(true);
     const { data } = await supabase
@@ -143,6 +182,7 @@ const EnviarComunicado = () => {
     setGrado("");
     setSalon("");
     setEstudiante("");
+    setInternoSeleccionado("");
   };
 
   const handleNivelChange = (value: string) => {
@@ -165,6 +205,12 @@ const EnviarComunicado = () => {
 
   // Construir texto de destinatarios
   const buildDestinatarios = (): string => {
+    // Interno individual
+    if (PERFILES_INTERNOS.includes(perfil) && internoSeleccionado && internoSeleccionado !== "Todos") {
+      const interno = internos.find(i => i.codigo === internoSeleccionado);
+      return interno ? `${interno.nombre}` : perfil;
+    }
+
     if (estudiante && estudiante !== "Todos") {
       // Estudiante específico - pasar código para búsqueda directa
       if (perfil === "Estudiantes") {
@@ -248,7 +294,7 @@ const EnviarComunicado = () => {
           nivel: (nivel && nivel !== "Todos") ? nivel : null,
           grado: grado || null,
           salon: (salon && salon !== "Todos") ? salon : null,
-          codigo_estudiantil: (estudiante && estudiante !== "Todos") ? estudiante : null,
+          codigo_estudiantil: (internoSeleccionado && internoSeleccionado !== "Todos") ? internoSeleccionado : (estudiante && estudiante !== "Todos") ? estudiante : null,
           ...(archivoUrl ? { archivo_url: archivoUrl } : {}),
         }),
       });
@@ -437,8 +483,24 @@ const EnviarComunicado = () => {
                   />
                 </div>
 
+                {/* Selección individual de interno */}
+                {PERFILES_INTERNOS.includes(perfil) && (
+                  <div className="space-y-2">
+                    <Label>Persona</Label>
+                    <ResponsiveSelect
+                      value={internoSeleccionado}
+                      onValueChange={setInternoSeleccionado}
+                      placeholder={loadingInternos ? "Cargando..." : "Todos"}
+                      options={[
+                        { value: "Todos", label: "Todos" },
+                        ...internos.map((i) => ({ value: i.codigo, label: i.nombre })),
+                      ]}
+                    />
+                  </div>
+                )}
+
                 {/* Nivel */}
-                {perfil && !['Profesores', 'Coordinadores', 'Todo el personal interno', 'Toda la comunidad'].includes(perfil) && (
+                {perfil && !PERFILES_INTERNOS.includes(perfil) && (
                   <div className="space-y-2">
                     <Label>Nivel</Label>
                     <ResponsiveSelect

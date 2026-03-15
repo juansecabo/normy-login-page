@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import normyExaminadoraImg from "@/assets/normy-examinadora.webp";
 import { getSession, isProfesor, isAdmin, isRectorOrCoordinador, isEstudiante, isPadreDeFamilia } from "@/hooks/useSession";
-import { BarChart3, Megaphone, UserCheck, CalendarPlus } from "lucide-react";
+import { BarChart3, Megaphone, UserCheck, CalendarPlus, Mail, FileText } from "lucide-react";
 import HeaderNormy from "@/components/HeaderNormy";
 import BuzonSugerencias from "@/components/BuzonSugerencias";
 
@@ -182,6 +182,20 @@ const Dashboard = () => {
           >
             <UserCheck className="w-5 h-5 lg:w-6 lg:h-6 shrink-0" />
             <span>Registro en Normy</span>
+          </button>
+          <button
+            onClick={() => navigate("/profesor/comunicados")}
+            className="flex flex-col lg:flex-row items-center justify-center gap-1 lg:gap-3 p-4 lg:p-6 rounded-lg bg-gradient-to-r from-indigo-500 to-indigo-600 text-white font-bold text-sm lg:text-base transition-all duration-200 hover:shadow-md hover:scale-[1.02] hover:from-indigo-600 hover:to-indigo-500 text-center"
+          >
+            <Mail className="w-5 h-5 lg:w-6 lg:h-6 shrink-0" />
+            <span>Comunicados Recibidos</span>
+          </button>
+          <button
+            onClick={() => navigate("/profesor/documentos")}
+            className="flex flex-col lg:flex-row items-center justify-center gap-1 lg:gap-3 p-4 lg:p-6 rounded-lg bg-gradient-to-r from-rose-500 to-rose-600 text-white font-bold text-sm lg:text-base transition-all duration-200 hover:shadow-md hover:scale-[1.02] hover:from-rose-600 hover:to-rose-500 text-center"
+          >
+            <FileText className="w-5 h-5 lg:w-6 lg:h-6 shrink-0" />
+            <span>Documentos Recibidos</span>
           </button>
         </div>
 

@@ -7,6 +7,8 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { getSession, isAdmin, isRectorOrCoordinador } from "@/hooks/useSession";
+
+const PERFILES_INTERNOS = ['Profesores', 'Coordinadores', 'Todo el personal interno', 'Toda la comunidad'];
 import HeaderNormy from "@/components/HeaderNormy";
 import { Loader2, FileUp, X, Clock, Trash2, Search } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -53,6 +55,12 @@ const EnviarDocumento = () => {
   const [estudiantes, setEstudiantes] = useState<{ codigo: string; nombre: string }[]>([]);
   const [loadingEstudiantes, setLoadingEstudiantes] = useState(false);
 
+  // Internos (para selección individual)
+  const [internos, setInternos] = useState<{ codigo: string; nombre: string }[]>([]);
+  const [internoSeleccionado, setInternoSeleccionado] = useState("");
+  const [loadingInternos, setLoadingInternos] = useState(false);
+  const [cargo, setCargo] = useState("");
+
   // Archivo y mensaje
   const [archivo, setArchivo] = useState<File | null>(null);
   const [mensaje, setMensaje] = useState("");
@@ -71,6 +79,7 @@ const EnviarDocumento = () => {
     }
     setRemitente(`${session.cargo} ${session.nombres} ${session.apellidos}`);
     setCodigoRemitente(session.codigo!);
+    setCargo(session.cargo || "");
   }, [navigate]);
 
   // Fetch estudiantes cuando cambia grado + salón
@@ -100,6 +109,39 @@ const EnviarDocumento = () => {
     fetchEstudiantes();
   }, [grado, salon]);
 
+  // Fetch internos cuando se selecciona un perfil interno
+  useEffect(() => {
+    if (!PERFILES_INTERNOS.includes(perfil)) {
+      setInternos([]);
+      setInternoSeleccionado("");
+      return;
+    }
+    const fetchInternos = async () => {
+      setLoadingInternos(true);
+      let query = supabase
+        .from("Internos")
+        .select("codigo, nombres, apellidos, cargo")
+        .order("apellidos", { ascending: true })
+        .order("nombres", { ascending: true });
+
+      if (perfil === "Profesores") {
+        query = query.eq("cargo", "Profesor(a)");
+      } else if (perfil === "Coordinadores") {
+        query = query.eq("cargo", "Coordinador(a)");
+      }
+
+      const { data } = await query;
+      setInternos(
+        data?.map((i) => ({
+          codigo: String(i.codigo),
+          nombre: `${i.apellidos} ${i.nombres}`,
+        })) || []
+      );
+      setLoadingInternos(false);
+    };
+    fetchInternos();
+  }, [perfil]);
+
   const fetchHistorial = async () => {
     setLoadingHistorial(true);
     const { data } = await supabase
@@ -126,6 +168,7 @@ const EnviarDocumento = () => {
     setGrado("");
     setSalon("");
     setEstudiante("");
+    setInternoSeleccionado("");
   };
 
   const handleNivelChange = (value: string) => {
@@ -148,6 +191,12 @@ const EnviarDocumento = () => {
 
   // Construir texto de destinatarios
   const buildDestinatarios = (): string => {
+    // Interno individual
+    if (PERFILES_INTERNOS.includes(perfil) && internoSeleccionado && internoSeleccionado !== "Todos") {
+      const interno = internos.find(i => i.codigo === internoSeleccionado);
+      return interno ? `${interno.nombre}` : perfil;
+    }
+
     if (estudiante && estudiante !== "Todos") {
       if (perfil === "Estudiantes") {
         return `Estudiante con código ${estudiante}`;
@@ -242,7 +291,7 @@ const EnviarDocumento = () => {
           nivel: (nivel && nivel !== "Todos") ? nivel : null,
           grado: grado || null,
           salon: (salon && salon !== "Todos") ? salon : null,
-          codigo_estudiantil: (estudiante && estudiante !== "Todos") ? estudiante : null,
+          codigo_estudiantil: (internoSeleccionado && internoSeleccionado !== "Todos") ? internoSeleccionado : (estudiante && estudiante !== "Todos") ? estudiante : null,
         }),
       });
 
@@ -331,12 +380,34 @@ const EnviarDocumento = () => {
                       { value: "Estudiantes", label: "Estudiantes" },
                       { value: "Padres de familia", label: "Padres de familia" },
                       { value: "Estudiantes y Padres de familia", label: "Estudiantes y Padres de familia" },
+                      ...(['Rector', 'Coordinador(a)'].includes(cargo) ? [
+                        { value: "Profesores", label: "Profesores" },
+                        { value: "Coordinadores", label: "Coordinadores" },
+                        { value: "Todo el personal interno", label: "Todo el personal interno" },
+                        { value: "Toda la comunidad", label: "Toda la comunidad" },
+                      ] : []),
                     ]}
                   />
                 </div>
 
+                {/* Selección individual de interno */}
+                {PERFILES_INTERNOS.includes(perfil) && (
+                  <div className="space-y-2">
+                    <Label>Persona</Label>
+                    <ResponsiveSelect
+                      value={internoSeleccionado}
+                      onValueChange={setInternoSeleccionado}
+                      placeholder={loadingInternos ? "Cargando..." : "Todos"}
+                      options={[
+                        { value: "Todos", label: "Todos" },
+                        ...internos.map((i) => ({ value: i.codigo, label: i.nombre })),
+                      ]}
+                    />
+                  </div>
+                )}
+
                 {/* Nivel */}
-                {perfil && (
+                {perfil && !PERFILES_INTERNOS.includes(perfil) && (
                   <div className="space-y-2">
                     <Label>Nivel</Label>
                     <ResponsiveSelect

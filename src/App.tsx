@@ -36,6 +36,8 @@ import Sugerencias from "./pages/admin/Sugerencias";
 // Rutas para Profesor
 import EstadisticasProfesor from "./pages/profesor/EstadisticasProfesor";
 import ProgramarActividad from "./pages/profesor/ProgramarActividad";
+import ComunicadosProfesor from "./pages/profesor/ComunicadosProfesor";
+import DocumentosProfesor from "./pages/profesor/DocumentosProfesor";
 
 // Rutas compartidas (Profesor + Rector)
 import RegistroNormy from "./pages/RegistroNormy";
@@ -106,6 +108,8 @@ const App = () => (
           {/* Rutas para Profesor */}
           <Route path="/profesor/estadisticas" element={<EstadisticasProfesor />} />
           <Route path="/profesor/programar-actividad" element={<ProgramarActividad />} />
+          <Route path="/profesor/comunicados" element={<ComunicadosProfesor />} />
+          <Route path="/profesor/documentos" element={<DocumentosProfesor />} />
           <Route path="/registro-normy" element={<RegistroNormy />} />
 
           {/* Rutas compartidas */}
