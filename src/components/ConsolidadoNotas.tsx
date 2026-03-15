@@ -231,14 +231,8 @@ const ConsolidadoNotas = ({ codigoEstudiante, nombreEstudiante, apellidosEstudia
         return (
           <div key={asignatura} className="bg-card rounded-lg shadow-soft overflow-hidden">
             {/* Header de la asignatura */}
-            <div className="bg-primary/10 p-4 border-b border-border flex flex-wrap items-center justify-between gap-2">
+            <div className="bg-primary/10 p-4 border-b border-border">
               <h3 className="text-lg font-bold text-foreground">{asignatura}</h3>
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-muted-foreground">Final Definitiva:</span>
-                <span className={`font-bold ${finalDefinitiva !== null && finalDefinitiva >= 3 ? 'text-green-600' : finalDefinitiva !== null ? 'text-red-600' : 'text-muted-foreground'}`}>
-                  {finalDefinitiva !== null ? finalDefinitiva.toFixed(2) : '—'}
-                </span>
-              </div>
             </div>
 
             {/* Tabs de períodos */}
