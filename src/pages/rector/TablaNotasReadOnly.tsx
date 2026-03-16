@@ -359,36 +359,6 @@ const TablaNotasReadOnly = () => {
                 </button>
               );
             })}
-            {/* Pestaña Final Definitiva */}
-            {(() => {
-              const porcentajePromedio = getPorcentajePromedioAnual();
-              const estaCompleto = porcentajePromedio === 100;
-              return (
-                <button
-                  onClick={() => setPeriodoActivo(0)}
-                  className={`flex-1 px-2 md:px-4 py-2 md:py-3 text-xs md:text-sm font-medium transition-colors relative
-                    ${esFinalDefinitiva
-                      ? 'bg-primary text-primary-foreground'
-                      : 'bg-muted/30 text-muted-foreground hover:bg-muted hover:text-foreground'
-                    }`}
-                >
-                  <span className="md:hidden flex items-center justify-center gap-1">
-                    Final ({porcentajePromedio}%)
-                    {estaCompleto && <span>✓</span>}
-                  </span>
-                  <span className="hidden md:flex items-center justify-center gap-1">
-                    Final Definitiva
-                    <span className={estaCompleto ? 'text-green-300' : ''}>
-                      ({porcentajePromedio}/100%)
-                    </span>
-                    {estaCompleto && <span>✓</span>}
-                  </span>
-                  {esFinalDefinitiva && (
-                    <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary-foreground" />
-                  )}
-                </button>
-              );
-            })()}
           </div>
 
           {/* Tabla de Notas */}
@@ -415,22 +385,6 @@ const TablaNotasReadOnly = () => {
                       Nombre
                     </th>
 
-                    {esFinalDefinitiva ? (
-                      <>
-                        {periodos.map((periodo) => (
-                          <th
-                            key={periodo.numero}
-                            className="border-r border-b border-border/30 p-2 text-center text-xs font-medium min-w-[120px] bg-primary/80"
-                          >
-                            {periodo.nombre}
-                          </th>
-                        ))}
-                        <th className="border-r border-b border-border/30 p-2 text-center text-xs font-semibold min-w-[130px] bg-primary">
-                          Final Definitiva
-                        </th>
-                      </>
-                    ) : (
-                      <>
                         {getActividadesPorPeriodo(periodoActivo).map((actividad) => (
                           <th
                             key={actividad.id}
@@ -456,8 +410,6 @@ const TablaNotasReadOnly = () => {
                             </span>
                           </div>
                         </th>
-                      </>
-                    )}
                   </tr>
                 </thead>
                 <tbody>
@@ -476,25 +428,6 @@ const TablaNotasReadOnly = () => {
                           {estudiante.nombre_estudiante}
                         </td>
 
-                        {esFinalDefinitiva ? (
-                          <>
-                            {periodos.map((periodo) => {
-                              const finalPeriodo = calcularFinalPeriodo(estudiante.codigo_estudiantil, periodo.numero);
-                              return (
-                                <td
-                                  key={periodo.numero}
-                                  className="border-r border-b border-border p-2 text-center text-sm"
-                                >
-                                  {finalPeriodo !== null ? finalPeriodo.toFixed(2) : '—'}
-                                </td>
-                              );
-                            })}
-                            <td className="border-r border-b border-border p-2 text-center text-sm font-semibold bg-primary/5">
-                              {calcularFinalDefinitiva(estudiante.codigo_estudiantil)?.toFixed(2) || '—'}
-                            </td>
-                          </>
-                        ) : (
-                          <>
                             {getActividadesPorPeriodo(periodoActivo).map((actividad) => {
                               const nota = notas[estudiante.codigo_estudiantil]?.[periodoActivo]?.[actividad.id];
                               const comentario = comentarios[estudiante.codigo_estudiantil]?.[periodoActivo]?.[actividad.id];
@@ -531,8 +464,6 @@ const TablaNotasReadOnly = () => {
                             <td className="border-r border-b border-border p-2 text-center text-sm font-semibold bg-primary/5">
                               {calcularFinalPeriodo(estudiante.codigo_estudiantil, periodoActivo)?.toFixed(2) || '—'}
                             </td>
-                          </>
-                        )}
                       </tr>
                     );
                   })}
