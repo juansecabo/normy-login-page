@@ -12,6 +12,7 @@ interface Comunicado {
   destinatarios: string;
   mensaje: string;
   fecha: string;
+  archivo_url: string | null;
   perfil: string | null;
   nivel: string | null;
   grado: string | null;
@@ -36,7 +37,6 @@ const ComunicadosEstudiante = () => {
         const { data, error } = await supabase
           .from('Comunicados')
           .select('*')
-          .eq('tipo', 'comunicado')
           .in('perfil', ['Estudiantes', 'Estudiantes y Padres de familia'])
           .order('fecha', { ascending: false });
 
@@ -83,7 +83,7 @@ const ComunicadosEstudiante = () => {
           <h2 className="text-2xl font-bold text-foreground mb-6 text-center">
             Comunicados
           </h2>
-          <ListaComunicados comunicados={comunicados} loading={loading} />
+          <ListaComunicados comunicados={comunicados} loading={loading} showDocumentLink />
         </div>
       </main>
     </div>
