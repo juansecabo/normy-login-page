@@ -484,7 +484,7 @@ const EnviarComunicado = () => {
                 </div>
 
                 {/* Selección individual de interno */}
-                {PERFILES_INTERNOS.includes(perfil) && (
+                {PERFILES_INTERNOS.includes(perfil) && perfil !== 'Toda la comunidad' && (
                   <div className="space-y-2">
                     <Label>Persona</Label>
                     <ResponsiveSelect
