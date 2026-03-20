@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Clock, Search, FileUp, Download } from "lucide-react";
+import { Clock, Search, FileUp, Download, Eye, Paperclip } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
@@ -29,7 +29,25 @@ const formatFecha = (fecha: string) => {
   });
 };
 
-const descargarArchivo = async (url: string, e: React.MouseEvent) => {
+const getCleanFilename = (url: string) =>
+  decodeURIComponent((url.split('/').pop() || '').replace(/^\d+-[a-z0-9]+-/, ''));
+
+const getFileExt = (url: string) =>
+  (url.split('.').pop() || '').toLowerCase().split('?')[0];
+
+const handleVerArchivo = (url: string, e: React.MouseEvent) => {
+  e.preventDefault();
+  e.stopPropagation();
+  const ext = getFileExt(url);
+  const officeExts = ['doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx'];
+  if (officeExts.includes(ext)) {
+    window.open(`https://docs.google.com/gview?url=${encodeURIComponent(url)}&embedded=true`, '_blank');
+  } else {
+    window.open(url, '_blank');
+  }
+};
+
+const handleDescargarArchivo = async (url: string, e: React.MouseEvent) => {
   e.preventDefault();
   e.stopPropagation();
   try {
@@ -37,8 +55,7 @@ const descargarArchivo = async (url: string, e: React.MouseEvent) => {
     const blob = await res.blob();
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
-    const nombre = decodeURIComponent(url.split("/").pop() || "documento");
-    a.download = nombre;
+    a.download = getCleanFilename(url);
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -46,6 +63,26 @@ const descargarArchivo = async (url: string, e: React.MouseEvent) => {
   } catch {
     window.open(url, "_blank");
   }
+};
+
+const renderArchivos = (archivoUrl: string, stopProp = false) => {
+  const urls = archivoUrl.split('\n').filter(Boolean);
+  return urls.map((url, i) => (
+    <div key={i} className="mt-2 space-y-1">
+      <div className="flex items-center gap-1.5">
+        <Paperclip className="h-4 w-4 text-muted-foreground shrink-0" />
+        <span className="text-sm text-foreground truncate">{getCleanFilename(url)}</span>
+      </div>
+      <div className="flex gap-2">
+        <button onClick={(e) => handleVerArchivo(url, e)} className="px-3 py-1.5 text-sm font-medium text-blue-700 bg-blue-50 border border-blue-200 rounded-md hover:bg-blue-100 flex items-center gap-1.5">
+          <Eye className="h-4 w-4" /> Ver
+        </button>
+        <button onClick={(e) => handleDescargarArchivo(url, e)} className="px-3 py-1.5 text-sm font-medium text-green-700 bg-green-50 border border-green-200 rounded-md hover:bg-green-100 flex items-center gap-1.5">
+          <Download className="h-4 w-4" /> Descargar
+        </button>
+      </div>
+    </div>
+  ));
 };
 
 const ListaComunicados = ({ comunicados, loading, showDocumentLink = false }: ListaComunicadosProps) => {
@@ -103,27 +140,7 @@ const ListaComunicados = ({ comunicados, loading, showDocumentLink = false }: Li
               {c.mensaje}
             </p>
           )}
-          {showDocumentLink && c.archivo_url && (
-            <div className="flex items-center gap-3">
-              <a
-                href={c.archivo_url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-2 text-sm text-primary hover:underline"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <FileUp className="w-4 h-4 shrink-0" />
-                Ver documento
-              </a>
-              <button
-                onClick={(e) => descargarArchivo(c.archivo_url!, e)}
-                className="flex items-center gap-1 text-sm text-emerald-600 hover:underline"
-              >
-                <Download className="w-4 h-4 shrink-0" />
-                Descargar
-              </button>
-            </div>
-          )}
+          {showDocumentLink && c.archivo_url && renderArchivos(c.archivo_url)}
         </div>
       ))}
 
@@ -151,27 +168,7 @@ const ListaComunicados = ({ comunicados, loading, showDocumentLink = false }: Li
                   {selectedItem.mensaje}
                 </p>
               )}
-              {showDocumentLink && selectedItem.archivo_url && (
-                <div className="flex items-center gap-3">
-                  <a
-                    href={selectedItem.archivo_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-2 text-sm text-primary hover:underline"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <FileUp className="w-4 h-4 shrink-0" />
-                    Ver documento
-                  </a>
-                  <button
-                    onClick={(e) => descargarArchivo(selectedItem.archivo_url!, e)}
-                    className="flex items-center gap-1 text-sm text-emerald-600 hover:underline"
-                  >
-                    <Download className="w-4 h-4 shrink-0" />
-                    Descargar
-                  </button>
-                </div>
-              )}
+              {showDocumentLink && selectedItem.archivo_url && renderArchivos(selectedItem.archivo_url)}
             </>
           )}
         </DialogContent>
