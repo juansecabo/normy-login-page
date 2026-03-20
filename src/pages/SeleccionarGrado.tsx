@@ -52,7 +52,14 @@ const SeleccionarGrado = () => {
         const todosGrados = asignacionesFiltradas
           ?.flatMap(a => a['Grado(s)'] || [])
           .flat() || [];
+        const ordenGrados = [
+          'Prejardín', 'Jardín', 'Transición',
+          'Primero', 'Segundo', 'Tercero', 'Cuarto', 'Quinto',
+          'Sexto', 'Séptimo', 'Octavo', 'Noveno',
+          'Décimo', 'Undécimo'
+        ];
         const gradosUnicos = [...new Set(todosGrados)];
+        gradosUnicos.sort((a, b) => ordenGrados.indexOf(a) - ordenGrados.indexOf(b));
         setGrados(gradosUnicos);
       } catch (error) {
         console.error('Error:', error);
