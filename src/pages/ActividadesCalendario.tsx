@@ -518,7 +518,7 @@ const ActividadesCalendario = () => {
                           className="text-sm text-blue-600 hover:underline mt-1 flex items-center gap-1"
                         >
                           <Paperclip className="h-3.5 w-3.5" />
-                          Documento adjunto{actividad.archivo_url!.includes('\n') ? ` ${i + 1}` : ''}
+                          {decodeURIComponent((url.split('/').pop() || '').replace(/^\d+-[a-z0-9]+-/, ''))}
                         </a>
                       ))}
                     </div>

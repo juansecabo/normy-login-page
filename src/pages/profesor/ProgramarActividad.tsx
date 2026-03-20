@@ -736,7 +736,7 @@ const ProgramarActividad = () => {
                                   {actividad.archivo_url && actividad.archivo_url.split('\n').filter(Boolean).map((url, i) => (
                                     <a key={i} href={url} target="_blank" rel="noopener noreferrer" className="text-sm text-blue-600 hover:underline mt-1 flex items-center gap-1">
                                       <Paperclip className="h-3.5 w-3.5" />
-                                      Documento adjunto{actividad.archivo_url!.includes('\n') ? ` ${i + 1}` : ''}
+                                      {decodeURIComponent((url.split('/').pop() || '').replace(/^\d+-[a-z0-9]+-/, ''))}
                                     </a>
                                   ))}
                                 </div>
@@ -784,7 +784,7 @@ const ProgramarActividad = () => {
               {editUrlsExistentes.map((url, i) => (
                 <div key={`existing-${i}`} className="flex items-center gap-2 p-2 bg-muted rounded-md text-sm">
                   <FileText className="h-4 w-4 text-blue-600 shrink-0" />
-                  <a href={url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline truncate flex-1">Archivo {i + 1}</a>
+                  <a href={url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline truncate flex-1">{decodeURIComponent((url.split('/').pop() || '').replace(/^\d+-[a-z0-9]+-/, ''))}</a>
                   <button type="button" onClick={() => setEditUrlsExistentes(prev => prev.filter((_, j) => j !== i))} className="text-muted-foreground hover:text-destructive" title="Quitar archivo">
                     <X className="h-4 w-4" />
                   </button>
