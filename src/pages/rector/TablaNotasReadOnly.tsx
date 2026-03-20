@@ -239,19 +239,19 @@ const TablaNotasReadOnly = () => {
     if (actividadesConPorcentaje.length === 0) return null;
 
     let suma = 0;
-    let tieneAlgunaNota = false;
+    let porcentajeCalificado = 0;
 
     actividadesConPorcentaje.forEach((actividad) => {
       const nota = notas[codigoEstudiantil]?.[periodo]?.[actividad.id];
       if (nota !== undefined) {
         suma += nota * ((actividad.porcentaje || 0) / 100);
-        tieneAlgunaNota = true;
+        porcentajeCalificado += actividad.porcentaje || 0;
       }
     });
 
-    if (!tieneAlgunaNota) return null;
+    if (porcentajeCalificado === 0) return null;
 
-    return Math.round(suma * 100) / 100;
+    return Math.round((suma / (porcentajeCalificado / 100)) * 100) / 100;
   };
 
   const calcularFinalDefinitiva = (codigoEstudiantil: string): number | null => {

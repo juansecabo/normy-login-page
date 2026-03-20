@@ -177,16 +177,16 @@ const ConsolidadoNotas = ({ codigoEstudiante, nombreEstudiante, apellidosEstudia
     if (actividadesConPorcentaje.length === 0) return null;
 
     let suma = 0;
-    let tieneAlgunaNota = false;
+    let porcentajeCalificado = 0;
     actividadesConPorcentaje.forEach((actividad) => {
       const nota = notas[asignatura]?.[periodo]?.[actividad.id];
       if (nota !== undefined) {
         suma += nota * ((actividad.porcentaje || 0) / 100);
-        tieneAlgunaNota = true;
+        porcentajeCalificado += actividad.porcentaje || 0;
       }
     });
-    if (!tieneAlgunaNota) return null;
-    return Math.round(suma * 100) / 100;
+    if (porcentajeCalificado === 0) return null;
+    return Math.round((suma / (porcentajeCalificado / 100)) * 100) / 100;
   };
 
   const calcularFinalDefinitiva = (asignatura: string): number | null => {
