@@ -24,6 +24,13 @@ interface ActividadConHijo extends ActividadCalendario {
 }
 
 const parsearFecha = (fechaStr: string): Date | null => {
+  // ISO format: YYYY-MM-DD
+  const matchISO = fechaStr.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (matchISO) {
+    const [, year, month, day] = matchISO;
+    return new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+  }
+  // DD/MM/YYYY format (legacy)
   const match = fechaStr.match(/(\d{2})\/(\d{2})\/(\d{4})/);
   if (match) {
     const [, day, month, year] = match;
