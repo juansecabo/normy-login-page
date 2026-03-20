@@ -942,18 +942,22 @@ const TablaNotas = () => {
     const actividadesConNotaYPorcentaje = actividadesConPorcentaje.filter(a => notasEstudiante[a.id] !== undefined);
     if (actividadesConNotaYPorcentaje.length === 0) return null;
     
-    // Calcular: Σ(nota * porcentaje/100)
+    // Calcular nota relativa: Σ(nota * porcentaje/100) / (porcentajeCalificado / 100)
     let sumaPonderada = 0;
-    
+    let porcentajeCalificado = 0;
+
     actividadesConNotaYPorcentaje.forEach(actividad => {
       const notaValue = notasEstudiante[actividad.id];
       if (notaValue !== undefined && actividad.porcentaje) {
         sumaPonderada += notaValue * (actividad.porcentaje / 100);
+        porcentajeCalificado += actividad.porcentaje;
       }
     });
-    
+
+    if (porcentajeCalificado === 0) return null;
+
     // Redondear a 2 decimales (redondeo matemático estándar)
-    return Math.round(sumaPonderada * 100) / 100;
+    return Math.round((sumaPonderada / (porcentajeCalificado / 100)) * 100) / 100;
   }, [actividades]);
 
   // Versión que usa el estado actual
