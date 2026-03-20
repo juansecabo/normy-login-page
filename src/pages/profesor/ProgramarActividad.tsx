@@ -603,10 +603,9 @@ const ProgramarActividad = () => {
                           id="descripcion"
                           placeholder="Ej: Resolver ejercicios de la página 45"
                           value={descripcion}
-                          onChange={(e) => setDescripcion(e.target.value.slice(0, 500))}
+                          onChange={(e) => setDescripcion(e.target.value)}
                           className="min-h-[100px]"
                         />
-                        <p className="text-xs text-muted-foreground text-right">{descripcion.length}/500 caracteres</p>
                       </div>
 
                       {/* 6. Archivos adjuntos */}
@@ -775,10 +774,9 @@ const ProgramarActividad = () => {
               <Textarea
                 id="edit-descripcion"
                 value={editDescripcion}
-                onChange={(e) => setEditDescripcion(e.target.value.slice(0, 500))}
+                onChange={(e) => setEditDescripcion(e.target.value)}
                 className="min-h-[100px]"
               />
-              <p className="text-xs text-muted-foreground text-right">{editDescripcion.length}/500 caracteres</p>
             </div>
 
             <div className="space-y-2">
