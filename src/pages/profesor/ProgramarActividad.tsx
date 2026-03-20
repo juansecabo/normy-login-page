@@ -766,15 +766,19 @@ const ProgramarActividad = () => {
                                     {mostrarFecha(actividad.fecha_de_presentacion)}
                                   </p>
                                   {actividad.archivo_url && actividad.archivo_url.split('\n').filter(Boolean).map((url, i) => (
-                                    <div key={i} className="flex items-center gap-2 mt-1">
-                                      <Paperclip className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                                      <span className="text-sm text-foreground truncate">{getCleanFilename(url)}</span>
-                                      <button onClick={() => handleVerArchivo(url)} className="text-xs text-blue-600 hover:underline flex items-center gap-0.5 shrink-0">
-                                        <Eye className="h-3 w-3" /> Ver
-                                      </button>
-                                      <button onClick={() => handleDescargarArchivo(url)} className="text-xs text-green-600 hover:underline flex items-center gap-0.5 shrink-0">
-                                        <Download className="h-3 w-3" /> Descargar
-                                      </button>
+                                    <div key={i} className="mt-2 space-y-1">
+                                      <div className="flex items-center gap-1.5">
+                                        <Paperclip className="h-4 w-4 text-muted-foreground shrink-0" />
+                                        <span className="text-sm text-foreground truncate">{getCleanFilename(url)}</span>
+                                      </div>
+                                      <div className="flex gap-2">
+                                        <button onClick={() => handleVerArchivo(url)} className="px-3 py-1.5 text-sm font-medium text-blue-700 bg-blue-50 border border-blue-200 rounded-md hover:bg-blue-100 flex items-center gap-1.5">
+                                          <Eye className="h-4 w-4" /> Ver
+                                        </button>
+                                        <button onClick={() => handleDescargarArchivo(url)} className="px-3 py-1.5 text-sm font-medium text-green-700 bg-green-50 border border-green-200 rounded-md hover:bg-green-100 flex items-center gap-1.5">
+                                          <Download className="h-4 w-4" /> Descargar
+                                        </button>
+                                      </div>
                                     </div>
                                   ))}
                                 </div>
