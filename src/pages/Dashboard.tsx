@@ -39,10 +39,10 @@ const Dashboard = () => {
     // Fetch asignaturas del profesor
     const fetchAsignaturas = async () => {
       try {
-        // Primero obtener el id del profesor desde Internos
+        // Primero obtener el numero_de_telefono del profesor desde Internos
         const { data: profesor, error: profesorError } = await supabase
           .from('Internos')
-          .select('id')
+          .select('numero_de_telefono')
           .eq('codigo', parseInt(session.codigo!))
           .single();
 
@@ -55,7 +55,7 @@ const Dashboard = () => {
         const { data: asignaciones, error: asignacionError } = await supabase
           .from('Asignación Profesores')
           .select('"Asignatura(s)", "Grado(s)"')
-          .eq('id', profesor.id);
+          .eq('numero_de_telefono', profesor.numero_de_telefono);
 
         if (asignacionError || !asignaciones) {
           setLoadingAsignaturas(false);

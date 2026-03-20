@@ -88,7 +88,7 @@ const ActividadesCalendario = () => {
   const [gradoSeleccionado, setGradoSeleccionado] = useState(() => localStorage.getItem("gradoSeleccionado") || "");
   const [salonSeleccionado, setSalonSeleccionado] = useState(() => localStorage.getItem("salonSeleccionado") || "");
   const [profesorCodigo, setProfesorCodigo] = useState("");
-  const [profesorIdReal, setProfesorIdReal] = useState(""); // ID real (celular) del profesor
+  const [profesorIdReal, setProfesorIdReal] = useState(""); // numero_de_telefono del profesor
   const [profesorNombres, setProfesorNombres] = useState("");
   const [profesorApellidos, setProfesorApellidos] = useState("");
   const [actividades, setActividades] = useState<ActividadCalendario[]>([]);
@@ -123,15 +123,15 @@ const ActividadesCalendario = () => {
       setProfesorNombres(session.nombres);
       setProfesorApellidos(session.apellidos);
 
-      // Buscar el ID real (celular) del profesor desde la tabla Internos
+      // Buscar el numero_de_telefono del profesor desde la tabla Internos
       const { data: profesorData, error: profesorError } = await supabase
         .from('Internos')
-        .select('id')
+        .select('numero_de_telefono')
         .eq('codigo', session.codigo)
         .single();
 
       if (profesorError || !profesorData) {
-        console.error('Error obteniendo ID del profesor:', profesorError);
+        console.error('Error obteniendo numero_de_telefono del profesor:', profesorError);
         toast({
           title: "Error",
           description: "No se pudo obtener la información del profesor",
@@ -141,7 +141,7 @@ const ActividadesCalendario = () => {
         return;
       }
 
-      const idProfesor = profesorData.id;
+      const idProfesor = profesorData.numero_de_telefono;
       setProfesorIdReal(idProfesor);
 
       const storedAsignatura = localStorage.getItem("asignaturaSeleccionada");

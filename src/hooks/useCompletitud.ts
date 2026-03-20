@@ -37,7 +37,7 @@ export interface ResultadoCompletitud {
 }
 
 interface InternoProfesor {
-  id: string;
+  numero_de_telefono: string;
   codigo: string;
   nombres: string;
   apellidos: string;
@@ -106,14 +106,14 @@ export const useCompletitud = () => {
         // 1) Internos
         const { data: internos, error: errorInternos } = await supabase
           .from("Internos")
-          .select("id, codigo, nombres, apellidos, cargo");
+          .select("numero_de_telefono, codigo, nombres, apellidos, cargo");
 
         if (errorInternos) console.error("❌ Error obteniendo Internos:", errorInternos);
 
         const soloProfesores: InternoProfesor[] = (internos || [])
           .filter((p: any) => p.cargo === "Profesor(a)")
           .map((p: any) => ({
-            id: String(p.id || ""),
+            numero_de_telefono: String(p.numero_de_telefono || ""),
             codigo: String(p.codigo || "").trim(),
             nombres: String(p.nombres || "").trim(),
             apellidos: String(p.apellidos || "").trim(),
@@ -124,11 +124,11 @@ export const useCompletitud = () => {
         console.log("totalInternosProfesores:", soloProfesores.length);
         console.log("Cargos únicos en Internos:", [...new Set((internos || []).map((p: any) => p.cargo))]);
 
-        // Map para match rápido por id y por nombre
-        const profById = new Map<string, InternoProfesor>();
+        // Map para match rápido por numero_de_telefono y por nombre
+        const profByTel = new Map<string, InternoProfesor>();
         const profByName = new Map<string, InternoProfesor>();
         for (const p of soloProfesores) {
-          profById.set(String(p.id), p);
+          profByTel.set(String(p.numero_de_telefono), p);
           profByName.set(`${normalize(p.apellidos)}|${normalize(p.nombres)}`, p);
         }
 
@@ -174,11 +174,11 @@ export const useCompletitud = () => {
           if (!asignaturas.length || !grados.length || !salones.length) continue;
           asignacionesValidas++;
 
-          // Encontrar profesor: por id si existe, sino por nombre
+          // Encontrar profesor: por numero_de_telefono si existe, sino por nombre
           let prof: InternoProfesor | null = null;
 
-          if (asig.id != null && String(asig.id).trim() !== "") {
-            prof = profById.get(String(asig.id)) || null;
+          if (asig.numero_de_telefono != null && String(asig.numero_de_telefono).trim() !== "") {
+            prof = profByTel.get(String(asig.numero_de_telefono)) || null;
           }
 
           if (!prof && asig.apellidos && asig.nombres) {

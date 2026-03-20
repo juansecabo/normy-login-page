@@ -65,7 +65,7 @@ const CambiarContrasenaModal = ({ open, onOpenChange }: CambiarContrasenaModalPr
 
         const { data: perfil, error: fetchError } = await supabase
           .from("Perfiles_Generales")
-          .select("id, contrasena")
+          .select("numero_de_telefono, contrasena")
           .eq(column, session.codigo)
           .not('perfil', 'is', null)
           .maybeSingle();
@@ -85,7 +85,7 @@ const CambiarContrasenaModal = ({ open, onOpenChange }: CambiarContrasenaModalPr
         const { data: updated, error: updateError } = await supabase
           .from("Perfiles_Generales")
           .update({ contrasena: nuevaContrasena })
-          .eq("id", perfil.id)
+          .eq("numero_de_telefono", perfil.numero_de_telefono)
           .select();
 
         if (updateError || !updated || updated.length === 0) {

@@ -7,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Loader2 } from "lucide-react";
 
 interface ProfesorStats {
-  id: string;
+  numero_de_telefono: string;
   codigo: string;
   nombre: string;
   notas: number;
@@ -50,7 +50,7 @@ const UsoNormy = () => {
       // 1. All professors
       const { data: internos } = await supabase
         .from("Internos")
-        .select("id, codigo, nombres, apellidos")
+        .select("numero_de_telefono, codigo, nombres, apellidos")
         .eq("cargo", "Profesor(a)");
 
       if (!internos) { setLoading(false); return; }
@@ -123,12 +123,12 @@ const UsoNormy = () => {
       // --- Build professor stats ---
       const profStats: ProfesorStats[] = internos.map(p => {
         const cod = String(p.codigo);
-        const id = String(p.id);
+        const tel = String(p.numero_de_telefono);
         const notas = notasByProf[cod] || 0;
-        const actividades = actByProf[id] || 0;
+        const actividades = actByProf[tel] || 0;
         const comunicados = comByProf[cod] || 0;
         return {
-          id, codigo: cod,
+          numero_de_telefono: tel, codigo: cod,
           nombre: `${p.apellidos} ${p.nombres}`.trim(),
           notas, actividades, comunicados,
           total: notas + actividades + comunicados,
@@ -260,7 +260,7 @@ const UsoNormy = () => {
                 ) : (
                   <div className="space-y-3">
                     {profesores.map((p, i) => (
-                      <div key={p.id} className="space-y-1">
+                      <div key={p.numero_de_telefono} className="space-y-1">
                         <div className="flex items-center justify-between">
                           <span className="text-sm font-medium truncate">
                             <span className="text-muted-foreground mr-2">{i + 1}.</span>

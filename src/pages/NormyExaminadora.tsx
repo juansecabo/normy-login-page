@@ -64,7 +64,7 @@ const NormyExaminadora = () => {
       try {
         const { data: profesor, error: profesorError } = await supabase
           .from('Internos')
-          .select('id')
+          .select('numero_de_telefono')
           .eq('codigo', parseInt(session.codigo!))
           .single();
 
@@ -73,13 +73,13 @@ const NormyExaminadora = () => {
           return;
         }
 
-        // Guardar el id del profesor
-        setIdProfesor(profesor.id);
+        // Guardar el numero_de_telefono del profesor
+        setIdProfesor(profesor.numero_de_telefono);
 
         const { data: asignacionesData, error: asignacionError } = await supabase
           .from('Asignación Profesores')
           .select('"Asignatura(s)", "Grado(s)", "Salon(es)"')
-          .eq('id', profesor.id);
+          .eq('numero_de_telefono', profesor.numero_de_telefono);
 
         if (asignacionError || !asignacionesData) {
           setLoading(false);

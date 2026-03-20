@@ -37,10 +37,10 @@ const SeleccionarSalon = () => {
 
     const fetchSalones = async () => {
       try {
-        // Obtener el id del profesor desde Internos
+        // Obtener el numero_de_telefono del profesor desde Internos
         const { data: profesor, error: profesorError } = await supabase
           .from('Internos')
-          .select('id')
+          .select('numero_de_telefono')
           .eq('codigo', parseInt(session.codigo!))
           .maybeSingle();
 
@@ -53,7 +53,7 @@ const SeleccionarSalon = () => {
         const { data: asignaciones, error: asignacionError } = await supabase
           .from('Asignación Profesores')
           .select('"Asignatura(s)", "Grado(s)", "Salon(es)"')
-          .eq('id', profesor.id);
+          .eq('numero_de_telefono', profesor.numero_de_telefono);
 
         if (asignacionError || !asignaciones) {
           setLoadingSalones(false);

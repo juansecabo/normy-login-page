@@ -332,7 +332,7 @@ const TablaNotas = () => {
       try {
         const { data: profesor } = await supabase
           .from('Internos')
-          .select('id')
+          .select('numero_de_telefono')
           .eq('codigo', parseInt(session.codigo!))
           .maybeSingle();
 
@@ -340,7 +340,7 @@ const TablaNotas = () => {
           const { data: asignaciones } = await supabase
             .from('Asignación Profesores')
             .select('"Asignatura(s)", "Grado(s)", "Salon(es)"')
-            .eq('id', profesor.id);
+            .eq('numero_de_telefono', profesor.numero_de_telefono);
 
           if (asignaciones) {
             const asignacionesFiltradas = asignaciones.filter(a => {

@@ -155,7 +155,7 @@ const ProgramarActividad = () => {
       try {
         const { data: profesor, error: profesorError } = await supabase
           .from('Internos')
-          .select('id')
+          .select('numero_de_telefono')
           .eq('codigo', parseInt(session.codigo!))
           .single();
 
@@ -165,12 +165,12 @@ const ProgramarActividad = () => {
           return;
         }
 
-        setProfesorIdReal(profesor.id);
+        setProfesorIdReal(profesor.numero_de_telefono);
 
         const { data: asignacionesData, error: asignacionError } = await supabase
           .from('Asignación Profesores')
           .select('"Asignatura(s)", "Grado(s)", "Salon(es)"')
-          .eq('id', profesor.id);
+          .eq('numero_de_telefono', profesor.numero_de_telefono);
 
         if (asignacionError || !asignacionesData) {
           setLoadingAsignaciones(false);

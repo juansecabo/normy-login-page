@@ -86,21 +86,21 @@ interface Interno {
   apellidos: string;
   cargo: string;
   contrasena: string;
-  id: string;
+  numero_de_telefono: string;
 }
 
 interface Asignacion {
   row_id: string;
   nombres: string;
   apellidos: string;
-  id: string;
+  numero_de_telefono: string;
   "Asignatura(s)": string[];
   "Grado(s)": string[];
   "Salon(es)": string[];
 }
 
 interface Perfil {
-  id: number;
+  numero_de_telefono: string;
   perfil: string;
   estudiante_codigo: number | null;
   estudiante_nombre: string | null;
@@ -276,7 +276,7 @@ const PanelControl = () => {
   const fetchInternos = async () => {
     setLoadingInt(true);
     const data = await fetchAllPages((from, to) =>
-      supabase.from("Internos").select("codigo, nombres, apellidos, cargo, contrasena, id").range(from, to)
+      supabase.from("Internos").select("codigo, nombres, apellidos, cargo, contrasena, numero_de_telefono").range(from, to)
     );
     setInternos(data.sort((a, b) => (a.apellidos || "").localeCompare(b.apellidos || "", "es")));
     setLoadingInt(false);
@@ -285,7 +285,7 @@ const PanelControl = () => {
   const fetchAsignaciones = async () => {
     setLoadingAsig(true);
     const data = await fetchAllPages<Asignacion>((from, to) =>
-      supabase.from("Asignación Profesores").select('row_id, nombres, apellidos, id, "Asignatura(s)", "Grado(s)", "Salon(es)"').range(from, to)
+      supabase.from("Asignación Profesores").select('row_id, nombres, apellidos, numero_de_telefono, "Asignatura(s)", "Grado(s)", "Salon(es)"').range(from, to)
     );
     setAsignaciones(data.sort((a, b) => (a.apellidos || "").localeCompare(b.apellidos || "", "es")));
     setLoadingAsig(false);
@@ -294,7 +294,7 @@ const PanelControl = () => {
   const fetchPerfiles = async () => {
     setLoadingPerf(true);
     const data = await fetchAllPages((from, to) =>
-      supabase.from("Perfiles_Generales").select("*").order("id").range(from, to)
+      supabase.from("Perfiles_Generales").select("*").order("numero_de_telefono").range(from, to)
     );
     setPerfiles(data);
     setLoadingPerf(false);
@@ -489,11 +489,11 @@ const PanelControl = () => {
   const openAsigDialog = (asig?: Asignacion) => {
     if (asig) {
       setEditingAsig(asig);
-      const prof = internos.find((i) => i.id === asig.id);
+      const prof = internos.find((i) => i.numero_de_telefono === asig.numero_de_telefono);
       setAsigProfesorCodigo(prof ? String(prof.codigo) : "");
       setAsigNombres(asig.nombres || "");
       setAsigApellidos(asig.apellidos || "");
-      setAsigId(asig.id || "");
+      setAsigId(asig.numero_de_telefono || "");
       setAsigAsignaturas(asig["Asignatura(s)"] || []);
       setAsigGrados(asig["Grado(s)"] || []);
       setAsigSalones(asig["Salon(es)"] || []);
@@ -516,7 +516,7 @@ const PanelControl = () => {
     if (prof) {
       setAsigNombres(prof.nombres || "");
       setAsigApellidos(prof.apellidos || "");
-      setAsigId(prof.id || "");
+      setAsigId(prof.numero_de_telefono || "");
     }
   };
 
@@ -539,7 +539,7 @@ const PanelControl = () => {
     const payload = {
       nombres: asigNombres.trim(),
       apellidos: asigApellidos.trim(),
-      id: asigId || null,
+      numero_de_telefono: asigId || null,
       "Asignatura(s)": asigAsignaturas,
       "Grado(s)": asigGrados,
       "Salon(es)": asigSalones,
@@ -739,7 +739,7 @@ const PanelControl = () => {
       ({ error } = await supabase
         .from("Perfiles_Generales")
         .update(payload)
-        .eq("id", editingPerf.id));
+        .eq("numero_de_telefono", editingPerf.numero_de_telefono));
     } else {
       ({ error } = await supabase.from("Perfiles_Generales").insert(payload));
     }
@@ -760,7 +760,7 @@ const PanelControl = () => {
     const { error } = await supabase
       .from("Perfiles_Generales")
       .delete()
-      .eq("id", showDeletePerf.id);
+      .eq("numero_de_telefono", showDeletePerf.numero_de_telefono);
     setSavingPerf(false);
     if (error) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
@@ -1117,7 +1117,7 @@ const PanelControl = () => {
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>ID</TableHead>
+                        <TableHead>Teléfono</TableHead>
                         <TableHead>Tipo</TableHead>
                         <TableHead>Nombre</TableHead>
                         <TableHead>Código</TableHead>
@@ -1135,8 +1135,8 @@ const PanelControl = () => {
                         </TableRow>
                       ) : (
                         filteredPerf.map((p) => (
-                          <TableRow key={p.id}>
-                            <TableCell className="font-mono text-xs">{p.id}</TableCell>
+                          <TableRow key={p.numero_de_telefono}>
+                            <TableCell className="font-mono text-xs">{p.numero_de_telefono}</TableCell>
                             <TableCell>
                               <span className={`text-xs px-2 py-1 rounded-full ${
                                 p.perfil === "Estudiante"
@@ -1408,7 +1408,7 @@ const PanelControl = () => {
               </Select>
               {asigNombres && (
                 <p className="text-xs text-muted-foreground">
-                  {asigApellidos} {asigNombres} — ID: {asigId || "sin ID"}
+                  {asigApellidos} {asigNombres} — Tel: {asigId || "sin teléfono"}
                 </p>
               )}
             </div>

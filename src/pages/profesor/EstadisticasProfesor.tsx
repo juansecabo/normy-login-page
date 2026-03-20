@@ -37,14 +37,14 @@ const EstadisticasProfesor = () => {
     const fetchAsignaciones = async () => {
       try {
         const { data: profesor } = await supabase
-          .from("Internos").select("id")
+          .from("Internos").select("numero_de_telefono")
           .eq("codigo", parseInt(session.codigo!)).single();
         if (!profesor) return;
 
         const { data: rows } = await supabase
           .from("Asignación Profesores")
           .select('"Asignatura(s)", "Grado(s)", "Salon(es)"')
-          .eq("id", profesor.id);
+          .eq("numero_de_telefono", profesor.numero_de_telefono);
 
         if (rows) {
           setAsignaciones(rows.map((r: any) => ({
