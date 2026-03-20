@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { getSession, isAdmin, isRectorOrCoordinador } from "@/hooks/useSession";
 import HeaderNormy from "@/components/HeaderNormy";
-import { Loader2, Send, Clock, Trash2, Search, Users, Eye, Paperclip, X, FileText } from "lucide-react";
+import { Loader2, Send, Clock, Trash2, Search, Users, Eye, Paperclip, X, FileText, Download } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -40,6 +40,42 @@ interface ComunicadoEnviado {
   archivo_url: string | null;
   fecha: string;
 }
+
+const getCleanFilename = (url: string) =>
+  decodeURIComponent((url.split('/').pop() || '').replace(/^\d+-[a-z0-9]+-/, ''));
+
+const getFileExt = (url: string) =>
+  (url.split('.').pop() || '').toLowerCase().split('?')[0];
+
+const handleVerArchivoHist = (url: string, e: React.MouseEvent) => {
+  e.preventDefault();
+  e.stopPropagation();
+  const ext = getFileExt(url);
+  const officeExts = ['doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx'];
+  if (officeExts.includes(ext)) {
+    window.open(`https://docs.google.com/gview?url=${encodeURIComponent(url)}&embedded=true`, '_blank');
+  } else {
+    window.open(url, '_blank');
+  }
+};
+
+const handleDescargarArchivoHist = async (url: string, e: React.MouseEvent) => {
+  e.preventDefault();
+  e.stopPropagation();
+  try {
+    const res = await fetch(url);
+    const blob = await res.blob();
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = getCleanFilename(url);
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(a.href);
+  } catch {
+    window.open(url, "_blank");
+  }
+};
 
 const EnviarComunicado = () => {
   const navigate = useNavigate();
@@ -807,28 +843,27 @@ const EnviarComunicado = () => {
                         <span className="font-medium text-foreground">Para:</span>{" "}
                         {c.destinatarios}
                       </p>
-                      {c.archivo_url && (
-                        <div className="flex flex-wrap gap-2">
-                          {c.archivo_url.split("\n").filter(u => u.trim()).map((url, i) => (
-                            <a
-                              key={i}
-                              href={url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="flex items-center gap-1 text-xs text-primary hover:underline"
-                              onClick={(e) => e.stopPropagation()}
-                            >
-                              <FileText className="w-3 h-3 shrink-0" />
-                              Archivo {i + 1}
-                            </a>
-                          ))}
-                        </div>
-                      )}
                       {c.mensaje && (
                         <p className="text-sm whitespace-pre-wrap bg-muted p-3 rounded-md max-h-32 overflow-y-auto">
                           {c.mensaje}
                         </p>
                       )}
+                      {c.archivo_url && c.archivo_url.split("\n").filter(u => u.trim()).map((url, i) => (
+                        <div key={i} className="mt-2 space-y-1">
+                          <div className="flex items-center gap-1.5">
+                            <Paperclip className="h-4 w-4 text-muted-foreground shrink-0" />
+                            <span className="text-sm text-foreground truncate">{getCleanFilename(url)}</span>
+                          </div>
+                          <div className="flex gap-2">
+                            <button onClick={(e) => handleVerArchivoHist(url, e)} className="px-3 py-1.5 text-sm font-medium text-blue-700 bg-blue-50 border border-blue-200 rounded-md hover:bg-blue-100 flex items-center gap-1.5">
+                              <Eye className="h-4 w-4" /> Ver
+                            </button>
+                            <button onClick={(e) => handleDescargarArchivoHist(url, e)} className="px-3 py-1.5 text-sm font-medium text-green-700 bg-green-50 border border-green-200 rounded-md hover:bg-green-100 flex items-center gap-1.5">
+                              <Download className="h-4 w-4" /> Descargar
+                            </button>
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   ))}
                 </div>
@@ -947,27 +982,27 @@ const EnviarComunicado = () => {
                   {formatFecha(selectedHistorial.fecha)}
                 </div>
               </DialogHeader>
-              {selectedHistorial.archivo_url && (
-                <div className="space-y-1">
-                  {selectedHistorial.archivo_url.split("\n").filter(u => u.trim()).map((url, i) => (
-                    <a
-                      key={i}
-                      href={url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-2 text-sm text-primary hover:underline"
-                    >
-                      <FileText className="w-4 h-4 shrink-0" />
-                      Archivo adjunto {i + 1}
-                    </a>
-                  ))}
-                </div>
-              )}
               {selectedHistorial.mensaje && (
                 <p className="text-sm whitespace-pre-wrap bg-muted p-4 rounded-md">
                   {selectedHistorial.mensaje}
                 </p>
               )}
+              {selectedHistorial.archivo_url && selectedHistorial.archivo_url.split("\n").filter(u => u.trim()).map((url, i) => (
+                <div key={i} className="mt-2 space-y-1">
+                  <div className="flex items-center gap-1.5">
+                    <Paperclip className="h-4 w-4 text-muted-foreground shrink-0" />
+                    <span className="text-sm text-foreground truncate">{getCleanFilename(url)}</span>
+                  </div>
+                  <div className="flex gap-2">
+                    <button onClick={(e) => handleVerArchivoHist(url, e)} className="px-3 py-1.5 text-sm font-medium text-blue-700 bg-blue-50 border border-blue-200 rounded-md hover:bg-blue-100 flex items-center gap-1.5">
+                      <Eye className="h-4 w-4" /> Ver
+                    </button>
+                    <button onClick={(e) => handleDescargarArchivoHist(url, e)} className="px-3 py-1.5 text-sm font-medium text-green-700 bg-green-50 border border-green-200 rounded-md hover:bg-green-100 flex items-center gap-1.5">
+                      <Download className="h-4 w-4" /> Descargar
+                    </button>
+                  </div>
+                </div>
+              ))}
             </>
           )}
         </DialogContent>
