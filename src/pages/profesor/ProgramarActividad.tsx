@@ -34,7 +34,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
-import { Calendar, Paperclip, FileText, X, Loader2, Pencil, Trash2 } from "lucide-react";
+import { Calendar, Paperclip, FileText, X, Loader2, Pencil, Trash2, Eye, Download } from "lucide-react";
 import { es } from "date-fns/locale";
 
 const diasSemana = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
@@ -84,6 +84,38 @@ interface ActividadCalendario {
   fecha_de_presentacion: string;
   archivo_url: string | null;
 }
+
+const getCleanFilename = (url: string) =>
+  decodeURIComponent((url.split('/').pop() || '').replace(/^\d+-[a-z0-9]+-/, ''));
+
+const getFileExt = (url: string) =>
+  (url.split('.').pop() || '').toLowerCase().split('?')[0];
+
+const handleVerArchivo = (url: string) => {
+  const ext = getFileExt(url);
+  const officeExts = ['doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx'];
+  if (officeExts.includes(ext)) {
+    window.open(`https://docs.google.com/gview?url=${encodeURIComponent(url)}&embedded=true`, '_blank');
+  } else {
+    window.open(url, '_blank');
+  }
+};
+
+const handleDescargarArchivo = async (url: string) => {
+  try {
+    const response = await fetch(url);
+    const blob = await response.blob();
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = getCleanFilename(url);
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(a.href);
+  } catch {
+    window.open(url, '_blank');
+  }
+};
 
 const ProgramarActividad = () => {
   const navigate = useNavigate();
@@ -734,10 +766,16 @@ const ProgramarActividad = () => {
                                     {mostrarFecha(actividad.fecha_de_presentacion)}
                                   </p>
                                   {actividad.archivo_url && actividad.archivo_url.split('\n').filter(Boolean).map((url, i) => (
-                                    <a key={i} href={url} target="_blank" rel="noopener noreferrer" className="text-sm text-blue-600 hover:underline mt-1 flex items-center gap-1">
-                                      <Paperclip className="h-3.5 w-3.5" />
-                                      {decodeURIComponent((url.split('/').pop() || '').replace(/^\d+-[a-z0-9]+-/, ''))}
-                                    </a>
+                                    <div key={i} className="flex items-center gap-2 mt-1">
+                                      <Paperclip className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                                      <span className="text-sm text-foreground truncate">{getCleanFilename(url)}</span>
+                                      <button onClick={() => handleVerArchivo(url)} className="text-xs text-blue-600 hover:underline flex items-center gap-0.5 shrink-0">
+                                        <Eye className="h-3 w-3" /> Ver
+                                      </button>
+                                      <button onClick={() => handleDescargarArchivo(url)} className="text-xs text-green-600 hover:underline flex items-center gap-0.5 shrink-0">
+                                        <Download className="h-3 w-3" /> Descargar
+                                      </button>
+                                    </div>
                                   ))}
                                 </div>
                                 <div className="flex gap-2">
