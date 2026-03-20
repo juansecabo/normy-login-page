@@ -94,6 +94,7 @@ interface Asignacion {
   nombres: string;
   apellidos: string;
   numero_de_telefono: string;
+  codigo: number | null;
   "Asignatura(s)": string[];
   "Grado(s)": string[];
   "Salon(es)": string[];
@@ -285,7 +286,7 @@ const PanelControl = () => {
   const fetchAsignaciones = async () => {
     setLoadingAsig(true);
     const data = await fetchAllPages<Asignacion>((from, to) =>
-      supabase.from("Asignación Profesores").select('row_id, nombres, apellidos, numero_de_telefono, "Asignatura(s)", "Grado(s)", "Salon(es)"').range(from, to)
+      supabase.from("Asignación Profesores").select('row_id, nombres, apellidos, numero_de_telefono, codigo, "Asignatura(s)", "Grado(s)", "Salon(es)"').range(from, to)
     );
     setAsignaciones(data.sort((a, b) => (a.apellidos || "").localeCompare(b.apellidos || "", "es")));
     setLoadingAsig(false);
@@ -489,8 +490,7 @@ const PanelControl = () => {
   const openAsigDialog = (asig?: Asignacion) => {
     if (asig) {
       setEditingAsig(asig);
-      const prof = internos.find((i) => i.numero_de_telefono === asig.numero_de_telefono);
-      setAsigProfesorCodigo(prof ? String(prof.codigo) : "");
+      setAsigProfesorCodigo(asig.codigo != null ? String(asig.codigo) : "");
       setAsigNombres(asig.nombres || "");
       setAsigApellidos(asig.apellidos || "");
       setAsigId(asig.numero_de_telefono || "");
@@ -540,6 +540,7 @@ const PanelControl = () => {
       nombres: asigNombres.trim(),
       apellidos: asigApellidos.trim(),
       numero_de_telefono: asigId || null,
+      codigo: asigProfesorCodigo ? Number(asigProfesorCodigo) : null,
       "Asignatura(s)": asigAsignaturas,
       "Grado(s)": asigGrados,
       "Salon(es)": asigSalones,
@@ -1408,7 +1409,7 @@ const PanelControl = () => {
               </Select>
               {asigNombres && (
                 <p className="text-xs text-muted-foreground">
-                  {asigApellidos} {asigNombres} — Tel: {asigId || "sin teléfono"}
+                  {asigApellidos} {asigNombres} — Código: {asigProfesorCodigo || "sin código"}
                 </p>
               )}
             </div>

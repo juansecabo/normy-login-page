@@ -29,23 +29,11 @@ const SeleccionarGrado = () => {
 
     const fetchGrados = async () => {
       try {
-        // Obtener el numero_de_telefono del profesor desde Internos
-        const { data: profesor, error: profesorError } = await supabase
-          .from('Internos')
-          .select('numero_de_telefono')
-          .eq('codigo', parseInt(session.codigo!))
-          .single();
-
-        if (profesorError || !profesor) {
-          setLoadingGrados(false);
-          return;
-        }
-
-        // Buscar asignaciones que contengan la asignatura seleccionada
+        // Buscar asignaciones que contengan la asignatura seleccionada directamente por codigo
         const { data: asignaciones, error: asignacionError } = await supabase
           .from('Asignación Profesores')
           .select('"Asignatura(s)", "Grado(s)"')
-          .eq('numero_de_telefono', profesor.numero_de_telefono);
+          .eq('codigo', parseInt(session.codigo!));
 
         if (asignacionError || !asignaciones) {
           setLoadingGrados(false);

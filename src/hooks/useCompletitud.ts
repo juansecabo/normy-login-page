@@ -124,10 +124,12 @@ export const useCompletitud = () => {
         console.log("totalInternosProfesores:", soloProfesores.length);
         console.log("Cargos únicos en Internos:", [...new Set((internos || []).map((p: any) => p.cargo))]);
 
-        // Map para match rápido por numero_de_telefono y por nombre
+        // Map para match rápido por codigo, numero_de_telefono y por nombre
+        const profByCodigo = new Map<string, InternoProfesor>();
         const profByTel = new Map<string, InternoProfesor>();
         const profByName = new Map<string, InternoProfesor>();
         for (const p of soloProfesores) {
+          if (p.codigo) profByCodigo.set(String(p.codigo).trim(), p);
           profByTel.set(String(p.numero_de_telefono), p);
           profByName.set(`${normalize(p.apellidos)}|${normalize(p.nombres)}`, p);
         }
@@ -174,10 +176,14 @@ export const useCompletitud = () => {
           if (!asignaturas.length || !grados.length || !salones.length) continue;
           asignacionesValidas++;
 
-          // Encontrar profesor: por numero_de_telefono si existe, sino por nombre
+          // Encontrar profesor: por codigo si existe, sino por numero_de_telefono, sino por nombre
           let prof: InternoProfesor | null = null;
 
-          if (asig.numero_de_telefono != null && String(asig.numero_de_telefono).trim() !== "") {
+          if (asig.codigo != null && String(asig.codigo).trim() !== "") {
+            prof = profByCodigo.get(String(asig.codigo).trim()) || null;
+          }
+
+          if (!prof && asig.numero_de_telefono != null && String(asig.numero_de_telefono).trim() !== "") {
             prof = profByTel.get(String(asig.numero_de_telefono)) || null;
           }
 

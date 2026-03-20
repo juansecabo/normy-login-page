@@ -153,6 +153,7 @@ const ProgramarActividad = () => {
       setProfesorCargo(session.cargo || "Profesor(a)");
 
       try {
+        // Get numero_de_telefono for Calendario Actividades (id_profesor)
         const { data: profesor, error: profesorError } = await supabase
           .from('Internos')
           .select('numero_de_telefono')
@@ -167,10 +168,11 @@ const ProgramarActividad = () => {
 
         setProfesorIdReal(profesor.numero_de_telefono);
 
+        // Get assignments directly by codigo
         const { data: asignacionesData, error: asignacionError } = await supabase
           .from('Asignación Profesores')
           .select('"Asignatura(s)", "Grado(s)", "Salon(es)"')
-          .eq('numero_de_telefono', profesor.numero_de_telefono);
+          .eq('codigo', parseInt(session.codigo!));
 
         if (asignacionError || !asignacionesData) {
           setLoadingAsignaciones(false);

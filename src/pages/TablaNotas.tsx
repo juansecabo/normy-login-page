@@ -330,19 +330,12 @@ const TablaNotas = () => {
 
       // Cargar otros salones en background (no bloquea la UI)
       try {
-        const { data: profesor } = await supabase
-          .from('Internos')
-          .select('numero_de_telefono')
-          .eq('codigo', parseInt(session.codigo!))
-          .maybeSingle();
+        const { data: asignaciones } = await supabase
+          .from('Asignación Profesores')
+          .select('"Asignatura(s)", "Grado(s)", "Salon(es)"')
+          .eq('codigo', parseInt(session.codigo!));
 
-        if (profesor) {
-          const { data: asignaciones } = await supabase
-            .from('Asignación Profesores')
-            .select('"Asignatura(s)", "Grado(s)", "Salon(es)"')
-            .eq('numero_de_telefono', profesor.numero_de_telefono);
-
-          if (asignaciones) {
+        if (asignaciones) {
             const asignacionesFiltradas = asignaciones.filter(a => {
               const asignaturas = (a['Asignatura(s)'] || []).flat();
               const grados = (a['Grado(s)'] || []).flat();
@@ -354,7 +347,6 @@ const TablaNotas = () => {
               .flat();
             const salonesUnicos = [...new Set(todosSalones)].filter(s => s !== storedSalon);
             setOtrosSalones(salonesUnicos);
-          }
         }
       } catch (error) {
         console.error('Error obteniendo otros salones:', error);

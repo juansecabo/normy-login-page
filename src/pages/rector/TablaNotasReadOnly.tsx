@@ -88,7 +88,7 @@ const TablaNotasReadOnly = () => {
         // Buscar el profesor que da esta asignatura en este grado/salón
         const { data: asignaciones } = await supabase
           .from('Asignación Profesores')
-          .select('numero_de_telefono, "Asignatura(s)", "Grado(s)", "Salon(es)"');
+          .select('codigo, "Asignatura(s)", "Grado(s)", "Salon(es)"');
 
         if (asignaciones) {
           // Encontrar la asignación que coincide
@@ -101,12 +101,12 @@ const TablaNotasReadOnly = () => {
                    salones.includes(storedSalon);
           });
 
-          if (asignacionCorrecta) {
-            // Buscar el nombre del profesor en la tabla Internos usando numero_de_telefono
+          if (asignacionCorrecta && asignacionCorrecta.codigo) {
+            // Buscar el nombre del profesor en la tabla Internos usando codigo
             const { data: profesorData } = await supabase
               .from('Internos')
               .select('nombres, apellidos')
-              .eq('numero_de_telefono', asignacionCorrecta.numero_de_telefono)
+              .eq('codigo', asignacionCorrecta.codigo)
               .maybeSingle();
 
             if (profesorData) {
