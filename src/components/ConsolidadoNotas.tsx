@@ -164,6 +164,13 @@ const ConsolidadoNotas = ({ codigoEstudiante, nombreEstudiante, apellidosEstudia
       .reduce((sum, a) => sum + (a.porcentaje || 0), 0);
   };
 
+  const getPorcentajeCalificado = (asignatura: string, periodo: number) => {
+    return (actividadesPorAsignatura[asignatura] || [])
+      .filter(a => a.periodo === periodo && a.porcentaje !== null && a.porcentaje > 0)
+      .filter(a => notas[asignatura]?.[periodo]?.[a.id] !== undefined)
+      .reduce((sum, a) => sum + (a.porcentaje || 0), 0);
+  };
+
   const calcularFinalPeriodo = (asignatura: string, periodo: number): number | null => {
     const actividadesDelPeriodo = getActividadesPorPeriodo(asignatura, periodo);
     const actividadesConPorcentaje = actividadesDelPeriodo.filter(a => a.porcentaje !== null && a.porcentaje > 0);
@@ -307,7 +314,7 @@ const ConsolidadoNotas = ({ codigoEstudiante, nombreEstudiante, apellidosEstudia
                           {calcularFinalPeriodo(asignatura, periodoActivo)?.toFixed(2) || '—'}
                         </div>
                         <div className="text-xs text-muted-foreground">
-                          {getPorcentajeUsado(asignatura, periodoActivo)}% del periodo
+                          {getPorcentajeCalificado(asignatura, periodoActivo)}% del periodo
                         </div>
                       </td>
                     </tr>
