@@ -98,6 +98,11 @@ const ListaComunicados = ({ comunicados, loading, showDocumentLink = false }: Li
             <span className="font-medium text-foreground">De:</span>{" "}
             {c.remitente}
           </p>
+          {c.mensaje && (
+            <p className="text-sm whitespace-pre-wrap bg-muted p-3 rounded-md max-h-32 overflow-y-auto">
+              {c.mensaje}
+            </p>
+          )}
           {showDocumentLink && c.archivo_url && (
             <div className="flex items-center gap-3">
               <a
@@ -118,11 +123,6 @@ const ListaComunicados = ({ comunicados, loading, showDocumentLink = false }: Li
                 Descargar
               </button>
             </div>
-          )}
-          {c.mensaje && (
-            <p className="text-sm whitespace-pre-wrap bg-muted p-3 rounded-md max-h-32 overflow-y-auto">
-              {c.mensaje}
-            </p>
           )}
         </div>
       ))}
@@ -146,6 +146,11 @@ const ListaComunicados = ({ comunicados, loading, showDocumentLink = false }: Li
                   {formatFecha(selectedItem.fecha)}
                 </div>
               </DialogHeader>
+              {selectedItem.mensaje && (
+                <p className="text-sm whitespace-pre-wrap bg-muted p-4 rounded-md">
+                  {selectedItem.mensaje}
+                </p>
+              )}
               {showDocumentLink && selectedItem.archivo_url && (
                 <div className="flex items-center gap-3">
                   <a
@@ -166,11 +171,6 @@ const ListaComunicados = ({ comunicados, loading, showDocumentLink = false }: Li
                     Descargar
                   </button>
                 </div>
-              )}
-              {selectedItem.mensaje && (
-                <p className="text-sm whitespace-pre-wrap bg-muted p-4 rounded-md">
-                  {selectedItem.mensaje}
-                </p>
               )}
             </>
           )}

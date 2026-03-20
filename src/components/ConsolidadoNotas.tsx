@@ -292,7 +292,10 @@ const ConsolidadoNotas = ({ codigoEstudiante, nombreEstudiante, apellidosEstudia
                         </th>
                       ))}
                       <th className="p-2 text-center text-xs font-semibold border-b border-border min-w-[100px] bg-primary/10">
-                        Final Periodo
+                        <div>Final Periodo</div>
+                        <div className="text-muted-foreground text-xs font-normal">
+                          ({getPorcentajeCalificado(asignatura, periodoActivo)}%)
+                        </div>
                       </th>
                     </tr>
                   </thead>
@@ -309,13 +312,8 @@ const ConsolidadoNotas = ({ codigoEstudiante, nombreEstudiante, apellidosEstudia
                           </td>
                         );
                       })}
-                      <td className="p-2 text-center border-b border-border bg-primary/5">
-                        <div className="text-sm font-semibold">
-                          {calcularFinalPeriodo(asignatura, periodoActivo)?.toFixed(2) || '—'}
-                        </div>
-                        <div className="text-xs text-muted-foreground">
-                          {getPorcentajeCalificado(asignatura, periodoActivo)}% del periodo
-                        </div>
+                      <td className="p-2 text-center text-sm font-semibold border-b border-border bg-primary/5">
+                        {calcularFinalPeriodo(asignatura, periodoActivo)?.toFixed(2) || '—'}
                       </td>
                     </tr>
                   </tbody>
