@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getSession, isAdmin } from "@/hooks/useSession";
-import { BookOpen, BarChart3, Megaphone, Settings, MessageSquare, UserCheck, Activity } from "lucide-react";
+import { BookOpen, BarChart3, Megaphone, Settings, MessageSquare, UserCheck, Activity, MessagesSquare } from "lucide-react";
 import HeaderNormy from "@/components/HeaderNormy";
 
 const DashboardAdmin = () => {
@@ -103,6 +103,14 @@ const DashboardAdmin = () => {
             >
               <UserCheck className="w-16 h-16 text-foreground" />
               <span className="font-semibold text-lg text-foreground text-center">Registro en Normy</span>
+            </button>
+
+            <button
+              onClick={() => window.open("https://chat.srv966880.hstgr.cloud", "_blank")}
+              className="flex flex-col items-center justify-center gap-4 p-8 rounded-lg bg-blue-100 transition-all duration-200 hover:shadow-md hover:bg-blue-200"
+            >
+              <MessagesSquare className="w-16 h-16 text-foreground" />
+              <span className="font-semibold text-lg text-foreground text-center">Conversaciones</span>
             </button>
           </div>
         </div>
