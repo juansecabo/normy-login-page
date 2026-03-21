@@ -135,7 +135,7 @@ const ConsolidadoNotas = ({ codigoEstudiante, nombreEstudiante, apellidosEstudia
           const notasFormateadas: NotasEstudiante = {};
           notasData.forEach((nota) => {
             const { asignatura, periodo, nombre_actividad, nota: valorNota } = nota;
-            if (nombre_actividad === "Final Definitiva" || nombre_actividad === "Final Periodo") return;
+            if (nombre_actividad === "Definitiva Anual" || nombre_actividad === "Definitiva Periodo") return;
 
             const actividadId = `${periodo}-${nombre_actividad}`;
             if (!notasFormateadas[asignatura]) notasFormateadas[asignatura] = {};

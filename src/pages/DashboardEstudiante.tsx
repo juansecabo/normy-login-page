@@ -65,7 +65,7 @@ const DashboardEstudiante = () => {
             .eq('codigo_estudiantil', codigo)
             .eq('grado', session.grado)
             .eq('salon', session.salon)
-            .not('nombre_actividad', 'in', '("Final Periodo","Final Definitiva")'),
+            .not('nombre_actividad', 'in', '("Definitiva Periodo","Definitiva Anual")'),
         ]);
 
         if (msgResult.data) {

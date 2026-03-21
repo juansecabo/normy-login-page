@@ -1,0 +1,316 @@
+{
+  "name": "Notificador de Notas - Sistema Completo",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "notificar-notas",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        -80,
+        -112
+      ],
+      "id": "046e3e49-a381-45fa-a4a6-390fc2bee663",
+      "name": "Webhook - Recibir desde Lovable",
+      "webhookId": "notificar-notas"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "WITH actividades_periodo AS (\n  -- Obtener actividades con porcentaje de cada período\n  SELECT \n    periodo,\n    COUNT(*) as total_actividades,\n    SUM(porcentaje) as suma_porcentajes\n  FROM \"Nombre de Actividades\"\n  WHERE materia = '{{ $json.body.contexto.materia }}'\n    AND grado = '{{ $json.body.contexto.grado }}'\n    AND salon = '{{ $json.body.contexto.salon }}'\n    AND porcentaje IS NOT NULL\n    AND porcentaje > 0\n  GROUP BY periodo\n  HAVING SUM(porcentaje) = 100  -- Solo períodos con 100%\n),\nnotas_estudiante_periodo AS (\n  -- Contar cuántas notas tiene cada estudiante por período\n  SELECT \n    codigo_estudiantil,\n    periodo,\n    COUNT(*) as notas_registradas\n  FROM \"Notas\"\n  WHERE codigo_estudiantil = ANY(ARRAY[{{ $json.body.estudiantes_codigos }}])\n    AND materia = '{{ $json.body.contexto.materia }}'\n    AND grado = '{{ $json.body.contexto.grado }}'\n    AND salon = '{{ $json.body.contexto.salon }}'\n    AND periodo BETWEEN 1 AND 4\n    AND nombre_actividad NOT IN ('Final Periodo', 'Final Definitiva')\n    AND nota IS NOT NULL\n    AND porcentaje IS NOT NULL\n  GROUP BY codigo_estudiantil, periodo\n),\nperiodos_completos AS (\n  -- Identificar períodos completos por estudiante\n  SELECT \n    nep.codigo_estudiantil,\n    nep.periodo\n  FROM notas_estudiante_periodo nep\n  INNER JOIN actividades_periodo ap ON nep.periodo = ap.periodo\n  WHERE nep.notas_registradas = ap.total_actividades\n)\n-- Query principal\nSELECT \n  n.codigo_estudiantil,\n  n.materia,\n  n.grado,\n  n.salon,\n  n.periodo,\n  n.nombre_actividad,\n  n.porcentaje,\n  n.nota,\n  n.comentario,\n  n.notificado,\n  n.orden,\n  e.nombre_estudiante,\n  e.apellidos_estudiante\nFROM \"Notas\" n\nINNER JOIN \"Estudiantes\" e ON n.codigo_estudiantil = e.codigo_estudiantil\nWHERE n.codigo_estudiantil = ANY(ARRAY[{{ $json.body.estudiantes_codigos }}])\n  AND n.materia = '{{ $json.body.contexto.materia }}'\n  AND n.grado = '{{ $json.body.contexto.grado }}'\n  AND n.salon = '{{ $json.body.contexto.salon }}'\n  AND (\n    -- Si es definitiva, filtrar específicamente\n    {{ $json.body.tipo_boton.includes('definitiva') \n       ? `(\n            -- Incluir Final Definitiva\n            (n.periodo = 0 AND n.nombre_actividad = 'Final Definitiva')\n            OR\n            -- Incluir SOLO Final Periodo de períodos completos\n            (\n              n.nombre_actividad = 'Final Periodo' \n              AND EXISTS (\n                SELECT 1 FROM periodos_completos pc \n                WHERE pc.codigo_estudiantil = n.codigo_estudiantil \n                  AND pc.periodo = n.periodo\n              )\n            )\n          )`\n       : `n.periodo = ${$json.body.contexto.periodo}` \n    }}\n  )\n  {{ $json.body.actividad ? \"AND n.nombre_actividad = '\" + $json.body.actividad + \"'\" : \"\" }}\nORDER BY \n  n.codigo_estudiantil ASC,\n  n.periodo ASC,\n  n.orden ASC;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        144,
+        -112
+      ],
+      "id": "52455b5d-fe69-49bf-83e1-b2d6722e0e99",
+      "name": "Consultar Notas",
+      "credentials": {
+        "postgres": {
+          "id": "My6H5VkArUMxked3",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Agrupar notas por estudiante\nconst notasPorEstudiante = {};\n\nfor (const item of $input.all()) {\n  const nota = item.json;\n  const codigo = nota.codigo_estudiantil;\n  \n  if (!notasPorEstudiante[codigo]) {\n    notasPorEstudiante[codigo] = {\n      codigo_estudiantil: codigo,\n      nombre_estudiante: nota.nombre_estudiante,\n      apellidos_estudiante: nota.apellidos_estudiante,\n      materia: nota.materia,\n      grado: nota.grado,\n      salon: nota.salon,\n      notas: []\n    };\n  }\n  \n  notasPorEstudiante[codigo].notas.push({\n    periodo: nota.periodo,\n    nombre_actividad: nota.nombre_actividad,\n    porcentaje: nota.porcentaje,\n    nota: nota.nota,\n    comentario: nota.comentario,\n    orden: nota.orden\n  });\n}\n\n// Convertir a array\nreturn Object.values(notasPorEstudiante).map(est => ({ json: est }));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        320,
+        -112
+      ],
+      "id": "0cf97f6c-81bf-4299-9593-1944e941aba9",
+      "name": "Agrupar por estudiante"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        512,
+        -112
+      ],
+      "id": "09cdf2a1-5909-4275-8d0d-7c7f5fc9e28c",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT \n  id,\n  SPLIT_PART(padre_nombre, ' ', 1) AS padre_primer_nombre\nFROM \"Perfiles_Generales\"\nWHERE perfil = 'Padre de familia'::perfil_enum_2\n  AND (\n    padre_estudiante1_codigo = {{ $json.codigo_estudiantil }}\n    OR padre_estudiante2_codigo = {{ $json.codigo_estudiantil }}\n    OR padre_estudiante3_codigo = {{ $json.codigo_estudiantil }}\n  );",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        752,
+        -96
+      ],
+      "id": "054b87d5-a4cc-4689-881e-4c357a9d86d7",
+      "name": "Execute a SQL query",
+      "alwaysOutputData": true,
+      "credentials": {
+        "postgres": {
+          "id": "My6H5VkArUMxked3",
+          "name": "Postgres account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.manychat.com/fb/sending/sendContent",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "=Bearer 2898416:b057cee379fe53d915fa8c73b87ce816"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ JSON.stringify({\n  subscriber_id: String($json.subscriber_id),\n  data: {\n    version: \"v2\",\n    content: { type: \"whatsapp\",\n      messages: [\n        { type: \"text\", text: String($json.mensaje).replace(/\\r\\n/g, '\\n') }\n      ]\n    }\n  }\n}) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1328,
+        -112
+      ],
+      "id": "c50862d8-4329-42e0-95f6-9868c29ad797",
+      "name": "HTTP Request1",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "q6x09GMARCv6CLuB",
+          "name": "Header Auth account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "// ========================================\n// FUNCIÓN AUXILIAR: Nombre del período\n// ========================================\nfunction nombrePeriodo(num) {\n  const nombres = {\n    1: 'primer',\n    2: 'segundo',\n    3: 'tercer',\n    4: 'cuarto'\n  };\n  return nombres[num] || num;\n}\n\n// ========================================\n// FUNCIÓN AUXILIAR: Formatear porcentaje\n// ========================================\nfunction formatearPorcentaje(valor) {\n  if (valor === null || valor === undefined) return null;\n  const num = parseFloat(valor);\n  if (Number.isNaN(num)) return null;\n  if (num % 1 === 0) return num.toString();\n  return num.toFixed(2).replace(/\\.?0+$/, '');\n}\n\n// ========================================\n// FUNCIÓN AUXILIAR: Formatear nota\n// ========================================\nfunction formatearNota(valor) {\n  if (valor === null || valor === undefined) return '-';\n  const num = parseFloat(valor);\n  if (Number.isNaN(num)) return '-';\n  return num.toFixed(2).replace(/\\.?0+$/, '');\n}\n\n// ========================================\n// DATOS DEL WEBHOOK Y ESTUDIANTE\n// ========================================\nconst webhook = $('Webhook - Recibir desde Lovable').first().json.body;\nconst tipoBoton = webhook.tipo_boton;\nconst actividad = webhook.actividad;\nconst periodo = webhook.contexto.periodo;\n\nconst estudiante = $('Loop Over Items').first().json;\n\n// ✅ NUNCA mostrar apellidos: solo nombre_estudiante\nconst nombreCompleto = `${estudiante.nombre_estudiante}`.trim();\n\nconst materia = estudiante.materia;\nconst notas = estudiante.notas || [];\n\n// ========================================\n// OBTENER TODOS LOS PADRES (NO SOLO UNO)\n// ========================================\n// ✅ IMPORTANTE: filtrar padres válidos (con id). Esto corrige el \"Always Output Data\".\nconst padres = $input.all()\n  .map(item => item.json)\n  .filter(p => p && p.id);\n\n// ✅ Si no hay padres válidos, devolver array vacío (continuar con siguiente estudiante)\nif (!padres.length) {\n  return [];\n}\n\n// ========================================\n// DETECTAR TIPO DE NOTIFICACIÓN\n// ========================================\nconst hasFinalDefinitiva = notas.some(n => n.nombre_actividad === 'Final Definitiva');\nconst hasFinalPeriodo = notas.some(n => n.nombre_actividad === 'Final Periodo');\n\n// ========================================\n// GENERAR MENSAJE\n// ========================================\nlet mensajeBase = '';\n\nif (actividad && !hasFinalPeriodo && !hasFinalDefinitiva) {\n  const nota = notas.find(n => n.nombre_actividad === actividad);\n\n  if (!nota) {\n    return [];\n  }\n\n  const notaValor = formatearNota(nota.nota);\n  mensajeBase = `REPORTE DE NOTA:\\n\\n{PADRE}, te notifico que ${nombreCompleto} sacó ${notaValor} en la siguiente actividad de ${materia}:\\n\\n${actividad}`;\n\n  if (nota.porcentaje) {\n    const porcFormateado = formatearPorcentaje(nota.porcentaje);\n    if (porcFormateado !== null) {\n      mensajeBase += ` (${porcFormateado}% del periodo)`;\n    }\n  }\n\n  if (nota.comentario) {\n    mensajeBase += `\\n\\nComentario del/de la docente: ${nota.comentario}`;\n  }\n}\n\nelse if (hasFinalPeriodo && !hasFinalDefinitiva) {\n  const finalPeriodo = notas.find(n => n.nombre_actividad === 'Final Periodo');\n  const actividades = notas\n    .filter(n => n.nombre_actividad !== 'Final Periodo')\n    .sort((a, b) => (a.orden ?? 0) - (b.orden ?? 0));\n\n  const sumaPorcentajes = actividades\n    .filter(a => a.porcentaje !== null && a.porcentaje !== undefined)\n    .reduce((sum, a) => sum + parseFloat(a.porcentaje), 0);\n\n  const periodoCompleto = sumaPorcentajes === 100;\n\n  if (periodoCompleto) {\n    mensajeBase = `REPORTE COMPLETO DE PERIODO\\n\\n{PADRE}, así quedó el ${nombrePeriodo(periodo)} periodo de ${materia} de ${nombreCompleto}:\\n\\nActividades:\\n`;\n\n    actividades.forEach(act => {\n      mensajeBase += `${act.nombre_actividad}`;\n      if (act.porcentaje) {\n        const porcFormateado = formatearPorcentaje(act.porcentaje);\n        mensajeBase += ` (${porcFormateado}%)`;\n      } else {\n        mensajeBase += ` (-)`;\n      }\n      const notaValor = formatearNota(act.nota);\n      mensajeBase += `: ${notaValor}\\n`;\n    });\n\n    const finalValor = formatearNota(finalPeriodo?.nota);\n    mensajeBase += `\\nFinal del periodo: ${finalValor}`;\n\n    if (finalPeriodo?.comentario) {\n      mensajeBase += `\\n\\nComentario del/de la docente: ${finalPeriodo.comentario}`;\n    }\n  } else {\n    mensajeBase = `REPORTE PARCIAL DE PERIODO\\n\\n{PADRE}, así va por ahora ${nombreCompleto} en el ${nombrePeriodo(periodo)} periodo de ${materia}:\\n\\nActividades:\\n\\n`;\n\n    actividades.forEach(act => {\n      mensajeBase += `${act.nombre_actividad}`;\n      if (act.porcentaje) {\n        const porcFormateado = formatearPorcentaje(act.porcentaje);\n        mensajeBase += ` (${porcFormateado}%)`;\n      } else {\n        mensajeBase += ` (-)`;\n      }\n      const notaValor = formatearNota(act.nota);\n      mensajeBase += `: ${notaValor}\\n`;\n    });\n\n    if (finalPeriodo?.comentario) {\n      mensajeBase += `\\nComentario del/de la docente: ${finalPeriodo.comentario}`;\n    }\n  }\n}\n\nelse if (hasFinalDefinitiva) {\n  const finalDefinitiva = notas.find(n => n.nombre_actividad === 'Final Definitiva');\n  const finalesPeriodo = notas\n    .filter(n => n.nombre_actividad === 'Final Periodo')\n    .sort((a, b) => (a.periodo ?? 0) - (b.periodo ?? 0));\n\n  const todosCompletos = finalesPeriodo.length === 4;\n\n  if (todosCompletos) {\n    mensajeBase = `REPORTE COMPLETO DE AÑO\\n\\n{PADRE}, así quedó la nota definitiva de ${materia} de ${nombreCompleto}:\\n\\nPeriodo(s):\\n`;\n\n    finalesPeriodo.forEach(fp => {\n      const nombreP = fp.periodo === 1 ? '1er Periodo' :\n                      fp.periodo === 2 ? '2do Periodo' :\n                      fp.periodo === 3 ? '3er Periodo' : '4to Periodo';\n      const notaValor = formatearNota(fp.nota);\n      mensajeBase += `${nombreP}: ${notaValor}\\n`;\n    });\n\n    const defValor = formatearNota(finalDefinitiva?.nota);\n    mensajeBase += `\\nFinal definitiva: ${defValor}`;\n\n    if (finalDefinitiva?.comentario) {\n      mensajeBase += `\\n\\nComentario del/de la docente: ${finalDefinitiva.comentario}`;\n    }\n  } else {\n    mensajeBase = `REPORTE PARCIAL DE AÑO\\n\\n{PADRE}, así van los periodos de ${materia} que ${nombreCompleto} tiene completos hasta ahora:\\n\\nPeriodo(s):\\n\\n`;\n\n    finalesPeriodo.forEach(fp => {\n      const nombreP = fp.periodo === 1 ? '1er Periodo' :\n                      fp.periodo === 2 ? '2do Periodo' :\n                      fp.periodo === 3 ? '3er Periodo' : '4to Periodo';\n      const notaValor = formatearNota(fp.nota);\n      mensajeBase += `${nombreP}: ${notaValor}\\n`;\n    });\n\n    if (finalDefinitiva?.comentario) {\n      mensajeBase += `\\n\\nComentario del/de la docente: ${finalDefinitiva.comentario}`;\n    }\n  }\n}\n\n// ========================================\n// RETORNAR UN MENSAJE POR CADA PADRE\n// ========================================\nreturn padres.map(padre => ({\n  json: {\n    subscriber_id: padre.id,\n    mensaje: mensajeBase.replace('{PADRE}', padre.padre_primer_nombre || 'Padre'),\n    estudiante: nombreCompleto,\n    tipo: hasFinalDefinitiva ? 'definitiva' : (hasFinalPeriodo ? 'periodo' : 'individual')\n  }\n}));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        960,
+        -96
+      ],
+      "id": "af4cc2ce-ef8c-42d0-84ab-36c0edcd72b9",
+      "name": "Generar Mensaje",
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "amount": 1
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        1520,
+        -112
+      ],
+      "id": "349c3c23-829e-434d-9745-9d0f1b85c691",
+      "name": "Wait",
+      "webhookId": "16d6323a-8bbb-41c6-be09-0b88459cad8c"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "bb2d179a-48da-4190-9f50-103947c364e6",
+              "leftValue": "={{ $json.subscriber_id !== undefined && $json.subscriber_id !== null && $json.subscriber_id !== '' }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1136,
+        -96
+      ],
+      "id": "810bbfe4-5588-4958-9905-69082fb07caf",
+      "name": "¿Hay mensaje?"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook - Recibir desde Lovable": {
+      "main": [
+        [
+          {
+            "node": "Consultar Notas",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Consultar Notas": {
+      "main": [
+        [
+          {
+            "node": "Agrupar por estudiante",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Agrupar por estudiante": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Execute a SQL query",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute a SQL query": {
+      "main": [
+        [
+          {
+            "node": "Generar Mensaje",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request1": {
+      "main": [
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generar Mensaje": {
+      "main": [
+        [
+          {
+            "node": "¿Hay mensaje?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "¿Hay mensaje?": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "3b5b2c00-09ca-47cd-8ff8-1c98b607285f",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "68982fb78721fac6f9f5e6195f1359f50836b71709d5046c50ea3b1c2cfd775e"
+  },
+  "id": "oUUl11dnn95pQ4rC",
+  "tags": []
+}

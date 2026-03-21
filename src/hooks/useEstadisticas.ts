@@ -137,7 +137,7 @@ export const useEstadisticas = () => {
           supabase
             .from("Notas")
             .select("*")
-            .not("nombre_actividad", "in", '("Final Periodo","Final Definitiva")')
+            .not("nombre_actividad", "in", '("Definitiva Periodo","Definitiva Anual")')
             .range(from, to)
         );
         setNotas(notasData);

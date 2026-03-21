@@ -1,0 +1,255 @@
+{
+  "name": "Normy Examinadora",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "41f121b5-276e-453a-98b2-f300227e2e99",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "b8b14c2c-0fd6-4ef8-9ddf-bf0628fd53e9",
+      "name": "Webhook",
+      "webhookId": "41f121b5-276e-453a-98b2-f300227e2e99"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "4686b853-2e68-45c4-ba70-7b4b8b368800",
+              "leftValue": "={{ $json.body.archivos }}",
+              "rightValue": "",
+              "operator": {
+                "type": "array",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        208,
+        0
+      ],
+      "id": "e6dae281-a348-46b4-a448-01612ae4e32b",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extraer datos del body\nconst {\n  nombre,\n  apellidos,\n  tipoActividad,\n  materiaSeleccionada,\n  gradoSeleccionado,\n  salonSeleccionado,\n  tema,\n  preguntasMultiple,\n  preguntasAbiertas,\n  instrucciones\n} = $input.item.json.body;\n\n// Mapear tipos de actividad\nconst tipos = {\n  'evaluacion': 'Evaluación',\n  'taller': 'Taller',\n  'quiz': 'Quiz'\n};\n\nconst tipoTexto = tipos[tipoActividad] || tipoActividad;\n\n// Fecha actual EN ZONA HORARIA DE COLOMBIA\nconst fecha = new Date().toLocaleDateString('es-CO', { \n  year: 'numeric', \n  month: 'long', \n  day: 'numeric',\n  timeZone: 'America/Bogota'\n});\n\n// Construir objeto en orden específico\nconst datos = {\n  fecha: fecha,\n  nombre: nombre,\n  apellidos: apellidos,\n  tipoActividad: tipoTexto,\n  materia: materiaSeleccionada,\n  grado: gradoSeleccionado\n};\n\n// Agregar salón justo después del grado (si existe)\nif (salonSeleccionado) {\n  datos.salon = salonSeleccionado;\n}\n\n// Continuar con el resto\ndatos.tema = tema;\n\n// Agregar instrucciones después del tema (si existen)\nif (instrucciones) {\n  datos.instrucciones = instrucciones;\n}\n\n// Agregar preguntas al final\ndatos.preguntasMultiple = preguntasMultiple;\ndatos.preguntasAbiertas = preguntasAbiertas;\ndatos.totalPreguntas = preguntasMultiple + preguntasAbiertas;\n\nreturn { json: datos };"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        432,
+        16
+      ],
+      "id": "674f8dee-346b-46dc-8b9e-1f4019955f5f",
+      "name": "Datos sin archivos"
+    },
+    {
+      "parameters": {
+        "jsCode": "// ==============================\n// PROCESAR PREGUNTAS (CON SOPORTE PARA IMÁGENES INCRUSTADAS)\n// - Soporta AI Agent y Message a model\n// - Las imágenes quedan DENTRO del contenido de cada pregunta\n// - Flask procesará las imágenes al encontrarlas\n// Recomendado: Run Once for All Items\n// ==============================\n\nconst datos = ($items('Datos sin archivos')?.[0]?.json) ?? {};\n\n// --------- Extraer texto de salida (robusto) ----------\nlet respuesta = '';\n\n// Intentar obtener de \"Reemplazar con URLs\" primero (si hay imágenes)\ntry {\n  const reemplazado = $items('Reemplazar con URLs')?.[0]?.json;\n  if (reemplazado && reemplazado.output) {\n    respuesta = reemplazado.output;\n  }\n} catch (e) {\n  // No existe el nodo \"Reemplazar con URLs\", continuar\n}\n\n// Si no hay respuesta, obtener directamente de AI Agent (sin imágenes)\nif (!respuesta) {\n  const agentOutput = $items('AI Agent')?.[0]?.json;\n  \n  if (agentOutput) {\n    if (typeof agentOutput.output === 'string') {\n      respuesta = agentOutput.output;\n    } else if (Array.isArray(agentOutput.output) && agentOutput.output.length > 0) {\n      const m0 = agentOutput.output[0];\n      if (typeof m0 === 'string') respuesta = m0;\n      else if (m0 && typeof m0 === 'object') {\n        if (m0.content?.[0]?.text) respuesta = m0.content[0].text;\n        else if (m0.content?.[0]?.output_text) respuesta = m0.content[0].output_text;\n        else if (m0.output_text) respuesta = m0.output_text;\n        else if (m0.content?.[0]?.type === 'output_text' && m0.content?.[0]?.text) respuesta = m0.content[0].text;\n      }\n    } else if (typeof agentOutput.text === 'string') {\n      respuesta = agentOutput.text;\n    }\n  }\n}\n\nif (!respuesta || typeof respuesta !== 'string') {\n  throw new Error(\n    \"No se encontró texto de salida. Verifica que el nodo 'AI Agent1' esté conectado correctamente.\"\n  );\n}\n\n// Normalizar saltos\nrespuesta = respuesta.replace(/\\r\\n/g, '\\n');\n\n// ------------------------------\n// 1) Separar preguntas de selección múltiple\n// ------------------------------\nconst preguntasMultiple = [];\nconst regexMultiple = /---PREGUNTA---([\\s\\S]*?)---FIN---/g;\nlet m;\n\nwhile ((m = regexMultiple.exec(respuesta)) !== null) {\n  const bloque = m[1].trim();\n\n  const numMatch = bloque.match(/^(\\d+)\\./);\n  const numero = numMatch ? numMatch[1] : null;\n\n  const correctaMatch = bloque.match(/CORRECTA:\\s*([A-D])/);\n  const correcta = correctaMatch ? correctaMatch[1] : null;\n\n  const contenidoLimpio = bloque\n    .replace(/\\n*CORRECTA:\\s*[A-D]\\s*$/m, '')\n    .trim();\n\n  // El contenido puede incluir marcadores ---IMAGEN--- dentro\n  // Flask los procesará cuando encuentre cada pregunta\n  preguntasMultiple.push({ numero, contenido: contenidoLimpio, correcta });\n}\n\n// ------------------------------\n// 2) Separar preguntas abiertas\n// ------------------------------\nconst preguntasAbiertas = [];\nconst regexAbiertas = /---ABIERTA---([\\s\\S]*?)---FIN---/g;\n\nwhile ((m = regexAbiertas.exec(respuesta)) !== null) {\n  const bloque = m[1].trim();\n\n  const numMatch = bloque.match(/^(\\d+)\\./);\n  const numero = numMatch ? numMatch[1] : null;\n\n  preguntasAbiertas.push({ numero, contenido: bloque });\n}\n\n// ------------------------------\n// 3) Hoja de respuestas (solo de preguntas reales)\n// ------------------------------\nconst hojaRespuestas = preguntasMultiple\n  .filter((p) => p.numero && p.correcta)\n  .map((p) => ({ numero: p.numero, correcta: p.correcta }));\n\nreturn {\n  json: {\n    datos,\n    preguntasMultiple, // Ya NO tiene recursos separados, las imágenes están dentro\n    preguntasAbiertas,\n    hojaRespuestas,\n    totalMultiple: preguntasMultiple.length,\n    totalAbiertas: preguntasAbiertas.length,\n  },\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        896,
+        16
+      ],
+      "id": "1b4118b0-8c01-45dc-8c1c-8ad7183d365d",
+      "name": "Procesar Preguntas"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Genera un(a) {{ $json.tipoActividad }} de {{ $json.materia }} sobre el siguiente tema:\n\nTEMA: {{ $json.tema }}\n\nESPECIFICACIONES:\n- {{ $json.preguntasMultiple }} preguntas de selección múltiple\n- {{ $json.preguntasAbiertas }} preguntas abiertas\n\n{{ $json.instrucciones ? 'INSTRUCCIONES ESPECIALES:\\n' + $json.instrucciones : '' }}",
+        "options": {
+          "systemMessage": "=Eres un experto en crear pruebas estilo ICFES de Colombia con preguntas variadas.\n\nCrea pruebas de alta calidad con:\n- Respuestas correctas distribuidas aleatoriamente entre A, B, C, D\n- Nivel de las preguntas acorde al grado del estudiante ({{ $json.grado }}) en el sistema colombiano\n- Contextos variados\n\nSegún el tipo de actividad ({{ $json.tipoActividad }}) crea el tipo de preguntas así:\n\nEvaluación: Crea preguntas formales estilo ICFES/SABER con distractores plausibles. Cuando creas que sea necesario, usa contextos y sutuaciones variadas, no necesariamente del contexto estudiantil.\n\nTaller: Crea ejercicios prácticos progresivos (de fácil a difícil) con situaciones cotidianas. Enfócate en aplicación y procedimiento.\n\nQuiz: Crea preguntas directas de verificación rápida. Prioriza conceptos clave y definiciones. Menos contexto, más precisión.\n\nUsa este formato EXACTO para cada pregunta de selección múltiple:\n\n---PREGUNTA---\n{número}. {enunciado}\n\nA) {opción}\nB) {opción}\nC) {opción}\nD) {opción}\n\nCORRECTA: {letra}\n---FIN---\n\nPara preguntas abiertas que no sean demasiado complicadas para el nivel del estudiante y CONTINÚA la numeración de las preguntas de selección múltiple:\n\n---ABIERTA---\n{número}. {enunciado}\n---FIN---\n\nIMPORTANTE: Por ejemplo, si hay 5 preguntas de selección múltiple, las preguntas abiertas empiezan en 6, no en 1.\n\n**REGLAS CRÍTICAS PARA MATEMÁTICAS Y FÓRMULAS:**\n\nUSA LaTeX **SOLO** para expresiones que NO se pueden escribir normalmente con el teclado:\n✅ Fracciones: \\frac{5}{2}\n✅ Raíces: \\sqrt{2}, \\sqrt[3]{8}\n\nNO uses LaTeX para cosas que se escriben normalmente:\n❌ NUNCA uses \\( \\) para rodear números simples\n❌ NUNCA uses {,} para comas decimales\n❌ NUNCA uses \\text{} para unidades simples\n❌ NUNCA escribas \\sin, \\cos, \\tan, es decir, sino sin la barra \\\n\n**EJEMPLOS CORRECTOS:**\n✓ \"El resultado es 0,02\" (NO escribas \\(0{,}02\\))\n✓ \"El volumen es 125 cm³\" (NO escribas 125\\text{cm}^3)\n✓ \"La fracción \\frac{5}{\\sqrt{2}}\" (SÍ usa LaTeX para fracciones)\n✓ \"La raíz \\sqrt[3]{27}\" (SÍ usa LaTeX para raíces)\n\n**EJEMPLOS INCORRECTOS (NO HAGAS ESTO):**\n✗ A) \\(0{,}02\\)  ← MAL, debe ser: A) 0,02\n✗ B) \\(2\\)       ← MAL, debe ser: B) 2\n✗ 125\\text{cm}^3 ← MAL, debe ser: 125 cm³\n\n**REGLA SIMPLE:**\nSi puedes escribirlo en un teclado normal (números, comas, puntos), NO uses LaTeX.\nSolo usa LaTeX para fracciones, raíces, y expresiones matemáticas complejas."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3,
+      "position": [
+        592,
+        16
+      ],
+      "id": "e120c7fa-a31c-4f92-8fbf-21be4326ada3",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-5.2",
+          "mode": "list",
+          "cachedResultName": "gpt-5.2"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        592,
+        176
+      ],
+      "id": "a06beb91-693d-4d85-82b2-ded2472ec32a",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "PKGrXs1i8Z9AyRvC",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://168.231.75.16:5000/generar-examen",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $json }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        1056,
+        16
+      ],
+      "id": "f25e2a1d-227e-4d69-a279-89d9bdefb28d",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "respondWith": "binary",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        1216,
+        16
+      ],
+      "id": "bddf4952-4ba5-4314-8902-48cea3faf005",
+      "name": "Respond to Webhook"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Datos sin archivos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Datos sin archivos": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Procesar Preguntas": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Procesar Preguntas",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "4e895a2d-645a-4b4d-846f-bda94b8f6499",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "68982fb78721fac6f9f5e6195f1359f50836b71709d5046c50ea3b1c2cfd775e"
+  },
+  "id": "jVS3NljIwcOzz7LY",
+  "tags": []
+}

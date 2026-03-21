@@ -166,7 +166,7 @@ const TablaNotasReadOnly = () => {
           notasData.forEach((nota) => {
             const { codigo_estudiantil, periodo, nombre_actividad, nota: valorNota, comentario } = nota;
 
-            if (nombre_actividad === "Final Definitiva" || nombre_actividad === "Final Periodo") {
+            if (nombre_actividad === "Definitiva Anual" || nombre_actividad === "Definitiva Periodo") {
               return;
             }
 

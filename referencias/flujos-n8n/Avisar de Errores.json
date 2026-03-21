@@ -1,0 +1,64 @@
+{
+  "name": "Avisar de Errores",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [
+        -48,
+        -32
+      ],
+      "id": "bd0c6064-7771-4d64-bc9b-9f55e31f55be",
+      "name": "Error Trigger"
+    },
+    {
+      "parameters": {
+        "sendTo": "juansecabo14@gmail.com",
+        "subject": "Error en flujo de n8n",
+        "message": "={{ ` <h3>🚨 Error en workflow</h3> <ul>   <li><b>Workflow:</b> ${$json.workflow.name} (id ${$json.workflow.id})</li>   <li><b>Execution ID:</b> ${$json.execution.id}</li>   <li><b>Último nodo:</b> ${$json.lastNodeExecuted || 'N/D'}</li>   <li><b>Mensaje:</b> ${$json.error?.message || 'N/D'}</li>   <li><b>Modo:</b> ${$json.mode}</li>   <li><b>Reintento de:</b> ${$json.retryOf || 'no'}</li>   <li><b>URL ejecución:</b> <a href=\"${$json.execution?.url || '#'}\">${$json.execution?.url || '(no disponible)'}</a></li>   <li><b>Hora servidor:</b> ${$now}</li> </ul> <pre style=\"white-space:pre-wrap;background:#f6f8fa;padding:12px;border:1px solid #eee;border-radius:6px;\"> ${JSON.stringify($json.error || {}, null, 2)} </pre> ` }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        160,
+        -32
+      ],
+      "id": "4387a0db-c840-46b5-9c8f-47bcd43163bc",
+      "name": "Send a message",
+      "webhookId": "9437412c-4a72-44a6-a59c-78868aa2a9b5",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "Q0UFVdkiSKH5Quro",
+          "name": "Gmail account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Error Trigger": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "dec80f4c-8a3d-4ef1-9488-532db0fb2852",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "68982fb78721fac6f9f5e6195f1359f50836b71709d5046c50ea3b1c2cfd775e"
+  },
+  "id": "1nUOTMfMSrqxpFxE",
+  "tags": []
+}

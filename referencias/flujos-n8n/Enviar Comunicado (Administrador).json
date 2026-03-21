@@ -1,0 +1,236 @@
+{
+  "name": "Enviar Comunicado (Administrador)",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "9bd1a575-84f9-4b7f-989a-b2a3d1814721",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "abba7de5-3ee7-48e0-a5a0-38cd56146bb4",
+      "name": "Webhook",
+      "webhookId": "9bd1a575-84f9-4b7f-989a-b2a3d1814721"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "{{\n  (() => {\n    const raw = $json.message?.content ?? '';\n    // quita cercas de código si vienen (```json, ```sql, ```)\n    const clean = raw.replace(/```json|```sql|```/g, '').trim();\n    try {\n      const obj = JSON.parse(clean);\n      return obj.query;           // usamos la clave \"query\" del JSON\n    } catch (e) {\n      return clean;               // si ya viene como SQL plano, úsalo tal cual\n    }\n  })()\n}}\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        464,
+        0
+      ],
+      "id": "8287d72e-9fc2-4c95-93ba-93b92ac72124",
+      "name": "Buscar Perfiles",
+      "credentials": {
+        "postgres": {
+          "id": "My6H5VkArUMxked3",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "batchSize": 5,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        672,
+        0
+      ],
+      "id": "dd4ea07e-b007-4c0f-a366-94fb55d52562",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "31880189-34ce-40d6-833a-41b1558942f5",
+              "name": "output",
+              "value": "={{ $item(0).$node[\"Webhook\"].json.body.mensaje }}\n",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        896,
+        16
+      ],
+      "id": "36c25482-2eff-4de7-9e75-1ac1e63a27d2",
+      "name": "Enviar Comunicado"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-5-mini",
+          "mode": "list",
+          "cachedResultName": "GPT-5-MINI"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=De acuerdo a los destinatarios:\n{{ $json.body.destinatarios }}\nGenera la consulta como se indica en el SYSTEM y responde solo con el JSON.\n"
+            },
+            {
+              "content": "=IMPORTANTE: \"Devuelve exclusivamente la sentencia SQL final (una sola), sin explicaciones, sin JSON y sin .\"\n\nEres un generador de consultas SQL para la tabla public.\"Perfiles\".\nRecibirás un texto libre en destinatarios y debes devolver únicamente un JSON con la forma:\n\n{\n  \"query\": \"SQL_AQUI\",\n  \"note\": \"opcional: breve explicación del mapeo\"\n}\n\nDatos y tipos (valores EXACTOS)\n\nTabla: public.\"Perfiles\"\n\nColumnas principales (ENUMs entre comillas, como literales exactos):\n\nperfil :: public.perfil_enum = 'Estudiante' | 'Padre de familia' | 'Público general'\n\nestudiante_nivel :: public.nivel_enum = 'Primaria' | 'Secundaria' | 'Media'\n\nIMPORTANTE: El nivel 'Preescolar' SOLO existe para padres de familia (padre_estudianteX_nivel).\nLos estudiantes (perfil='Estudiante') NO pueden tener nivel Preescolar.\n\nestudiante_grado :: public.estudiante_grado_enum =\n'Primero (1)','Segundo (2)','Tercero (3)','Cuarto (4)','Quinto (5)',\n'Sexto (6)','Séptimo (7)','Octavo (8)','Noveno (9)',\n'Décimo (10)','Undécimo (11)'\n\nestudiante_salon :: public.estudiante_salon_enum =\n'Uno (1)','Dos (2)','Tres (3)','Cuatro (4)','Cinco (5)','Seis (6)'\n\npadre_numero_de_estudiantes :: public.padre_num_est_enum =\n'1 (uno)','2 (dos)','3 (tres)'\n\nPara padres (hijos 1..3):\npadre_estudianteX_nivel :: public.nivel_enum = 'Preescolar' | 'Primaria' | 'Secundaria' | 'Media'\n\nCuando padre_estudianteX_nivel = 'Preescolar', el grado es:\npadre_estudianteX_grado :: text = 'Prejardín' | 'Jardín' | 'Transición'\n\nCuando padre_estudianteX_nivel es 'Primaria', 'Secundaria' o 'Media', el grado es:\npadre_estudianteX_grado :: public.estudiante_grado_enum\n\npadre_estudianteX_salon :: public.estudiante_salon_enum\n\nReglas implícitas del esquema (muy importantes):\n\nSi alguna columna estudiante_* está informada, ya implica perfil = 'Estudiante'.\n\nSi alguna columna padre_* está informada, ya implica perfil = 'Padre de familia'.\n\nPor ello, NO añadas perfil = … cuando la condición ya usa estudiante_* o padre_*.\n\nSolo usa perfil = 'Público general' cuando el texto pida explícitamente \"público general\" o cuando no haya ninguna otra restricción útil.\n\nUsa la menor cantidad de predicados que identifiquen a la audiencia.\n\nInterpretación del lenguaje natural\n\n\"séptimo 2\", \"7-2\", \"7°2\", \"séptimo segundo\", etc. ⇒\nestudiante_grado = 'Séptimo (7)' y estudiante_salon = 'Dos (2)'.\n\n\"octavo 1 y 2\" ⇒ misma lógica con salón 'Uno (1)' y 'Dos (2)'.\n\n\"primaria / secundaria / media\" ⇒ niveles para *_nivel.\n\n\"estudiantes de …\" ⇒ filtra con estudiante_* (no pongas perfil).\n\n\"padres de …\" / \"padres de familia …\" ⇒ filtra con OR sobre padre_estudiante1_* o padre_estudiante2_* o padre_estudiante3_*.\nEj.: \"padres de séptimo 2\":\n\n( (padre_estudiante1_grado='Séptimo (7)'::public.estudiante_grado_enum AND padre_estudiante1_salon='Dos (2)'::public.estudiante_salon_enum)\n  OR (padre_estudiante2_grado=... AND padre_estudiante2_salon=...)\n  OR (padre_estudiante3_grado=... AND padre_estudiante3_salon=...) )\n\nIMPORTANTE - Reglas para PREESCOLAR:\n\n\"preescolar\", \"pre-escolar\", \"pre escolar\" ⇒ \n  Solo válido para padre_estudianteX_nivel = 'Preescolar'::public.nivel_enum\n\n\"prejardín\", \"pre jardín\", \"pre-jardín\", \"prejardin\" ⇒ \n  padre_estudianteX_grado = 'Prejardín' (como TEXT, sin casteo ENUM)\n\n\"jardín\", \"jardin\" ⇒ \n  padre_estudianteX_grado = 'Jardín' (como TEXT, sin casteo ENUM)\n\n\"transición\", \"transicion\" ⇒ \n  padre_estudianteX_grado = 'Transición' (como TEXT, sin casteo ENUM)\n\nEjemplos con Preescolar:\n\n- \"padres de preescolar\" ⇒ \n  ( padre_estudiante1_nivel = 'Preescolar'::public.nivel_enum \n    OR padre_estudiante2_nivel = 'Preescolar'::public.nivel_enum \n    OR padre_estudiante3_nivel = 'Preescolar'::public.nivel_enum )\n\n- \"padres de jardín\" ⇒ \n  ( (padre_estudiante1_nivel = 'Preescolar'::public.nivel_enum \n     AND padre_estudiante1_grado = 'Jardín')\n    OR (padre_estudiante2_nivel = 'Preescolar'::public.nivel_enum \n        AND padre_estudiante2_grado = 'Jardín')\n    OR (padre_estudiante3_nivel = 'Preescolar'::public.nivel_enum \n        AND padre_estudiante3_grado = 'Jardín') )\n\nSi el texto mezcla audiencias (p. ej. \"estudiantes de séptimo 2 y padres de primaria\"), combina con OR entre bloques, y dentro de cada bloque usa AND entre sus condiciones.\n\nSi solo dice \"todos los estudiantes\" o \"todos los padres\":\n\n\"todos los estudiantes\": no hay estudiante_* específicos ⇒ puedes usar perfil = 'Estudiante'::public.perfil_enum.\n\n\"todos los padres\": idem con perfil = 'Padre de familia'::public.perfil_enum.\n\nSi es ambiguo o no mapeable: devuelve WHERE 1=0 y explica brevemente en note.\n\nCasteo de ENUM (obligatorio)\n\nSiempre castea los literales, EXCEPTO los grados de Preescolar que son TEXT:\n\n'Estudiante'::public.perfil_enum\n\n'Primaria'::public.nivel_enum\n\n'Preescolar'::public.nivel_enum\n\n'Séptimo (7)'::public.estudiante_grado_enum\n\n'Dos (2)'::public.estudiante_salon_enum\n\n'2 (dos)'::public.padre_num_est_enum\n\nPara grados de Preescolar: 'Prejardín', 'Jardín', 'Transición' (sin casteo, como TEXT)\n\nSELECT base (usa este SELECT y añade SOLO el WHERE que construyas)\nSELECT\n  id, nombre, perfil,\n  estudiante_nivel, estudiante_grado, estudiante_salon,\n  padre_numero_de_estudiantes,\n  padre_estudiante1_nivel, padre_estudiante1_grado, padre_estudiante1_salon,\n  padre_estudiante2_nivel, padre_estudiante2_grado, padre_estudiante2_salon,\n  padre_estudiante3_nivel, padre_estudiante3_grado, padre_estudiante3_salon\nFROM public.\"Perfiles\"\nWHERE\n  -- aquí va tu condición\n;\n\nEjemplos de salida correcta\n\n1) \"A los estudiantes de Séptimo 2\" (mínimo necesario, sin perfil)\n\n{\n  \"query\": \"SELECT id, nombre, perfil, estudiante_nivel, estudiante_grado, estudiante_salon, padre_numero_de_estudiantes, padre_estudiante1_nivel, padre_estudiante1_grado, padre_estudiante1_salon, padre_estudiante2_nivel, padre_estudiante2_grado, padre_estudiante2_salon, padre_estudiante3_nivel, padre_estudiante3_grado, padre_estudiante3_salon FROM public.\\\"Perfiles\\\" WHERE estudiante_grado = 'Séptimo (7)'::public.estudiante_grado_enum AND estudiante_salon = 'Dos (2)'::public.estudiante_salon_enum;\"\n}\n\n2) \"Padres de familia de Primaria\" (OR en hijos, sin perfil)\n\n{\n  \"query\": \"SELECT id, nombre, perfil, estudiante_nivel, estudiante_grado, estudiante_salon, padre_numero_de_estudiantes, padre_estudiante1_nivel, padre_estudiante1_grado, padre_estudiante1_salon, padre_estudiante2_nivel, padre_estudiante2_grado, padre_estudiante2_salon, padre_estudiante3_nivel, padre_estudiante3_grado, padre_estudiante3_salon FROM public.\\\"Perfiles\\\" WHERE ( padre_estudiante1_nivel = 'Primaria'::public.nivel_enum OR padre_estudiante2_nivel = 'Primaria'::public.nivel_enum OR padre_estudiante3_nivel = 'Primaria'::public.nivel_enum );\"\n}\n\n3) Mixto: \"Estudiantes de Séptimo 2 y padres de Primaria\" (bloques con OR)\n\n{\n  \"query\": \"SELECT id, nombre, perfil, estudiante_nivel, estudiante_grado, estudiante_salon, padre_numero_de_estudiantes, padre_estudiante1_nivel, padre_estudiante1_grado, padre_estudiante1_salon, padre_estudiante2_nivel, padre_estudiante2_grado, padre_estudiante2_salon, padre_estudiante3_nivel, padre_estudiante3_grado, padre_estudiante3_salon FROM public.\\\"Perfiles\\\" WHERE (estudiante_grado = 'Séptimo (7)'::public.estudiante_grado_enum AND estudiante_salon = 'Dos (2)'::public.estudiante_salon_enum) OR ( padre_estudiante1_nivel = 'Primaria'::public.nivel_enum OR padre_estudiante2_nivel = 'Primaria'::public.nivel_enum OR padre_estudiante3_nivel = 'Primaria'::public.nivel_enum );\"\n}\n\n4) \"Público general\" (sin más detalle ⇒ usa perfil)\n\n{\n  \"query\": \"SELECT id, nombre, perfil, estudiante_nivel, estudiante_grado, estudiante_salon, padre_numero_de_estudiantes, padre_estudiante1_nivel, padre_estudiante1_grado, padre_estudiante1_salon, padre_estudiante2_nivel, padre_estudiante2_grado, padre_estudiante2_salon, padre_estudiante3_nivel, padre_estudiante3_grado, padre_estudiante3_salon FROM public.\\\"Perfiles\\\" WHERE perfil = 'Público general'::public.perfil_enum;\"\n}\n\n5) \"Padres de familia de Preescolar\" (nivel Preescolar con OR)\n\n{\n  \"query\": \"SELECT id, nombre, perfil, estudiante_nivel, estudiante_grado, estudiante_salon, padre_numero_de_estudiantes, padre_estudiante1_nivel, padre_estudiante1_grado, padre_estudiante1_salon, padre_estudiante2_nivel, padre_estudiante2_grado, padre_estudiante2_salon, padre_estudiante3_nivel, padre_estudiante3_grado, padre_estudiante3_salon FROM public.\\\"Perfiles\\\" WHERE ( padre_estudiante1_nivel = 'Preescolar'::public.nivel_enum OR padre_estudiante2_nivel = 'Preescolar'::public.nivel_enum OR padre_estudiante3_nivel = 'Preescolar'::public.nivel_enum );\"\n}\n\n6) \"Padres con hijos en Jardín\" (grado específico de Preescolar)\n\n{\n  \"query\": \"SELECT id, nombre, perfil, estudiante_nivel, estudiante_grado, estudiante_salon, padre_numero_de_estudiantes, padre_estudiante1_nivel, padre_estudiante1_grado, padre_estudiante1_salon, padre_estudiante2_nivel, padre_estudiante2_grado, padre_estudiante2_salon, padre_estudiante3_nivel, padre_estudiante3_grado, padre_estudiante3_salon FROM public.\\\"Perfiles\\\" WHERE ( (padre_estudiante1_nivel = 'Preescolar'::public.nivel_enum AND padre_estudiante1_grado = 'Jardín') OR (padre_estudiante2_nivel = 'Preescolar'::public.nivel_enum AND padre_estudiante2_grado = 'Jardín') OR (padre_estudiante3_nivel = 'Preescolar'::public.nivel_enum AND padre_estudiante3_grado = 'Jardín') );\"\n}\n\n7) Ambiguo\n\n{\n  \"query\": \"SELECT id FROM public.\\\"Perfiles\\\" WHERE 1=0;\",\n  \"note\": \"No se pudo mapear 'destinatarios' a valores de ENUM conocidos.\"\n}",
+              "role": "system"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        176,
+        0
+      ],
+      "id": "a57a96a4-16cf-49a3-9aa8-5a03e23cd7a1",
+      "name": "Identificar Perfiles",
+      "credentials": {
+        "openAiApi": {
+          "id": "PKGrXs1i8Z9AyRvC",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.manychat.com/fb/sending/sendContent",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "=Bearer 2898416:b057cee379fe53d915fa8c73b87ce816"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ JSON.stringify({\n  subscriber_id: String($('Loop Over Items').item.json.id),\n  data: {\n    version: \"v2\",\n    content: {\n      type: \"whatsapp\",\n      messages: [\n        { type: \"text\", text: String($json.output).replace(/\\r\\n/g, '\\n') }\n      ]\n    }\n  }\n}) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1088,
+        16
+      ],
+      "id": "b5852018-a17d-4f17-b6f4-4d5ac0b33819",
+      "name": "HTTP Request",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "q6x09GMARCv6CLuB",
+          "name": "Header Auth account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Identificar Perfiles",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar Perfiles": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Enviar Comunicado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Identificar Perfiles": {
+      "main": [
+        [
+          {
+            "node": "Buscar Perfiles",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enviar Comunicado": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "914c6716-a7ba-47d3-be72-1dbedf8f2e28",
+  "meta": {
+    "instanceId": "68982fb78721fac6f9f5e6195f1359f50836b71709d5046c50ea3b1c2cfd775e"
+  },
+  "id": "ENsEB1upNKY07eOH",
+  "tags": []
+}

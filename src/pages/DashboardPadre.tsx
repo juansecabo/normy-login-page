@@ -94,7 +94,7 @@ const DashboardPadre = () => {
               .eq('codigo_estudiantil', hijo.codigo)
               .eq('grado', hijo.grado)
               .eq('salon', hijo.salon)
-              .not('nombre_actividad', 'in', '("Final Periodo","Final Definitiva")'),
+              .not('nombre_actividad', 'in', '("Definitiva Periodo","Definitiva Anual")'),
           ]);
 
           if (actResult.data) {

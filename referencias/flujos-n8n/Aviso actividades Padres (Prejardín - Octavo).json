@@ -1,0 +1,564 @@
+{
+  "name": "Aviso actividades Padres (Prejardín - Octavo)",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 12
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -464,
+        -304
+      ],
+      "id": "3bafe0b1-f753-4688-ad12-ea999c889763",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT\n  p.id AS id,\n  SPLIT_PART(p.padre_nombre, ' ', 1) AS padre_primer_nombre,\n  s.nombre_completo AS estudiante_nombre_completo,\n  TRIM(s.grado::TEXT || ' ' || s.salon::TEXT) AS grado_salon\nFROM public.\"Perfiles_Generales\" p\nCROSS JOIN LATERAL (\n  VALUES\n    (p.padre_estudiante1_nombre, p.padre_estudiante1_grado, p.padre_estudiante1_salon),\n    (p.padre_estudiante2_nombre, p.padre_estudiante2_grado, p.padre_estudiante2_salon),\n    (p.padre_estudiante3_nombre, p.padre_estudiante3_grado, p.padre_estudiante3_salon)\n) AS s(nombre_completo, grado, salon)\nWHERE\n  p.perfil = 'Padre de familia'::perfil_enum_2\n  AND s.nombre_completo IS NOT NULL\n  AND s.grado IN (\n    'Prejardín'::public.grado_enum,\n    'Jardín'::public.grado_enum,\n    'Transición'::public.grado_enum,\n    'Primero'::public.grado_enum,\n    'Segundo'::public.grado_enum,\n    'Tercero'::public.grado_enum,\n    'Cuarto'::public.grado_enum,\n    'Quinto'::public.grado_enum,\n    'Sexto'::public.grado_enum,\n    'Séptimo'::public.grado_enum,\n    'Octavo'::public.grado_enum\n  )\nORDER BY p.id, s.nombre_completo;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        208,
+        -320
+      ],
+      "id": "48fae38a-0ec7-47e8-a7f9-58e08b5c1741",
+      "name": "Execute a SQL query",
+      "credentials": {
+        "postgres": {
+          "id": "My6H5VkArUMxked3",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        448,
+        -320
+      ],
+      "id": "9fbf277d-65e9-47aa-b177-1144b5c84218",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "Calendario Actividades",
+        "returnAll": true,
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "Grado y Salon",
+              "condition": "eq",
+              "keyValue": "={{ $json.grado_salon }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        672,
+        -304
+      ],
+      "id": "05c89385-6409-4545-b144-c010c0d8ccc5",
+      "name": "Get many rows",
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "axobjzxlEt2nszsH",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.manychat.com/fb/sending/sendContent",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "=Bearer 2898416:b057cee379fe53d915fa8c73b87ce816"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ JSON.stringify({\n  subscriber_id: String($item(0).$node[\"Loop Over Items\"].json.id),\n  data: {\n    version: \"v2\",\n    content: {\n      type: \"whatsapp\",\n      messages: [\n        { type: \"text\", text: String($json.output).replace(/\\r\\n/g, '\\n') }\n      ]\n    }\n  }\n}) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1280,
+        -112
+      ],
+      "id": "03753a0c-4362-4576-a862-d48134998640",
+      "name": "HTTP Request",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "q6x09GMARCv6CLuB",
+          "name": "Header Auth account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "f66576c2-4dd8-4b5b-97d0-f5cf1868ae32",
+              "leftValue": "={{ ( () => {\n  const tz = 'America/Bogota';\n  const d  = new Date(new Date().toLocaleString('en-US', { timeZone: tz }));\n  const dow = d.getDay(); // 0=Dom, 1=Lun ... 6=Sáb\n  return dow >= 1 && dow <= 5; // Lunes a Viernes\n})() }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -288,
+        -304
+      ],
+      "id": "5d2d4073-d854-47c2-a494-f548f278a8b0",
+      "name": "If"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        -112,
+        -192
+      ],
+      "id": "a4219dc0-497c-47b5-a4b1-600dc67305fd",
+      "name": "No Operation, do nothing"
+    },
+    {
+      "parameters": {
+        "jsCode": "const validos = (items || []).filter(it => it?.json && Object.keys(it.json).length > 0);\n\nconst listado = validos.map((it, idx) => {\n  const j = it.json || {};\n  const materia  = (j.Materia ?? '').toString().trim();\n  const profesor = [j.Nombres, j.Apellidos].filter(Boolean).join(' ').trim();\n  const desc     = (j['Descripción'] ?? j.Descripcion ?? '').toString().trim();\n  return `${idx + 1}. ${materia}\\n   Profesor: ${profesor}\\n   Descripción: ${desc}`;\n}).join('\\n\\n');\n\nreturn [{\n  json: {\n    actividades: listado || 'Sin actividades',\n    actividades_count: validos.length\n  },\n}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1120,
+        -320
+      ],
+      "id": "e8fce478-00ee-4bae-b0a5-613afc72deef",
+      "name": "Code1"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.manychat.com/fb/sending/sendContent",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "=Bearer 2898416:b057cee379fe53d915fa8c73b87ce816"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ JSON.stringify({\n  subscriber_id: String($item(0).$node[\"Loop Over Items\"].json.id),\n  data: {\n    version: \"v2\",\n    content: { type: \"whatsapp\",\n      messages: [\n        { type: \"text\", text: String($json.output).replace(/\\r\\n/g, '\\n') }\n      ]\n    }\n  }\n}) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1424,
+        -320
+      ],
+      "id": "3f0888c8-ef08-46ef-b230-604e14d305d9",
+      "name": "HTTP Request1",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "q6x09GMARCv6CLuB",
+          "name": "Header Auth account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "// America/Bogota: próximo día hábil (lun–jue => mañana, vie => lunes)\nconst tz = 'America/Bogota';\nconst nowTz = new Date(new Date().toLocaleString('en-US', { timeZone: tz }));\nconst dow = nowTz.getDay(); // 0=Dom, 1=Lun ... 5=Vie, 6=Sáb\n\nconst addDays = (dow === 5) ? 3 : 1; // viernes => +3, demás (lun–jue) => +1\nconst target = new Date(nowTz);\ntarget.setDate(target.getDate() + addDays);\n\nconst yyyy = target.getFullYear();\nconst mm = String(target.getMonth() + 1).padStart(2, '0');\nconst dd = String(target.getDate()).padStart(2, '0');\n\nreturn [{ fecha_objetivo: `${yyyy}-${mm}-${dd}`, tz }];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        0,
+        -320
+      ],
+      "id": "cee0710a-b9f8-4a1c-a9ed-80454d29eee9",
+      "name": "Determinar siguiente día hábil"
+    },
+    {
+      "parameters": {
+        "amount": 1
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        1584,
+        -320
+      ],
+      "id": "39b50610-b015-4650-a704-7c74911af4fa",
+      "name": "Wait",
+      "webhookId": "20b27a39-e458-478d-878d-93d1d3c08b92",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "amount": 1
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        1440,
+        -112
+      ],
+      "id": "c53c5097-bd03-4dcc-bde6-121edcf3d9b5",
+      "name": "Wait1",
+      "webhookId": "53e22679-d17b-4801-88b1-075bf5566586",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "jsCode": "// Toma fecha_objetivo del nodo \"Determinar siguiente día hábil\"\nconst fechaObjetivo = $('Determinar siguiente día hábil').item.json.fecha_objetivo; // \"YYYY-MM-DD\"\n\n// Normaliza varios formatos a \"YYYY-MM-DD\"\nfunction normalizaFecha(str) {\n  const s = (str || '').toString().trim();\n\n  // dd/mm/yyyy o dd-mm-yyyy o dd/mm/yy o dd-mm-yy (ej: \"30/10/2025 (jueves)\" o \"28/10/25 (martes)\")\n  const dmY = s.match(/\\b(\\d{1,2})[\\/-](\\d{1,2})[\\/-](\\d{2,4})\\b/);\n  if (dmY) {\n    const [, d, m, y] = dmY;\n    // Si el año tiene 2 dígitos, asumimos 20XX\n    const year = y.length === 2 ? `20${y}` : y;\n    return `${year}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;\n  }\n\n  // yyyy/mm/dd o yyyy-mm-dd\n  const yMd = s.match(/\\b(\\d{4})[\\/-](\\d{1,2})[\\/-](\\d{1,2})\\b/);\n  if (yMd) {\n    const [, y, m, d] = yMd;\n    return `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;\n  }\n\n  return null;\n}\n\n// Devuelve SOLO las actividades con fecha == fechaObjetivo\nconst filtradas = (items || []).filter(it => {\n  const j = it?.json || {};\n  const f = normalizaFecha(j.fecha_de_presentacion ?? j['Fecha de presentación']);\n  return f === fechaObjetivo;\n});\n\n// Importante: devolver como array de items (n8n)\nreturn filtradas;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        816,
+        -304
+      ],
+      "id": "6ded90e1-4ff7-4a72-a1ae-e9810d1b8a3a",
+      "name": "Actividades para el día siguiente",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "dfd03fbc-7cb7-4ddf-b46f-c3576a998d88",
+              "leftValue": "={{ \n  $items('Actividades para el día siguiente', 0, $runIndex)\n    .some(i => i && i.json && Object.keys(i.json).length > 0)\n}}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        960,
+        -304
+      ],
+      "id": "acd73af2-baa2-44b4-b7b6-125cd13e230c",
+      "name": "¿Tiene actividades?"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "86ed7350-4019-4c75-ba41-f87950bb7430",
+              "name": "output",
+              "value": "=REPORTE ACADÉMICO PARA {{ ( ()=>{ const tz='America/Bogota'; const now=new Date(new Date().toLocaleString('en-US',{timeZone:tz})); return now.getDay()===5 ? 'EL LUNES' : 'MAÑANA'; })() }} 📖✏️\n\n{{ ($item(0).$node[\"Loop Over Items\"].json.padre_primer_nombre || 'Padre').trim() }}, {{ $json.actividades_count === 1 ? 'esta es la actividad' : 'estas son las actividades' }} que tiene {{ ($item(0).$node[\"Loop Over Items\"].json.estudiante_nombre_completo || 'su estudiante').trim() }} para {{ ( ()=>{ const tz='America/Bogota'; const now=new Date(new Date().toLocaleString('en-US',{timeZone:tz})); return now.getDay()===5 ? 'el lunes' : 'mañana'; })() }}:\n\n{{ $json.actividades }}\n\nRecuerda que también puedes preguntarme por las actividades que tenga para otros días y que vaya adelantando 😉",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1280,
+        -320
+      ],
+      "id": "5141f96b-530e-4e3b-ac19-2ed7c54aec38",
+      "name": "Mensaje Tiene actividades",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "86ed7350-4019-4c75-ba41-f87950bb7430",
+              "name": "output",
+              "value": "=REPORTE ACADÉMICO PARA {{ ( ()=>{ const tz='America/Bogota'; const now=new Date(new Date().toLocaleString('en-US',{timeZone:tz})); return now.getDay()===5 ? 'EL LUNES' : 'MAÑANA'; })() }} 📖✏️\n\n{{ ($item(0).$node[\"Loop Over Items\"].json.padre_primer_nombre || 'Padre').trim() }}, según veo en mi sistema, {{ ($item(0).$node[\"Loop Over Items\"].json.estudiante_nombre_completo || 'su estudiante').trim() }} no tiene tareas o actividades académicas para {{ ( ()=>{ const tz='America/Bogota'; const now=new Date(new Date().toLocaleString('en-US',{timeZone:tz})); return now.getDay()===5 ? 'el lunes' : 'mañana'; })() }}, pero recuerda que puedes preguntarme por las actividades que tenga para otros días y que vaya adelantando 😉",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1120,
+        -112
+      ],
+      "id": "0c296bd5-6505-4184-861c-4b35f62b36bb",
+      "name": "Mensaje No tiene actividades",
+      "onError": "continueRegularOutput"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute a SQL query": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Get many rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get many rows": {
+      "main": [
+        [
+          {
+            "node": "Actividades para el día siguiente",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Wait1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Determinar siguiente día hábil",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "No Operation, do nothing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code1": {
+      "main": [
+        [
+          {
+            "node": "Mensaje Tiene actividades",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request1": {
+      "main": [
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Determinar siguiente día hábil": {
+      "main": [
+        [
+          {
+            "node": "Execute a SQL query",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait1": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Actividades para el día siguiente": {
+      "main": [
+        [
+          {
+            "node": "¿Tiene actividades?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "¿Tiene actividades?": {
+      "main": [
+        [
+          {
+            "node": "Code1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Mensaje No tiene actividades",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mensaje Tiene actividades": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mensaje No tiene actividades": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "America/Bogota",
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "versionId": "0c07a0e2-2d20-4d03-9c2e-0a6082f16de1",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "68982fb78721fac6f9f5e6195f1359f50836b71709d5046c50ea3b1c2cfd775e"
+  },
+  "id": "l8XYSHBAX6Oxc3PV",
+  "tags": []
+}
