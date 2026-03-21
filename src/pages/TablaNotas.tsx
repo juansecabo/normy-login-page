@@ -262,7 +262,7 @@ const TablaNotas = () => {
           notasData.forEach((nota) => {
             const { codigo_estudiantil, periodo, nombre_actividad, nota: valorNota, comentario } = nota;
             
-            // Cargar comentarios de Final Definitiva (periodo = 0)
+            // Cargar comentarios de Definitiva Anual(periodo = 0)
             if (nombre_actividad === "Final Definitiva" && periodo === 0) {
               if (comentario) {
                 const actividadId = '0-Final Definitiva';
@@ -837,7 +837,7 @@ const TablaNotas = () => {
           : `"${actividadAEliminar.nombre}" y todas sus notas han sido eliminadas`,
       });
       
-      // Recalcular y guardar Final Periodo y Final Definitiva para todos los estudiantes afectados
+      // Recalcular y guardar Final Periodo y Definitiva Anualpara todos los estudiantes afectados
       setTimeout(async () => {
         console.log('=== RECALCULANDO FINALES DESPUÉS DE ELIMINAR ACTIVIDAD ===');
         for (const est of estudiantes) {
@@ -965,26 +965,23 @@ const TablaNotas = () => {
     return calcularFinalPeriodoConNotas(notas, codigoEstudiantil, periodo);
   }, [calcularFinalPeriodoConNotas, notas]);
 
-  // Calcular Final Definitiva (promedio de los 4 períodos, siempre divide entre 4)
+  // Calcular Definitiva Anual (promedio de las notas relativas de los períodos que tienen datos)
   const calcularFinalDefinitiva = useCallback((codigoEstudiantil: string): number | null => {
     let suma = 0;
-    let tieneAlgunaNota = false;
-    
+    let periodosConNota = 0;
+
     for (let p = 1; p <= 4; p++) {
       const finalPeriodo = calcularFinalPeriodo(codigoEstudiantil, p);
       if (finalPeriodo !== null) {
         suma += finalPeriodo;
-        tieneAlgunaNota = true;
+        periodosConNota++;
       }
-      // Si es null, cuenta como 0 (no sumamos nada)
     }
-    
-    // Si no tiene ninguna nota en ningún período, mostrar "—"
-    if (!tieneAlgunaNota) return null;
-    
-    // Siempre dividir entre 4 (los 4 períodos del año)
-    const promedio = suma / 4;
-    
+
+    if (periodosConNota === 0) return null;
+
+    const promedio = suma / periodosConNota;
+
     // Redondear a 2 decimales (redondeo matemático estándar)
     return Math.round(promedio * 100) / 100;
   }, [calcularFinalPeriodo]);
@@ -1008,7 +1005,7 @@ const TablaNotas = () => {
 
   const getNombreArchivo = () => {
     const periodoNombre = esFinalDefinitiva
-      ? "Final Definitiva"
+      ? "Definitiva Anual"
       : periodos[periodoActivo - 1].nombre;
     return `${asignaturaSeleccionada} - ${gradoSeleccionado} ${salonSeleccionado} - ${periodoNombre}`;
   };
@@ -1027,7 +1024,7 @@ const TablaNotas = () => {
 
       if (esFinalDefinitiva) {
         periodos.forEach(p => headers.push(p.nombre));
-        headers.push("Final Definitiva");
+        headers.push("Definitiva Anual");
 
         estudiantes.forEach(est => {
           const fila: (string | number | null)[] = [
@@ -1048,7 +1045,7 @@ const TablaNotas = () => {
         actividadesPeriodo.forEach(a => {
           headers.push(a.porcentaje !== null ? `${a.nombre} (${a.porcentaje}%)` : a.nombre);
         });
-        headers.push("Final Periodo");
+        headers.push("Definitiva Periodo");
 
         estudiantes.forEach(est => {
           const fila: (string | number | null)[] = [
@@ -1129,7 +1126,7 @@ const TablaNotas = () => {
 
       if (esFinalDefinitiva) {
         periodos.forEach(p => headers.push(p.nombre));
-        headers.push("Final Definitiva");
+        headers.push("Definitiva Anual");
 
         estudiantes.forEach(est => {
           const fila: string[] = [
@@ -1150,7 +1147,7 @@ const TablaNotas = () => {
         actividadesPeriodo.forEach(a => {
           headers.push(a.porcentaje !== null ? `${a.nombre} (${a.porcentaje}%)` : a.nombre);
         });
-        headers.push("Final Periodo");
+        headers.push("Definitiva Periodo");
 
         estudiantes.forEach(est => {
           const fila: string[] = [
@@ -1406,7 +1403,7 @@ const TablaNotas = () => {
     }
   };
 
-  // Guardar Final Definitiva en Supabase (preservando comentario existente)
+  // Guardar Definitiva Anualen Supabase (preservando comentario existente)
   const guardarFinalDefinitiva = async (codigoEstudiantil: string, notaFinal: number | null) => {
     console.log('=== INICIANDO guardarFinalDefinitiva ===');
     console.log('Parámetros:', { codigoEstudiantil, notaFinal, asignatura: asignaturaSeleccionada, grado: gradoSeleccionado, salon: salonSeleccionado });
@@ -1435,7 +1432,7 @@ const TablaNotas = () => {
         .eq('salon', salonSeleccionado)
         .eq('periodo', 0)
         .eq('nombre_actividad', 'Final Definitiva');
-      console.log('Final Definitiva eliminada para:', codigoEstudiantil, 'Error:', error);
+      console.log('Definitiva Anualeliminada para:', codigoEstudiantil, 'Error:', error);
     } else {
       // Hay períodos, hacer upsert (con nota NULL o con valor)
       const { data: existente, error: errorConsulta } = await supabase
@@ -1475,14 +1472,14 @@ const TablaNotas = () => {
         })
         .select();
       
-      console.log('=== RESULTADO UPSERT Final Definitiva ===');
+      console.log('=== RESULTADO UPSERT Definitiva Anual===');
       console.log('Data:', data);
       console.log('Error:', error);
       
       if (error) {
         console.error('ERROR guardando Final Definitiva:', error);
       } else {
-        console.log('✅ Final Definitiva guardada exitosamente:', codigoEstudiantil, notaFinal);
+        console.log('✅ Definitiva Anualguardada exitosamente:', codigoEstudiantil, notaFinal);
       }
     }
   };
@@ -1515,7 +1512,7 @@ const TablaNotas = () => {
     console.log('Datos:', { codigoEstudiantil, periodo, nombreActividad, nuevoComentario });
     
     try {
-      // Para Final Definitiva (periodo = 0), verificar si existe el registro
+      // Para Definitiva Anual(periodo = 0), verificar si existe el registro
       if (periodo === 0 && nombreActividad === 'Final Definitiva') {
         const { data: existe } = await supabase
           .from('Notas')
@@ -1528,12 +1525,12 @@ const TablaNotas = () => {
           .eq('nombre_actividad', 'Final Definitiva')
           .maybeSingle();
         
-        console.log('Registro Final Definitiva existe:', existe);
+        console.log('Registro Definitiva Anualexiste:', existe);
         
         if (!existe) {
           // Calcular la nota actual y crear el registro
           const finalDef = calcularFinalDefinitiva(codigoEstudiantil);
-          console.log('Creando registro Final Definitiva con nota:', finalDef);
+          console.log('Creando registro Definitiva Anualcon nota:', finalDef);
           
           const { data, error } = await supabase
             .from('Notas')
@@ -1793,7 +1790,7 @@ const TablaNotas = () => {
     setNotificacionModalOpen(true);
   };
 
-  // Preparar notificación para Final Definitiva individual
+  // Preparar notificación para Definitiva Anualindividual
   const handleNotificarFinalDefinitivaIndividual = (
     estudiante: Estudiante,
     notaFinal: number
@@ -2030,7 +2027,7 @@ const TablaNotas = () => {
     const todosConActividadesCompletas = completitudPeriodos.every(p => p.porcentaje === 100);
     
     // Filtrar SOLO estudiantes que cumplen los requisitos:
-    // 1. Tienen Final Definitiva calculada
+    // 1. Tienen Definitiva Anualcalculada
     // 2. Tienen al menos un período completo (100%) con TODAS las notas
     const estudiantesElegibles = estudiantes.filter(est => {
       const finalDef = calcularFinalDefinitiva(est.codigo_estudiantil);
@@ -2126,7 +2123,7 @@ const TablaNotas = () => {
       
       if (estudiantesCompletos.length > 0 && estudiantesParciales === 0) {
         // Todos recibirán reporte completo
-        descripcion += `Se enviará REPORTE FINAL COMPLETO a ${estudiantesCompletos.length} estudiante(s) sobre:\nFinal Definitiva (4 períodos completados)`;
+        descripcion += `Se enviará REPORTE FINAL COMPLETO a ${estudiantesCompletos.length} estudiante(s) sobre:\nDefinitiva Anual(4 períodos completados)`;
       } else if (estudiantesCompletos.length > 0 && estudiantesParciales > 0) {
         // Mezcla de completos y parciales
         descripcion += `Se enviará notificación a ${estudiantesElegibles.length} estudiante(s):\n`;
@@ -2134,7 +2131,7 @@ const TablaNotas = () => {
         descripcion += `• ${estudiantesParciales} recibirá(n) REPORTE PARCIAL (períodos completados individualmente)`;
       } else {
         // Solo parciales
-        descripcion += `Se enviará REPORTE PARCIAL a ${estudiantesParciales} estudiante(s) sobre:\nFinal Definitiva (períodos completados individualmente)`;
+        descripcion += `Se enviará REPORTE PARCIAL a ${estudiantesParciales} estudiante(s) sobre:\nDefinitiva Anual(períodos completados individualmente)`;
       }
       
       if (estudiantesExcluidos > 0) {
@@ -2145,7 +2142,7 @@ const TablaNotas = () => {
       const promedioCompletitud = Math.round((completitudPeriodos.reduce((sum, p) => sum + p.porcentaje, 0) / 4));
       
       descripcion = `Los períodos NO tienen todas las actividades asignadas (promedio: ${promedioCompletitud}%).\n\n`;
-      descripcion += `Se enviará REPORTE PARCIAL a ${estudiantesElegibles.length} estudiante(s) sobre:\nFinal Definitiva (períodos con actividades completadas)`;
+      descripcion += `Se enviará REPORTE PARCIAL a ${estudiantesElegibles.length} estudiante(s) sobre:\nDefinitiva Anual(períodos con actividades completadas)`;
       
       if (estudiantesExcluidos > 0) {
         descripcion += `\n\n⚠️ Se excluirá(n) ${estudiantesExcluidos} estudiante(s) sin períodos elegibles.`;
@@ -2298,7 +2295,7 @@ const TablaNotas = () => {
             .eq('grado', gradoSeleccionado)
             .eq('salon', salonSeleccionado)
             .eq('periodo', periodoReal)
-            .eq('nombre_actividad', actividadNombre === "Final Definitiva" ? "Final Definitiva" : 
+            .eq('nombre_actividad', actividadNombre === "Final Definitiva" ? "Definitiva Anual" : 
               actividadNombre?.includes("Final") ? "Final Periodo" : actividadNombre);
         }
       } catch (error) {
@@ -2456,7 +2453,7 @@ const TablaNotas = () => {
               await guardarFinalDefinitiva(codigoEstudiantil, finalDef);
             } else {
               await guardarFinalDefinitiva(codigoEstudiantil, null);
-              // Eliminar comentario del Final Definitiva del estado local
+              // Eliminar comentario del Definitiva Anualdel estado local
               setComentarios(prev => {
                 const nuevosComentarios = { ...prev };
                 const finalDefId = '0-Final Definitiva';
@@ -2547,12 +2544,12 @@ const TablaNotas = () => {
           setNotas(nuevasNotas);
           console.log("Nota guardada correctamente:", notaRedondeada);
           
-          // Calcular y guardar Final Periodo y Final Definitiva después de actualizar el estado
+          // Calcular y guardar Final Periodo y Definitiva Anualdespués de actualizar el estado
           setTimeout(async () => {
             const notaFinal = calcularFinalPeriodoConNotas(nuevasNotas, codigoEstudiantil, periodo);
             await guardarFinalPeriodo(codigoEstudiantil, periodo, notaFinal);
             
-            // Recalcular y guardar Final Definitiva (siempre divide entre 4)
+            // Recalcular y guardar Definitiva Anual(siempre divide entre 4)
             let suma = 0;
             let tieneAlgunaNota = false;
             for (let p = 1; p <= 4; p++) {
@@ -2727,7 +2724,7 @@ const TablaNotas = () => {
                 </button>
               );
             })}
-            {/* Pestaña Final Definitiva */}
+            {/* Pestaña Definitiva Anual*/}
             {(() => {
               const porcentajePromedio = getPorcentajePromedioAnual();
               const estaCompleto = porcentajePromedio === 100;
@@ -2747,7 +2744,7 @@ const TablaNotas = () => {
                   </span>
                   {/* Desktop: texto completo */}
                   <span className="hidden md:flex items-center justify-center gap-1">
-                    Final Definitiva 
+                    Definitiva Anual
                     <span className={estaCompleto ? 'text-green-300' : ''}>
                       ({porcentajePromedio}/100%)
                     </span>
@@ -2786,7 +2783,7 @@ const TablaNotas = () => {
                       Nombre
                     </th>
                     
-                    {/* Vista Final Definitiva */}
+                    {/* Vista Definitiva Anual*/}
                     {esFinalDefinitiva ? (
                       <>
                         {periodos.map((periodo) => (
@@ -2862,7 +2859,7 @@ const TablaNotas = () => {
                           return (
                             <th className="border-r border-b border-border/30 p-2 text-center text-xs font-medium min-w-[130px] bg-primary">
                               <div className="flex flex-col items-center">
-                                <span>Final Periodo</span>
+                                <span>Definitiva Periodo</span>
                                 <span className={`text-xs ${isComplete ? 'text-green-300' : 'text-primary-foreground/70'}`}>
                                   ({porcentajeUsado}/100%)
                                   {isComplete && ' ✓'}
@@ -2895,7 +2892,7 @@ const TablaNotas = () => {
                           {estudiante.nombre_estudiante}
                         </td>
                         
-                        {/* Vista Final Definitiva */}
+                        {/* Vista Definitiva Anual*/}
                         {esFinalDefinitiva ? (
                           <>
                             {periodos.map((periodo) => {
@@ -2925,7 +2922,7 @@ const TablaNotas = () => {
                                 />
                               );
                             })}
-                            {/* Celda Final Definitiva */}
+                            {/* Celda Definitiva Anual*/}
                             {(() => {
                               const finalDef = calcularFinalDefinitiva(estudiante.codigo_estudiantil);
                               const comentario = comentarios[estudiante.codigo_estudiantil]?.[0]?.['0-Final Definitiva'] || null;
@@ -3083,12 +3080,12 @@ const TablaNotas = () => {
                                 className="w-full px-1 py-1 text-xs rounded-md bg-green-100 hover:bg-green-200 text-green-800 transition-colors flex flex-col items-center justify-center h-10"
                               >
                                 <span className="text-[10px]">📱 Notificar</span>
-                                <span className="font-semibold text-[10px] leading-tight">Final Periodo</span>
+                                <span className="font-semibold text-[10px] leading-tight">Definitiva Periodo</span>
                               </button>
                             )}
                           </td>
                         ))}
-                        {/* Botón Final Definitiva */}
+                        {/* Botón Definitiva Anual*/}
                         <td className="border-r border-b border-border p-1 text-center">
                           {hayFinalDefinitiva() && (
                             <button
@@ -3096,7 +3093,7 @@ const TablaNotas = () => {
                               className="w-full px-1 py-1 text-xs rounded-md bg-green-100 hover:bg-green-200 text-green-800 transition-colors flex flex-col items-center justify-center h-10"
                             >
                               <span className="text-[10px]">📱 Notificar</span>
-                              <span className="font-semibold text-[10px] leading-tight">Final Definitiva</span>
+                              <span className="font-semibold text-[10px] leading-tight">Definitiva Anual</span>
                             </button>
                           )}
                         </td>
@@ -3128,7 +3125,7 @@ const TablaNotas = () => {
                               className="w-full px-1 py-1 text-xs rounded-md bg-green-100 hover:bg-green-200 text-green-800 transition-colors flex flex-col items-center justify-center h-10"
                             >
                               <span className="text-[10px]">📱 Notificar</span>
-                              <span className="font-semibold text-[10px] leading-tight">Final Periodo</span>
+                              <span className="font-semibold text-[10px] leading-tight">Definitiva Periodo</span>
                             </button>
                           )}
                         </td>

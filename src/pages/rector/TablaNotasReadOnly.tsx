@@ -256,19 +256,19 @@ const TablaNotasReadOnly = () => {
 
   const calcularFinalDefinitiva = (codigoEstudiantil: string): number | null => {
     let suma = 0;
-    let tieneAlgunaNota = false;
+    let periodosConNota = 0;
 
     for (let periodo = 1; periodo <= 4; periodo++) {
       const finalPeriodo = calcularFinalPeriodo(codigoEstudiantil, periodo);
       if (finalPeriodo !== null) {
         suma += finalPeriodo;
-        tieneAlgunaNota = true;
+        periodosConNota++;
       }
     }
 
-    if (!tieneAlgunaNota) return null;
+    if (periodosConNota === 0) return null;
 
-    return Math.round((suma / 4) * 100) / 100;
+    return Math.round((suma / periodosConNota) * 100) / 100;
   };
 
   return (
@@ -404,7 +404,7 @@ const TablaNotasReadOnly = () => {
                         ))}
                         <th className="border-r border-b border-border/30 p-2 text-center text-xs font-medium min-w-[130px] bg-primary">
                           <div className="flex flex-col items-center">
-                            <span>Final Periodo</span>
+                            <span>Definitiva Periodo</span>
                             <span className="text-xs text-primary-foreground/70">
                               ({getPorcentajeUsado(periodoActivo)}/100%)
                             </span>

@@ -228,19 +228,19 @@ const EstudianteConsolidado = () => {
 
   const calcularFinalDefinitiva = (asignatura: string): number | null => {
     let suma = 0;
-    let tieneAlgunaNota = false;
+    let periodosConNota = 0;
 
     for (let periodo = 1; periodo <= 4; periodo++) {
       const finalPeriodo = calcularFinalPeriodo(asignatura, periodo);
       if (finalPeriodo !== null) {
         suma += finalPeriodo;
-        tieneAlgunaNota = true;
+        periodosConNota++;
       }
     }
 
-    if (!tieneAlgunaNota) return null;
+    if (periodosConNota === 0) return null;
 
-    return Math.round((suma / 4) * 100) / 100;
+    return Math.round((suma / periodosConNota) * 100) / 100;
   };
 
   const handleChangePeriodo = (asignatura: string, periodo: number) => {
@@ -384,7 +384,7 @@ const EstudianteConsolidado = () => {
                             </th>
                           ))}
                           <th className="p-2 text-center text-xs font-semibold border-b border-border min-w-[100px] bg-primary/10">
-                            Final Periodo
+                            Definitiva Periodo
                           </th>
                         </tr>
                       </thead>

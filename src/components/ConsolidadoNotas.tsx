@@ -191,16 +191,16 @@ const ConsolidadoNotas = ({ codigoEstudiante, nombreEstudiante, apellidosEstudia
 
   const calcularFinalDefinitiva = (asignatura: string): number | null => {
     let suma = 0;
-    let tieneAlgunaNota = false;
+    let periodosConNota = 0;
     for (let periodo = 1; periodo <= 4; periodo++) {
       const finalPeriodo = calcularFinalPeriodo(asignatura, periodo);
       if (finalPeriodo !== null) {
         suma += finalPeriodo;
-        tieneAlgunaNota = true;
+        periodosConNota++;
       }
     }
-    if (!tieneAlgunaNota) return null;
-    return Math.round((suma / 4) * 100) / 100;
+    if (periodosConNota === 0) return null;
+    return Math.round((suma / periodosConNota) * 100) / 100;
   };
 
   const handleChangePeriodo = (asignatura: string, periodo: number) => {
@@ -292,7 +292,7 @@ const ConsolidadoNotas = ({ codigoEstudiante, nombreEstudiante, apellidosEstudia
                         </th>
                       ))}
                       <th className="p-2 text-center text-xs font-semibold border-b border-border min-w-[100px] bg-primary/10">
-                        <div>Final Periodo</div>
+                        <div>Definitiva Periodo</div>
                         <div className="text-muted-foreground text-xs font-normal">
                           ({getPorcentajeCalificado(asignatura, periodoActivo)}%)
                         </div>
