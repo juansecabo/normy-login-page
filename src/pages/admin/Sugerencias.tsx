@@ -35,6 +35,7 @@ const Sugerencias = () => {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<Sugerencia | null>(null);
+  const [selectedTelefono, setSelectedTelefono] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<Sugerencia | null>(null);
 
   useEffect(() => {
@@ -138,7 +139,25 @@ const Sugerencias = () => {
                     <TableRow
                       key={s.id}
                       className="cursor-pointer hover:bg-muted/50"
-                      onClick={() => setSelected(s)}
+                      onClick={async () => {
+                        setSelected(s);
+                        setSelectedTelefono(null);
+                        const { data: perfil } = await supabase
+                          .from('Perfiles_Generales')
+                          .select('numero_de_telefono')
+                          .or(`estudiante_codigo.eq.${s.codigo},padre_codigo.eq.${s.codigo}`)
+                          .maybeSingle();
+                        if (perfil?.numero_de_telefono) {
+                          setSelectedTelefono(perfil.numero_de_telefono);
+                        } else {
+                          const { data: interno } = await supabase
+                            .from('Internos')
+                            .select('numero_de_telefono')
+                            .eq('codigo', s.codigo)
+                            .maybeSingle();
+                          if (interno?.numero_de_telefono) setSelectedTelefono(interno.numero_de_telefono);
+                        }
+                      }}
                     >
                       <TableCell className="text-xs whitespace-nowrap">
                         {formatDate(s.created_at)}
@@ -169,7 +188,7 @@ const Sugerencias = () => {
       </main>
 
       {/* Dialog: ver sugerencia completa */}
-      <Dialog open={!!selected} onOpenChange={() => setSelected(null)}>
+      <Dialog open={!!selected} onOpenChange={() => { setSelected(null); setSelectedTelefono(null); }}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>Sugerencia</DialogTitle>
@@ -180,6 +199,7 @@ const Sugerencias = () => {
                 <span><strong>De:</strong> {selected.nombres} {selected.apellidos || ""}</span>
                 <span><strong>Rol:</strong> {selected.rol}</span>
                 <span><strong>Contacto:</strong> {selected.contacto}</span>
+                {selectedTelefono && <span><strong>Teléfono:</strong> {selectedTelefono}</span>}
               </div>
               <p className="text-xs text-muted-foreground">{formatDate(selected.created_at)}</p>
               <p className="text-foreground whitespace-pre-wrap">{selected.mensaje}</p>
