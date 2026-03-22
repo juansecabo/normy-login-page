@@ -426,7 +426,7 @@ const ProgramarActividad = () => {
 
       // Fire & forget webhook notification
       try {
-        await fetch('https://n8n.srv966880.hstgr.cloud/webhook/notificar-actividades', {
+        await fetch('https://n8n.notasnormy.com/webhook/notificar-actividades', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({

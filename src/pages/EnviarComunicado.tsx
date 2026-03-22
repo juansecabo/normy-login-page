@@ -13,15 +13,15 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
 const WEBHOOK_URL =
-  "https://n8n.srv966880.hstgr.cloud/webhook/ae459f1c-7e94-45f4-9909-aaddc82a7552";
+  "https://n8n.notasnormy.com/webhook/ae459f1c-7e94-45f4-9909-aaddc82a7552";
 
 const WEBHOOK_RECTOR_URL =
-  "https://n8n.srv966880.hstgr.cloud/webhook/enviar-comunicado-rector-coordinadores";
+  "https://n8n.notasnormy.com/webhook/enviar-comunicado-rector-coordinadores";
 
 const PERFILES_INTERNOS = ['Profesores', 'Coordinadores', 'Todo el personal interno', 'Toda la comunidad'];
 
 const WEBHOOK_MASIVO_URL =
-  "https://n8n.srv966880.hstgr.cloud/webhook/masivo-personalizado";
+  "https://n8n.notasnormy.com/webhook/masivo-personalizado";
 
 const NIVELES_GRADOS: Record<string, string[]> = {
   Preescolar: ["Prejardín", "Jardín", "Transición"],

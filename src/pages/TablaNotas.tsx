@@ -40,7 +40,7 @@ import ComentarioModal from "@/components/notas/ComentarioModal";
 import NotificacionModal, { TipoNotificacion } from "@/components/notas/NotificacionModal";
 
 // Configuración del webhook de n8n
-const N8N_WEBHOOK_URL = 'https://n8n.srv966880.hstgr.cloud/webhook/notificar-notas';
+const N8N_WEBHOOK_URL = 'https://n8n.notasnormy.com/webhook/notificar-notas';
 
 interface Estudiante {
   codigo_estudiantil: string;

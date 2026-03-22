@@ -189,7 +189,7 @@ const NormyExaminadora = () => {
       payload.preguntasAbiertas = parseInt(preguntasAbiertas) || 0;
 
       const response = await fetch(
-        "https://n8n.srv966880.hstgr.cloud/webhook/41f121b5-276e-453a-98b2-f300227e2e99",
+        "https://n8n.notasnormy.com/webhook/41f121b5-276e-453a-98b2-f300227e2e99",
         {
           method: "POST",
           mode: "cors",

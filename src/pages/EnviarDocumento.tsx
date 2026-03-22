@@ -15,7 +15,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
 const WEBHOOK_URL =
-  "https://n8n.srv966880.hstgr.cloud/webhook/af44e992-4372-48ce-b661-73019d6cab9d";
+  "https://n8n.notasnormy.com/webhook/af44e992-4372-48ce-b661-73019d6cab9d";
 
 const NIVELES_GRADOS: Record<string, string[]> = {
   Preescolar: ["Prejardín", "Jardín", "Transición"],
