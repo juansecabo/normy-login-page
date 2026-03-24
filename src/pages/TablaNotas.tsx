@@ -1120,8 +1120,8 @@ const TablaNotas = () => {
       const html2canvas = (await import("html2canvas")).default;
       const jsPDF = (await import("jspdf")).default;
 
-      // Construir datos
-      const headers: string[] = ["Código", "Apellidos", "Nombre"];
+      // Construir datos (sin Código en el PDF para ahorrar espacio)
+      const headers: string[] = ["Apellidos", "Nombre"];
       const rows: string[][] = [];
 
       if (esFinalDefinitiva) {
@@ -1130,7 +1130,6 @@ const TablaNotas = () => {
 
         estudiantes.forEach(est => {
           const fila: string[] = [
-            est.codigo_estudiantil,
             est.apellidos_estudiante,
             est.nombre_estudiante,
           ];
@@ -1151,7 +1150,6 @@ const TablaNotas = () => {
 
         estudiantes.forEach(est => {
           const fila: string[] = [
-            est.codigo_estudiantil,
             est.apellidos_estudiante,
             est.nombre_estudiante,
           ];
@@ -1212,8 +1210,8 @@ const TablaNotas = () => {
         const headerRow = document.createElement("tr");
         headers.forEach(h => {
           const th = document.createElement("th");
-          th.style.cssText = "background:#16a34a;color:white;padding:10px 8px;border:1px solid #0d8a35;text-align:center;font-weight:700;white-space:nowrap;font-size:13px;";
-          if (h === "Código" || h === "Apellidos" || h === "Nombre") th.style.textAlign = "left";
+          th.style.cssText = "background:#16a34a;color:white;padding:6px 4px;border:1px solid #0d8a35;text-align:center;font-weight:700;font-size:11px;word-break:break-word;";
+          if (h === "Apellidos" || h === "Nombre") th.style.textAlign = "left";
           th.textContent = h;
           headerRow.appendChild(th);
         });
@@ -1227,8 +1225,8 @@ const TablaNotas = () => {
           tr.style.backgroundColor = rowIdx % 2 === 0 ? "#ffffff" : "#f0fdf4";
           row.forEach((cell, colIdx) => {
             const td = document.createElement("td");
-            td.style.cssText = "padding:8px;border:1px solid #d0d0d0;white-space:nowrap;font-size:13px;font-weight:500;color:#1a1a1a;";
-            if (colIdx >= 3) td.style.textAlign = "center";
+            td.style.cssText = "padding:4px 3px;border:1px solid #d0d0d0;font-size:11px;font-weight:500;color:#1a1a1a;white-space:nowrap;";
+            if (colIdx >= 2) td.style.textAlign = "center";
             if (colIdx === row.length - 1 && cell !== "—") td.style.fontWeight = "700";
             td.textContent = cell;
             tr.appendChild(td);
@@ -1238,8 +1236,10 @@ const TablaNotas = () => {
         table.appendChild(tbody);
         container.appendChild(table);
 
-        const anchoBase = Math.max(headers.length * 120, 900);
+        // Ancho fijo que cabe en landscape A4 (~1100px) para que las columnas se compriman
+        const anchoBase = 1100;
         container.style.width = `${anchoBase}px`;
+        table.style.tableLayout = "auto";
         return { container, anchoBase };
       };
 
