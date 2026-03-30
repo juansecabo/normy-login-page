@@ -49,8 +49,20 @@ const NotasPadre = () => {
     }
   }, [navigate]);
 
+  // Handle browser back button to return to student selection
+  useEffect(() => {
+    const handlePopState = () => {
+      if (hijo) {
+        setHijo(null);
+      }
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [hijo]);
+
   const seleccionar = (h: HijoData) => {
     setHijo(h);
+    window.history.pushState({ hijoSelected: true }, '');
     localStorage.setItem("hijoSeleccionado", JSON.stringify(h));
 
     const marcarVisto = async () => {
