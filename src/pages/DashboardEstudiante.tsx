@@ -52,7 +52,7 @@ const DashboardEstudiante = () => {
         const [msgResult, actResult, notasResult] = await Promise.all([
           supabase
             .from('Comunicados')
-            .select('id, tipo, perfil, nivel, grado, salon, codigo_estudiantil')
+            .select('id, tipo, perfil, nivel, grado, salon, codigo_estudiantil, archivo_url')
             .in('perfil', ['Estudiantes', 'Estudiantes y Padres de familia']),
           supabase
             .from('Calendario Actividades')
@@ -77,11 +77,11 @@ const DashboardEstudiante = () => {
             return true;
           });
           b.comunicados = countNewItems(
-            misFiltrados.filter((c: any) => c.tipo === 'comunicado').map((c: any) => c.id),
+            misFiltrados.map((c: any) => c.id),
             lastSeen['comunicados']
           );
           b.documentos = countNewItems(
-            misFiltrados.filter((c: any) => c.tipo === 'documento').map((c: any) => c.id),
+            misFiltrados.filter((c: any) => c.archivo_url).map((c: any) => c.id),
             lastSeen['documentos']
           );
         }

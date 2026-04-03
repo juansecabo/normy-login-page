@@ -53,7 +53,7 @@ const DashboardPadre = () => {
 
         const { data: msgData } = await supabase
           .from('Comunicados')
-          .select('id, tipo, perfil, nivel, grado, salon, codigo_estudiantil')
+          .select('id, tipo, perfil, nivel, grado, salon, codigo_estudiantil, archivo_url')
           .in('perfil', ['Padres de familia', 'Estudiantes y Padres de familia']);
 
         if (msgData) {
@@ -70,11 +70,11 @@ const DashboardPadre = () => {
             });
           });
           b.comunicados = countNewItems(
-            filtrados.filter((c: any) => c.tipo === 'comunicado').map((c: any) => c.id),
+            filtrados.map((c: any) => c.id),
             lastSeenPadre['comunicados']
           );
           b.documentos = countNewItems(
-            filtrados.filter((c: any) => c.tipo === 'documento').map((c: any) => c.id),
+            filtrados.filter((c: any) => c.archivo_url).map((c: any) => c.id),
             lastSeenPadre['documentos']
           );
         }

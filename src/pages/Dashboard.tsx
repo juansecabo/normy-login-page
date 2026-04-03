@@ -53,12 +53,12 @@ const Dashboard = () => {
         const lastSeen = await getAllLastSeen(session.id!);
         const { data: msgData } = await supabase
           .from('Comunicados')
-          .select('id, tipo, perfil')
+          .select('id, tipo, perfil, archivo_url')
           .in('perfil', ['Profesores', 'Coordinadores', 'Todo el personal interno', 'Toda la comunidad']);
         if (msgData) {
           setBadges({
-            comunicados: countNewItems(msgData.filter((c: any) => c.tipo === 'comunicado').map((c: any) => c.id), lastSeen['comunicados']),
-            documentos: countNewItems(msgData.filter((c: any) => c.tipo === 'documento').map((c: any) => c.id), lastSeen['documentos']),
+            comunicados: countNewItems(msgData.map((c: any) => c.id), lastSeen['comunicados']),
+            documentos: countNewItems(msgData.filter((c: any) => c.archivo_url).map((c: any) => c.id), lastSeen['documentos']),
           });
         }
       } catch {}
