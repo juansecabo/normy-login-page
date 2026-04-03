@@ -75,7 +75,7 @@ const CalendarioEstudiante = () => {
   const [actividades, setActividades] = useState<ActividadCalendario[]>([]);
   const [loading, setLoading] = useState(true);
   const [mesActual, setMesActual] = useState(new Date());
-  const [diaSeleccionado, setDiaSeleccionado] = useState<Date | undefined>(undefined);
+  const [diaSeleccionado, setDiaSeleccionado] = useState<Date | undefined>(new Date());
   const [marcas, setMarcas] = useState<Record<number, 'hecho' | 'estudiar'>>({});
 
   useEffect(() => {

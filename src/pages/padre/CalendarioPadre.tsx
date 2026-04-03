@@ -80,7 +80,7 @@ const CalendarioPadre = () => {
   const [actividades, setActividades] = useState<ActividadConHijo[]>([]);
   const [loading, setLoading] = useState(true);
   const [mesActual, setMesActual] = useState(new Date());
-  const [diaSeleccionado, setDiaSeleccionado] = useState<Date | undefined>(undefined);
+  const [diaSeleccionado, setDiaSeleccionado] = useState<Date | undefined>(new Date());
 
   useEffect(() => {
     const session = getSession();
