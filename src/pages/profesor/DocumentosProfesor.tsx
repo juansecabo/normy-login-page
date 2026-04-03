@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { getSession, isProfesor } from "@/hooks/useSession";
 import HeaderNormy from "@/components/HeaderNormy";
 import ListaComunicados from "@/components/ListaComunicados";
+import { markLastSeen } from "@/utils/notificaciones";
 
 interface Comunicado {
   id: number;
@@ -43,6 +44,8 @@ const DocumentosProfesor = () => {
             return true;
           });
           setDocumentos(filtrados);
+          const maxId = filtrados.length > 0 ? Math.max(...filtrados.map((c: Comunicado) => c.id)) : 0;
+          if (maxId > 0) markLastSeen('documentos', session.id!, maxId);
         }
       } catch (err) {
         console.error('Error:', err);
