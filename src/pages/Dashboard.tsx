@@ -6,12 +6,23 @@ import { getSession, isProfesor, isAdmin, isRectorOrCoordinador, isEstudiante, i
 import { BarChart3, Megaphone, UserCheck, CalendarPlus, Mail, FileText } from "lucide-react";
 import HeaderNormy from "@/components/HeaderNormy";
 import BuzonSugerencias from "@/components/BuzonSugerencias";
+import { getAllLastSeen, countNewItems } from "@/utils/notificaciones";
+
+const Badge = ({ count }: { count: number }) => {
+  if (count <= 0) return null;
+  return (
+    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full min-w-[20px] h-5 flex items-center justify-center px-1 shadow-sm z-10">
+      {count > 99 ? '99+' : count}
+    </span>
+  );
+};
 
 const Dashboard = () => {
   const navigate = useNavigate();
   const [nombres, setNombres] = useState("");
   const [apellidos, setApellidos] = useState("");
   const [asignaturas, setAsignaturas] = useState<string[]>([]);
+  const [badges, setBadges] = useState({ comunicados: 0, documentos: 0 });
   const [selectedAsignatura, setSelectedAsignatura] = useState<string | null>(null);
   const [loadingAsignaturas, setLoadingAsignaturas] = useState(true);
 
@@ -35,6 +46,24 @@ const Dashboard = () => {
 
     setNombres(session.nombres || "");
     setApellidos(session.apellidos || "");
+
+    // Fetch badges
+    const fetchBadges = async () => {
+      try {
+        const lastSeen = await getAllLastSeen(session.id!);
+        const { data: msgData } = await supabase
+          .from('Comunicados')
+          .select('id, tipo, perfil')
+          .in('perfil', ['Profesores', 'Coordinadores', 'Todo el personal interno', 'Toda la comunidad']);
+        if (msgData) {
+          setBadges({
+            comunicados: countNewItems(msgData.filter((c: any) => c.tipo === 'comunicado').map((c: any) => c.id), lastSeen['comunicados']),
+            documentos: countNewItems(msgData.filter((c: any) => c.tipo === 'documento').map((c: any) => c.id), lastSeen['documentos']),
+          });
+        }
+      } catch {}
+    };
+    fetchBadges();
 
     // Fetch asignaturas del profesor
     const fetchAsignaturas = async () => {
@@ -173,15 +202,17 @@ const Dashboard = () => {
           </button>
           <button
             onClick={() => navigate("/profesor/comunicados")}
-            className="flex flex-col lg:flex-row items-center justify-center gap-1 lg:gap-3 p-4 lg:p-6 rounded-lg bg-gradient-to-r from-indigo-500 to-indigo-600 text-white font-bold text-sm lg:text-base transition-all duration-200 hover:shadow-md hover:scale-[1.02] hover:from-indigo-600 hover:to-indigo-500 text-center"
+            className="relative flex flex-col lg:flex-row items-center justify-center gap-1 lg:gap-3 p-4 lg:p-6 rounded-lg bg-gradient-to-r from-indigo-500 to-indigo-600 text-white font-bold text-sm lg:text-base transition-all duration-200 hover:shadow-md hover:scale-[1.02] hover:from-indigo-600 hover:to-indigo-500 text-center"
           >
+            <Badge count={badges.comunicados} />
             <Mail className="w-5 h-5 lg:w-6 lg:h-6 shrink-0" />
             <span>Comunicados Recibidos</span>
           </button>
           <button
             onClick={() => navigate("/profesor/documentos")}
-            className="flex flex-col lg:flex-row items-center justify-center gap-1 lg:gap-3 p-4 lg:p-6 rounded-lg bg-gradient-to-r from-rose-500 to-rose-600 text-white font-bold text-sm lg:text-base transition-all duration-200 hover:shadow-md hover:scale-[1.02] hover:from-rose-600 hover:to-rose-500 text-center"
+            className="relative flex flex-col lg:flex-row items-center justify-center gap-1 lg:gap-3 p-4 lg:p-6 rounded-lg bg-gradient-to-r from-rose-500 to-rose-600 text-white font-bold text-sm lg:text-base transition-all duration-200 hover:shadow-md hover:scale-[1.02] hover:from-rose-600 hover:to-rose-500 text-center"
           >
+            <Badge count={badges.documentos} />
             <FileText className="w-5 h-5 lg:w-6 lg:h-6 shrink-0" />
             <span>Documentos Recibidos</span>
           </button>
