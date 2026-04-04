@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { getPeriodoActual } from "@/utils/periodoActual";
 
 interface ConsolidadoNotasProps {
   codigoEstudiante: string;
@@ -87,7 +88,7 @@ const ConsolidadoNotas = ({ codigoEstudiante, nombreEstudiante, apellidosEstudia
 
         const periodosIniciales: PeriodosActivos = {};
         asignaturasDelGrado.forEach(asignatura => {
-          periodosIniciales[asignatura] = 1;
+          periodosIniciales[asignatura] = getPeriodoActual();
         });
         setPeriodosActivos(periodosIniciales);
 
