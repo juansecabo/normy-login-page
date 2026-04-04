@@ -1,3 +1,4 @@
+import { getPeriodoActual } from "@/utils/periodoActual";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -45,7 +46,7 @@ const TablaNotasReadOnly = () => {
   const [actividades, setActividades] = useState<Actividad[]>([]);
   const [notas, setNotas] = useState<NotasEstudiantes>({});
   const [comentarios, setComentarios] = useState<ComentariosEstudiantes>({});
-  const [periodoActivo, setPeriodoActivo] = useState<number>(1);
+  const [periodoActivo, setPeriodoActivo] = useState<number>(getPeriodoActual());
   const [nombreProfesor, setNombreProfesor] = useState<string>("");
 
   // Modal de comentarios

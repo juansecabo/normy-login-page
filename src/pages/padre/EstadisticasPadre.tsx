@@ -1,3 +1,4 @@
+import { getPeriodoActual } from "@/utils/periodoActual";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getSession, isPadreDeFamilia, HijoData } from "@/hooks/useSession";
@@ -12,7 +13,7 @@ const EstadisticasPadre = () => {
   const { loading } = useEstadisticas();
   const [hijos, setHijos] = useState<HijoData[]>([]);
   const [hijo, setHijo] = useState<HijoData | null>(null);
-  const [periodoSeleccionado, setPeriodoSeleccionado] = useState("1");
+  const [periodoSeleccionado, setPeriodoSeleccionado] = useState(String(getPeriodoActual()));
 
   useEffect(() => {
     const session = getSession();

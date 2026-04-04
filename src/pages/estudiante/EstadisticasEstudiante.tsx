@@ -1,3 +1,4 @@
+import { getPeriodoActual } from "@/utils/periodoActual";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getSession, isEstudiante } from "@/hooks/useSession";
@@ -10,7 +11,7 @@ import { Loader2 } from "lucide-react";
 const EstadisticasEstudiantePage = () => {
   const navigate = useNavigate();
   const { loading } = useEstadisticas();
-  const [periodoSeleccionado, setPeriodoSeleccionado] = useState("1");
+  const [periodoSeleccionado, setPeriodoSeleccionado] = useState(String(getPeriodoActual()));
 
   useEffect(() => {
     const session = getSession();

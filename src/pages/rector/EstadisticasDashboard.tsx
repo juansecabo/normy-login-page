@@ -1,3 +1,4 @@
+import { getPeriodoActual } from "@/utils/periodoActual";
 import { useEffect, useState, useMemo } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { getSession, isRectorOrCoordinador } from "@/hooks/useSession";
@@ -18,7 +19,7 @@ const EstadisticasDashboard = () => {
   
   // Leer filtros desde URL params (para restaurar estado al volver)
   const [nivelAnalisis, setNivelAnalisis] = useState(() => searchParams.get("nivel") || "institucion");
-  const [periodoSeleccionado, setPeriodoSeleccionado] = useState(() => searchParams.get("periodo") || "1");
+  const [periodoSeleccionado, setPeriodoSeleccionado] = useState(() => searchParams.get("periodo") || String(getPeriodoActual()));
   const [gradoSeleccionado, setGradoSeleccionado] = useState(() => searchParams.get("grado") || "");
   const [salonSeleccionado, setSalonSeleccionado] = useState(() => searchParams.get("salon") || "");
   const [asignaturaSeleccionada, setAsignaturaSeleccionada] = useState(() => searchParams.get("asignatura") || "");

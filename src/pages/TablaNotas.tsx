@@ -1,3 +1,4 @@
+import { getPeriodoActual } from "@/utils/periodoActual";
 import { useEffect, useState, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -99,11 +100,11 @@ const TablaNotas = () => {
   const [comentarios, setComentarios] = useState<ComentariosEstudiantes>({});
   
   // Estado para período activo (pestañas)
-  const [periodoActivo, setPeriodoActivo] = useState<number>(1);
+  const [periodoActivo, setPeriodoActivo] = useState<number>(getPeriodoActual());
   
   // Modal state para crear/editar actividad
   const [modalOpen, setModalOpen] = useState(false);
-  const [periodoActual, setPeriodoActual] = useState<number>(1);
+  const [periodoActual, setPeriodoActual] = useState<number>(getPeriodoActual());
   const [nombreActividad, setNombreActividad] = useState("");
   const [porcentajeActividad, setPorcentajeActividad] = useState("");
   const [actividadEditando, setActividadEditando] = useState<Actividad | null>(null);

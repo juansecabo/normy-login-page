@@ -1,3 +1,4 @@
+import { getPeriodoActual } from "@/utils/periodoActual";
 import { useEffect, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -23,7 +24,7 @@ const EstadisticasProfesor = () => {
   const [asignaciones, setAsignaciones] = useState<Asignacion[]>([]);
 
   const [asignaturaSeleccionada, setAsignaturaSeleccionada] = useState("");
-  const [periodoSeleccionado, setPeriodoSeleccionado] = useState("1");
+  const [periodoSeleccionado, setPeriodoSeleccionado] = useState(String(getPeriodoActual()));
   const [nivelAnalisis, setNivelAnalisis] = useState("grado");
   const [gradoSeleccionado, setGradoSeleccionado] = useState("");
   const [salonSeleccionado, setSalonSeleccionado] = useState("");
