@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { getSession, isRectorOrCoordinador } from "@/hooks/useSession";
+import { getPeriodoActual } from "@/utils/periodoActual";
 import HeaderNormy from "@/components/HeaderNormy";
 
 interface Estudiante {
@@ -120,7 +121,7 @@ const EstudianteConsolidado = () => {
         // Inicializar periodos activos (todos en periodo 1)
         const periodosIniciales: PeriodosActivos = {};
         asignaturasDelGrado.forEach(asignatura => {
-          periodosIniciales[asignatura] = 1;
+          periodosIniciales[asignatura] = getPeriodoActual();
         });
         setPeriodosActivos(periodosIniciales);
 
@@ -323,7 +324,7 @@ const EstudianteConsolidado = () => {
         {/* Tabla por cada asignatura */}
         <div className="space-y-6">
           {asignaturas.map((asignatura) => {
-            const periodoActivo = periodosActivos[asignatura] || 1;
+            const periodoActivo = periodosActivos[asignatura] || getPeriodoActual();
             const actividadesDelPeriodo = getActividadesPorPeriodo(asignatura, periodoActivo);
             const finalDefinitiva = calcularFinalDefinitiva(asignatura);
 
