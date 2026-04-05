@@ -106,13 +106,31 @@ const EstadisticasProfesor = () => {
     return ss.sort((a, b) => (parseInt(a) || 0) - (parseInt(b) || 0));
   }, [trios, asignaturaSeleccionada, gradoSeleccionado]);
 
-  // Estudiantes del salón (solo cuando grado y salon son específicos)
-  const estudiantesDelSalon = useMemo(() => {
-    if (!gradoSeleccionado || gradoSeleccionado === "all" || !salonSeleccionado || salonSeleccionado === "all") return [];
-    return getPromediosEstudiantes("anual", gradoSeleccionado, salonSeleccionado)
-      .map(e => ({ codigo: e.codigo_estudiantil, nombre: e.nombre_completo }))
-      .sort((a, b) => a.nombre.localeCompare(b.nombre));
-  }, [gradoSeleccionado, salonSeleccionado, getPromediosEstudiantes]);
+  // Estudiantes del salón (query directa a Supabase para obtener TODOS)
+  const [estudiantesDelSalon, setEstudiantesDelSalon] = useState<{ codigo: string; nombre: string }[]>([]);
+
+  useEffect(() => {
+    if (!gradoSeleccionado || gradoSeleccionado === "all" || !salonSeleccionado || salonSeleccionado === "all") {
+      setEstudiantesDelSalon([]);
+      return;
+    }
+    const fetchEstudiantes = async () => {
+      const { data } = await supabase
+        .from('Estudiantes')
+        .select('codigo_estudiantil, apellidos_estudiante, nombre_estudiante')
+        .eq('grado_estudiante', gradoSeleccionado)
+        .eq('salon_estudiante', salonSeleccionado)
+        .order('apellidos_estudiante')
+        .order('nombre_estudiante');
+      setEstudiantesDelSalon(
+        (data || []).map(e => ({
+          codigo: String(e.codigo_estudiantil),
+          nombre: `${e.apellidos_estudiante} ${e.nombre_estudiante}`
+        }))
+      );
+    };
+    fetchEstudiantes();
+  }, [gradoSeleccionado, salonSeleccionado]);
 
   // Valores efectivos para pasar a los componentes ("all" → undefined)
   const gradoEfectivo = gradoSeleccionado === "all" ? "" : gradoSeleccionado;
