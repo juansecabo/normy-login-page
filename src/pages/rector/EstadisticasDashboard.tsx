@@ -15,7 +15,7 @@ import { Loader2 } from "lucide-react";
 const EstadisticasDashboard = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { loading, grados, salones, asignaturas, getAsignaturasFiltradas, getPromediosEstudiantes } = useEstadisticas();
+  const { loading, grados, salones, asignaturas, estudiantes: todosEstudiantes, getAsignaturasFiltradas, getPromediosEstudiantes } = useEstadisticas();
   
   // Leer filtros desde URL params (para restaurar estado al volver)
   const [nivelAnalisis, setNivelAnalisis] = useState(() => searchParams.get("nivel") || "institucion");
@@ -51,15 +51,17 @@ const EstadisticasDashboard = () => {
     return getAsignaturasFiltradas(gradoSeleccionado, salonSeleccionado);
   }, [gradoSeleccionado, salonSeleccionado, asignaturas, getAsignaturasFiltradas]);
 
-  // Obtener lista de estudiantes del salón seleccionado
+  // Obtener lista de estudiantes del salón seleccionado (TODOS, no solo los que tienen notas)
   const estudiantesDelSalon = useMemo(() => {
     if (!gradoSeleccionado || !salonSeleccionado) return [];
-    const estudiantes = getPromediosEstudiantes("anual", gradoSeleccionado, salonSeleccionado);
-    return estudiantes.map(e => ({
-      codigo: e.codigo_estudiantil,
-      nombre: e.nombre_completo
-    })).sort((a, b) => a.nombre.localeCompare(b.nombre));
-  }, [gradoSeleccionado, salonSeleccionado, getPromediosEstudiantes]);
+    return todosEstudiantes
+      .filter(e => e.grado_estudiante === gradoSeleccionado && e.salon_estudiante === salonSeleccionado)
+      .map(e => ({
+        codigo: String(e.codigo_estudiantil),
+        nombre: `${e.apellidos_estudiante} ${e.nombre_estudiante}`
+      }))
+      .sort((a, b) => a.nombre.localeCompare(b.nombre));
+  }, [gradoSeleccionado, salonSeleccionado, todosEstudiantes]);
 
   const periodoNumerico = periodoSeleccionado === "anual" 
     ? "anual" as const
