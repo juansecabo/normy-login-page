@@ -25,8 +25,7 @@ const EstadisticasProfesor = () => {
 
   const [asignaturaSeleccionada, setAsignaturaSeleccionada] = useState("");
   const [periodoSeleccionado, setPeriodoSeleccionado] = useState(String(getPeriodoActual()));
-  const [nivelAnalisis, setNivelAnalisis] = useState("grado");
-  const [gradoSeleccionado, setGradoSeleccionado] = useState("");
+  const [gradoSeleccionado, setGradoSeleccionado] = useState("all");
   const [salonSeleccionado, setSalonSeleccionado] = useState("");
   const [estudianteSeleccionado, setEstudianteSeleccionado] = useState("");
 
@@ -143,14 +142,14 @@ const EstadisticasProfesor = () => {
   // Título dinámico
   const getTitulo = () => {
     const periodoTexto = periodoSeleccionado === "anual" ? "Acumulado Anual" : `Período ${periodoSeleccionado}`;
-    if (nivelAnalisis === "estudiante" && estudianteSeleccionado) {
+    if (estudianteSeleccionado && estudianteSeleccionado !== "all") {
       const est = estudiantesDelSalon.find(e => e.codigo === estudianteSeleccionado);
       return `${est?.nombre || "Estudiante"} - ${periodoTexto}`;
     }
     const partes = [asignaturaSeleccionada || "Asignatura"];
     if (gradoEfectivo) {
       partes.push(salonEfectivo ? `${gradoEfectivo} ${salonEfectivo}` : gradoEfectivo);
-    } else if (gradoSeleccionado === "all") {
+    } else {
       partes.push("Todos los grados");
     }
     partes.push(periodoTexto);
@@ -183,13 +182,13 @@ const EstadisticasProfesor = () => {
           <>
             <div className="bg-card rounded-lg shadow-soft p-4 mb-6">
               <h3 className="font-semibold text-foreground mb-4">Filtros de análisis</h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4">
+              <div className="flex flex-wrap gap-4">
                 {/* 1. Asignatura */}
-                <div>
+                <div className="w-full sm:w-auto sm:min-w-[180px]">
                   <label className="text-sm text-muted-foreground mb-1.5 block">Asignatura</label>
                   <Select value={asignaturaSeleccionada} onValueChange={(val) => {
                     setAsignaturaSeleccionada(val);
-                    setGradoSeleccionado("");
+                    setGradoSeleccionado("all");
                     setSalonSeleccionado("");
                     setEstudianteSeleccionado("");
                   }}>
@@ -203,7 +202,7 @@ const EstadisticasProfesor = () => {
                 </div>
 
                 {/* 2. Período */}
-                <div>
+                <div className="w-full sm:w-auto sm:min-w-[150px]">
                   <label className="text-sm text-muted-foreground mb-1.5 block">Período</label>
                   <Select value={periodoSeleccionado} onValueChange={setPeriodoSeleccionado}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
@@ -217,59 +216,35 @@ const EstadisticasProfesor = () => {
                   </Select>
                 </div>
 
-                {/* 3. Nivel de Análisis */}
-                <div>
-                  <label className="text-sm text-muted-foreground mb-1.5 block">Nivel de Análisis</label>
-                  <Select value={nivelAnalisis} onValueChange={(val) => {
-                    setNivelAnalisis(val);
-                    setGradoSeleccionado("");
+                {/* 3. Grado (siempre visible) */}
+                <div className="w-full sm:w-auto sm:min-w-[160px]">
+                  <label className="text-sm text-muted-foreground mb-1.5 block">Grado</label>
+                  <Select value={gradoSeleccionado} onValueChange={(val) => {
+                    setGradoSeleccionado(val);
                     setSalonSeleccionado("");
                     setEstudianteSeleccionado("");
                   }}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectTrigger><SelectValue placeholder="Seleccionar grado" /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="grado">Por Grado</SelectItem>
-                      <SelectItem value="salon">Por Salón</SelectItem>
-                      <SelectItem value="estudiante">Por Estudiante</SelectItem>
+                      <SelectItem value="all">Todos</SelectItem>
+                      {gradosParaAsignatura.map(g => (
+                        <SelectItem key={g} value={g}>{g}</SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
 
-                {/* 4. Grado - visible para grado, salon, estudiante */}
-                {(nivelAnalisis === "grado" || nivelAnalisis === "salon" || nivelAnalisis === "estudiante") && (
-                  <div>
-                    <label className="text-sm text-muted-foreground mb-1.5 block">Grado</label>
-                    <Select value={gradoSeleccionado} onValueChange={(val) => {
-                      setGradoSeleccionado(val);
-                      setSalonSeleccionado("");
-                      setEstudianteSeleccionado("");
-                    }}>
-                      <SelectTrigger><SelectValue placeholder="Seleccionar grado" /></SelectTrigger>
-                      <SelectContent>
-                        {nivelAnalisis === "grado" && (
-                          <SelectItem value="all">Todos los grados</SelectItem>
-                        )}
-                        {gradosParaAsignatura.map(g => (
-                          <SelectItem key={g} value={g}>{g}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                )}
-
-                {/* 5. Salón - visible para salon y estudiante, solo si grado es específico */}
-                {(nivelAnalisis === "salon" || nivelAnalisis === "estudiante") && gradoSeleccionado && gradoSeleccionado !== "all" && (
-                  <div>
+                {/* 4. Salón (aparece cuando se escoge un grado específico) */}
+                {gradoSeleccionado && gradoSeleccionado !== "all" && (
+                  <div className="w-full sm:w-auto sm:min-w-[140px]">
                     <label className="text-sm text-muted-foreground mb-1.5 block">Salón</label>
-                    <Select value={salonSeleccionado} onValueChange={(val) => {
-                      setSalonSeleccionado(val);
+                    <Select value={salonSeleccionado || "all"} onValueChange={(val) => {
+                      setSalonSeleccionado(val === "all" ? "" : val);
                       setEstudianteSeleccionado("");
                     }}>
-                      <SelectTrigger><SelectValue placeholder="Seleccionar salón" /></SelectTrigger>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
                       <SelectContent>
-                        {nivelAnalisis === "salon" && (
-                          <SelectItem value="all">Todos los salones</SelectItem>
-                        )}
+                        <SelectItem value="all">Todos</SelectItem>
                         {salonesParaGrado.map(s => (
                           <SelectItem key={s} value={s}>{s}</SelectItem>
                         ))}
@@ -278,13 +253,16 @@ const EstadisticasProfesor = () => {
                   </div>
                 )}
 
-                {/* 6. Estudiante - visible solo con grado y salon específicos */}
-                {nivelAnalisis === "estudiante" && gradoSeleccionado && gradoSeleccionado !== "all" && salonSeleccionado && salonSeleccionado !== "all" && (
-                  <div>
+                {/* 5. Estudiante (aparece cuando se escoge un salón específico) */}
+                {gradoSeleccionado && gradoSeleccionado !== "all" && salonSeleccionado && (
+                  <div className="w-full sm:w-auto sm:min-w-[200px]">
                     <label className="text-sm text-muted-foreground mb-1.5 block">Estudiante</label>
-                    <Select value={estudianteSeleccionado} onValueChange={setEstudianteSeleccionado}>
-                      <SelectTrigger><SelectValue placeholder="Seleccionar estudiante" /></SelectTrigger>
+                    <Select value={estudianteSeleccionado || "all"} onValueChange={(val) => {
+                      setEstudianteSeleccionado(val === "all" ? "" : val);
+                    }}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
                       <SelectContent>
+                        <SelectItem value="all">Todos</SelectItem>
                         {estudiantesDelSalon.map(e => (
                           <SelectItem key={e.codigo} value={e.codigo}>{e.nombre}</SelectItem>
                         ))}
@@ -296,16 +274,13 @@ const EstadisticasProfesor = () => {
             </div>
 
             {/* Resultados */}
-            {nivelAnalisis === "grado" && gradoSeleccionado && (
-              <AnalisisAsignatura
-                asignatura={asignaturaSeleccionada}
+            {estudianteSeleccionado ? (
+              <AnalisisEstudiante
+                codigoEstudiante={estudianteSeleccionado}
                 periodo={periodoNumerico}
-                grado={gradoEfectivo}
-                salon=""
                 titulo={getTitulo()}
               />
-            )}
-            {nivelAnalisis === "salon" && gradoSeleccionado && (gradoSeleccionado === "all" || salonSeleccionado) && (
+            ) : asignaturaSeleccionada && gradoSeleccionado ? (
               <AnalisisAsignatura
                 asignatura={asignaturaSeleccionada}
                 periodo={periodoNumerico}
@@ -313,29 +288,9 @@ const EstadisticasProfesor = () => {
                 salon={salonEfectivo}
                 titulo={getTitulo()}
               />
-            )}
-            {nivelAnalisis === "estudiante" && estudianteSeleccionado && (
-              <AnalisisEstudiante
-                codigoEstudiante={estudianteSeleccionado}
-                periodo={periodoNumerico}
-                titulo={getTitulo()}
-              />
-            )}
-
-            {/* Mensajes guía */}
-            {!gradoSeleccionado && (
+            ) : (
               <div className="bg-card rounded-lg shadow-soft p-8 text-center text-muted-foreground">
-                Selecciona un grado para ver el análisis
-              </div>
-            )}
-            {(nivelAnalisis === "salon" || nivelAnalisis === "estudiante") && gradoSeleccionado && gradoSeleccionado !== "all" && !salonSeleccionado && (
-              <div className="bg-card rounded-lg shadow-soft p-8 text-center text-muted-foreground">
-                Selecciona un salón para ver el análisis
-              </div>
-            )}
-            {nivelAnalisis === "estudiante" && gradoSeleccionado && gradoSeleccionado !== "all" && salonSeleccionado && salonSeleccionado !== "all" && !estudianteSeleccionado && (
-              <div className="bg-card rounded-lg shadow-soft p-8 text-center text-muted-foreground">
-                Selecciona un estudiante para ver el análisis
+                Selecciona una asignatura para ver el análisis
               </div>
             )}
           </>
