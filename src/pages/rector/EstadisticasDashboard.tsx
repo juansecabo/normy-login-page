@@ -4,6 +4,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { getSession, isRectorOrCoordinador } from "@/hooks/useSession";
 import HeaderNormy from "@/components/HeaderNormy";
 import { useEstadisticas } from "@/hooks/useEstadisticas";
+import { supabase } from "@/integrations/supabase/client";
 import { FiltrosEstadisticas } from "@/components/estadisticas/FiltrosEstadisticas";
 import { AnalisisInstitucional } from "@/components/estadisticas/AnalisisInstitucional";
 import { AnalisisGrado } from "@/components/estadisticas/AnalisisGrado";
@@ -15,7 +16,7 @@ import { Loader2 } from "lucide-react";
 const EstadisticasDashboard = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { loading, grados, salones, asignaturas, estudiantes: todosEstudiantes, getAsignaturasFiltradas, getPromediosEstudiantes } = useEstadisticas();
+  const { loading, grados, salones, asignaturas, getAsignaturasFiltradas, getPromediosEstudiantes } = useEstadisticas();
   
   // Leer filtros desde URL params (para restaurar estado al volver)
   const [nivelAnalisis, setNivelAnalisis] = useState(() => searchParams.get("nivel") || "institucion");
@@ -51,17 +52,31 @@ const EstadisticasDashboard = () => {
     return getAsignaturasFiltradas(gradoSeleccionado, salonSeleccionado);
   }, [gradoSeleccionado, salonSeleccionado, asignaturas, getAsignaturasFiltradas]);
 
-  // Obtener lista de estudiantes del salón seleccionado (TODOS, no solo los que tienen notas)
-  const estudiantesDelSalon = useMemo(() => {
-    if (!gradoSeleccionado || !salonSeleccionado) return [];
-    return todosEstudiantes
-      .filter(e => e.grado_estudiante === gradoSeleccionado && e.salon_estudiante === salonSeleccionado)
-      .map(e => ({
-        codigo: String(e.codigo_estudiantil),
-        nombre: `${e.apellidos_estudiante} ${e.nombre_estudiante}`
-      }))
-      .sort((a, b) => a.nombre.localeCompare(b.nombre));
-  }, [gradoSeleccionado, salonSeleccionado, todosEstudiantes]);
+  // Obtener lista de estudiantes del salón seleccionado (query directa a Supabase)
+  const [estudiantesDelSalon, setEstudiantesDelSalon] = useState<{ codigo: string; nombre: string }[]>([]);
+
+  useEffect(() => {
+    if (!gradoSeleccionado || !salonSeleccionado) {
+      setEstudiantesDelSalon([]);
+      return;
+    }
+    const fetchEstudiantes = async () => {
+      const { data } = await supabase
+        .from('Estudiantes')
+        .select('codigo_estudiantil, apellidos_estudiante, nombre_estudiante')
+        .eq('grado_estudiante', gradoSeleccionado)
+        .eq('salon_estudiante', salonSeleccionado)
+        .order('apellidos_estudiante')
+        .order('nombre_estudiante');
+      setEstudiantesDelSalon(
+        (data || []).map(e => ({
+          codigo: String(e.codigo_estudiantil),
+          nombre: `${e.apellidos_estudiante} ${e.nombre_estudiante}`
+        }))
+      );
+    };
+    fetchEstudiantes();
+  }, [gradoSeleccionado, salonSeleccionado]);
 
   const periodoNumerico = periodoSeleccionado === "anual" 
     ? "anual" as const
