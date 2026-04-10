@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { getSession, isAdmin, isRectorOrCoordinador } from "@/hooks/useSession";
+import { getSession, isAdmin, puedeAccederDashboard, isAdministrativo } from "@/hooks/useSession";
 import { BookOpen, BarChart3, Megaphone, Settings, UserCheck, Activity } from "lucide-react";
 import HeaderNormy from "@/components/HeaderNormy";
 
@@ -9,10 +9,11 @@ const DashboardRector = () => {
   const [nombres, setNombres] = useState("");
   const [apellidos, setApellidos] = useState("");
   const [cargo, setCargo] = useState("");
+  const esAdministrativo = isAdministrativo();
 
   useEffect(() => {
     const session = getSession();
-    
+
     if (!session.codigo) {
       navigate("/");
       return;
@@ -24,8 +25,8 @@ const DashboardRector = () => {
       return;
     }
 
-    // Verificar que es Rector o Coordinador
-    if (!isRectorOrCoordinador()) {
+    // Verificar que tiene acceso al dashboard (Rector, Coordinador, Administrativo)
+    if (!puedeAccederDashboard()) {
       navigate("/dashboard");
       return;
     }
@@ -60,13 +61,15 @@ const DashboardRector = () => {
           </h3>
           
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 gap-6 max-w-4xl mx-auto">
-            <button
-              onClick={() => navigate("/rector/seleccionar-grado")}
-              className="flex flex-col items-center justify-center gap-4 p-8 rounded-lg bg-emerald-100 transition-all duration-200 hover:shadow-md hover:bg-emerald-200"
-            >
-              <BookOpen className="w-16 h-16 text-foreground" />
-              <span className="font-semibold text-lg text-foreground">Notas</span>
-            </button>
+            {!esAdministrativo && (
+              <button
+                onClick={() => navigate("/rector/seleccionar-grado")}
+                className="flex flex-col items-center justify-center gap-4 p-8 rounded-lg bg-emerald-100 transition-all duration-200 hover:shadow-md hover:bg-emerald-200"
+              >
+                <BookOpen className="w-16 h-16 text-foreground" />
+                <span className="font-semibold text-lg text-foreground">Notas</span>
+              </button>
+            )}
 
             <button
               onClick={() => navigate("/rector/estadisticas")}

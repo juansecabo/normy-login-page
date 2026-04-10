@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { getSession, isRectorOrCoordinador } from "@/hooks/useSession";
+import { getSession, puedeAccederDashboard } from "@/hooks/useSession";
 import HeaderNormy from "@/components/HeaderNormy";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -170,7 +170,7 @@ const PanelControl = () => {
   useEffect(() => {
     const session = getSession();
     if (!session.codigo) { navigate("/"); return; }
-    if (!isRectorOrCoordinador()) { navigate("/dashboard"); return; }
+    if (!puedeAccederDashboard()) { navigate("/dashboard"); return; }
   }, [navigate]);
 
   // ═══════════════════════════════════════════════════════════════════════════

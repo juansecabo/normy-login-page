@@ -1,7 +1,7 @@
 import { getPeriodoActual } from "@/utils/periodoActual";
 import { useEffect, useState, useMemo } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { getSession, isRectorOrCoordinador } from "@/hooks/useSession";
+import { getSession, puedeAccederDashboard } from "@/hooks/useSession";
 import HeaderNormy from "@/components/HeaderNormy";
 import { useEstadisticas } from "@/hooks/useEstadisticas";
 import { supabase } from "@/integrations/supabase/client";
@@ -32,7 +32,7 @@ const EstadisticasDashboard = () => {
       navigate("/");
       return;
     }
-    if (!isRectorOrCoordinador()) {
+    if (!puedeAccederDashboard()) {
       navigate("/dashboard");
       return;
     }

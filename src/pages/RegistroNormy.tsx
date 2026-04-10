@@ -1,7 +1,7 @@
 import { useEffect, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { getSession, isProfesor, isRectorOrCoordinador, isAdmin } from "@/hooks/useSession";
+import { getSession, isProfesor, puedeAccederDashboard, isAdmin } from "@/hooks/useSession";
 import HeaderNormy from "@/components/HeaderNormy";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -82,10 +82,10 @@ const RegistroNormy = () => {
   useEffect(() => {
     const session = getSession();
     if (!session.codigo) { navigate("/"); return; }
-    if (!isProfesor() && !isRectorOrCoordinador()) { navigate("/dashboard"); return; }
+    if (!isProfesor() && !puedeAccederDashboard()) { navigate("/dashboard"); return; }
   }, [navigate]);
 
-  const backLink = isAdmin() ? "/dashboard-admin" : isRectorOrCoordinador() ? "/dashboard-rector" : "/dashboard";
+  const backLink = isAdmin() ? "/dashboard-admin" : puedeAccederDashboard() ? "/dashboard-rector" : "/dashboard";
 
   // State
   const [estudiantes, setEstudiantes] = useState<Estudiante[]>([]);

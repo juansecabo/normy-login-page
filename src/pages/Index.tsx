@@ -26,7 +26,7 @@ const Index = () => {
     if (session.codigo) {
       if (session.cargo === 'Administrador') {
         navigate("/dashboard-admin", { replace: true });
-      } else if (session.cargo === 'Rector' || session.cargo === 'Coordinador(a)') {
+      } else if (session.cargo === 'Rector' || session.cargo === 'Coordinador(a)' || session.cargo === 'Administrativo(a)') {
         navigate("/dashboard-rector", { replace: true });
       } else if (session.cargo === 'Estudiante') {
         navigate("/dashboard-estudiante", { replace: true });
@@ -81,7 +81,7 @@ const Index = () => {
           return;
         }
 
-        const cargosPermitidos = ['Profesor(a)', 'Rector', 'Coordinador(a)', 'Administrador'];
+        const cargosPermitidos = ['Profesor(a)', 'Rector', 'Coordinador(a)', 'Administrador', 'Administrativo(a)'];
         if (!cargosPermitidos.includes(usuario.cargo)) {
           toast({ title: "Acceso denegado", description: "No tienes permisos de acceso", variant: "destructive" });
           setLoading(false);
@@ -92,7 +92,7 @@ const Index = () => {
 
         if (usuario.cargo === 'Administrador') {
           navigate("/dashboard-admin");
-        } else if (usuario.cargo === 'Rector' || usuario.cargo === 'Coordinador(a)') {
+        } else if (usuario.cargo === 'Rector' || usuario.cargo === 'Coordinador(a)' || usuario.cargo === 'Administrativo(a)') {
           navigate("/dashboard-rector");
         } else {
           navigate("/dashboard");

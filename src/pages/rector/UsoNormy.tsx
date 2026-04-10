@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { getSession, isAdmin, isRectorOrCoordinador } from "@/hooks/useSession";
+import { getSession, isAdmin, puedeAccederDashboard } from "@/hooks/useSession";
 import HeaderNormy from "@/components/HeaderNormy";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Loader2 } from "lucide-react";
@@ -41,7 +41,7 @@ const UsoNormy = () => {
   useEffect(() => {
     const session = getSession();
     if (!session.codigo) { navigate("/"); return; }
-    if (!isAdmin() && !isRectorOrCoordinador()) { navigate("/dashboard"); return; }
+    if (!isAdmin() && !puedeAccederDashboard()) { navigate("/dashboard"); return; }
     cargarDatos();
   }, [navigate]);
 
