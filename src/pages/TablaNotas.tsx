@@ -858,10 +858,10 @@ const TablaNotas = () => {
                   sumaPonderada += notaValue * (act.porcentaje / 100);
                 }
               });
-              notaFinal = Math.round(sumaPonderada * 100) / 100;
+              notaFinal = Math.round(sumaPonderada * 10) / 10;
             }
           }
-          
+
           await guardarFinalPeriodo(est.codigo_estudiantil, periodoEliminado, notaFinal);
           
           // Recalcular Definitiva Anual
@@ -884,18 +884,18 @@ const TablaNotas = () => {
                     sumPond += nv * (act.porcentaje / 100);
                   }
                 });
-                fp = Math.round(sumPond * 100) / 100;
+                fp = Math.round(sumPond * 10) / 10;
               }
             }
-            
+
             if (fp !== null) {
               suma += fp;
               tieneAlgunaNota = true;
             }
           }
-          
+
           if (tieneAlgunaNota) {
-            const finalDef = Math.round((suma / 4) * 100) / 100;
+            const finalDef = Math.round((suma / 4) * 10) / 10;
             await guardarFinalDefinitiva(est.codigo_estudiantil, finalDef);
           } else {
             await guardarFinalDefinitiva(est.codigo_estudiantil, null);
@@ -957,8 +957,8 @@ const TablaNotas = () => {
 
     if (porcentajeCalificado === 0) return null;
 
-    // Redondear a 2 decimales (redondeo matemático estándar)
-    return Math.round((sumaPonderada / (porcentajeCalificado / 100)) * 100) / 100;
+    // Redondear a 1 decimal (redondeo matemático estándar)
+    return Math.round((sumaPonderada / (porcentajeCalificado / 100)) * 10) / 10;
   }, [actividades]);
 
   // Versión que usa el estado actual
@@ -983,8 +983,8 @@ const TablaNotas = () => {
 
     const promedio = suma / periodosConNota;
 
-    // Redondear a 2 decimales (redondeo matemático estándar)
-    return Math.round(promedio * 100) / 100;
+    // Redondear a 1 decimal (redondeo matemático estándar)
+    return Math.round(promedio * 10) / 10;
   }, [calcularFinalPeriodo]);
 
   // Verificar si un estudiante tiene AL MENOS UNA NOTA registrada en un período
@@ -2450,7 +2450,7 @@ const TablaNotas = () => {
               }
             }
             if (tieneAlgunaNota) {
-              const finalDef = Math.round((suma / 4) * 100) / 100;
+              const finalDef = Math.round((suma / 4) * 10) / 10;
               await guardarFinalDefinitiva(codigoEstudiantil, finalDef);
             } else {
               await guardarFinalDefinitiva(codigoEstudiantil, null);
@@ -2562,7 +2562,7 @@ const TablaNotas = () => {
               // Si es null, cuenta como 0
             }
             if (tieneAlgunaNota) {
-              const finalDef = Math.round((suma / 4) * 100) / 100;
+              const finalDef = Math.round((suma / 4) * 10) / 10;
               await guardarFinalDefinitiva(codigoEstudiantil, finalDef);
             } else {
               await guardarFinalDefinitiva(codigoEstudiantil, null);
@@ -2932,7 +2932,7 @@ const TablaNotas = () => {
                                 <td className="border-r border-b border-border p-1 text-center text-sm min-w-[130px] bg-primary/20 font-bold relative group">
                                   <div className="relative flex items-center justify-center h-8">
                                     <span className={finalDef !== null ? "" : "text-muted-foreground"}>
-                                      {finalDef !== null ? finalDef.toFixed(2) : "—"}
+                                      {finalDef !== null ? finalDef.toFixed(1) : "—"}
                                     </span>
                                     {comentario && (
                                       <div className="absolute top-0 right-6 w-2 h-2 bg-amber-500 rounded-full" title={comentario} />

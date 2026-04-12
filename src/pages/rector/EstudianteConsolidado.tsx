@@ -224,7 +224,7 @@ const EstudianteConsolidado = () => {
 
     if (porcentajeCalificado === 0) return null;
 
-    return Math.round((suma / (porcentajeCalificado / 100)) * 100) / 100;
+    return Math.round((suma / (porcentajeCalificado / 100)) * 10) / 10;
   };
 
   const calcularFinalDefinitiva = (asignatura: string): number | null => {
@@ -241,7 +241,7 @@ const EstudianteConsolidado = () => {
 
     if (periodosConNota === 0) return null;
 
-    return Math.round((suma / periodosConNota) * 100) / 100;
+    return Math.round((suma / periodosConNota) * 10) / 10;
   };
 
   const handleChangePeriodo = (asignatura: string, periodo: number) => {
@@ -403,7 +403,7 @@ const EstudianteConsolidado = () => {
                             );
                           })}
                           <td className="p-2 text-center text-sm font-semibold border-b border-border bg-primary/5">
-                            {calcularFinalPeriodo(asignatura, periodoActivo)?.toFixed(2) || '—'}
+                            {calcularFinalPeriodo(asignatura, periodoActivo)?.toFixed(1) || '—'}
                           </td>
                         </tr>
                       </tbody>

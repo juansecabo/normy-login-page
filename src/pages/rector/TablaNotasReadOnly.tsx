@@ -252,7 +252,7 @@ const TablaNotasReadOnly = () => {
 
     if (porcentajeCalificado === 0) return null;
 
-    return Math.round((suma / (porcentajeCalificado / 100)) * 100) / 100;
+    return Math.round((suma / (porcentajeCalificado / 100)) * 10) / 10;
   };
 
   const calcularFinalDefinitiva = (codigoEstudiantil: string): number | null => {
@@ -269,7 +269,7 @@ const TablaNotasReadOnly = () => {
 
     if (periodosConNota === 0) return null;
 
-    return Math.round((suma / periodosConNota) * 100) / 100;
+    return Math.round((suma / periodosConNota) * 10) / 10;
   };
 
   return (
@@ -463,7 +463,7 @@ const TablaNotasReadOnly = () => {
                               );
                             })}
                             <td className="border-r border-b border-border p-2 text-center text-sm font-semibold bg-primary/5">
-                              {calcularFinalPeriodo(estudiante.codigo_estudiantil, periodoActivo)?.toFixed(2) || '—'}
+                              {calcularFinalPeriodo(estudiante.codigo_estudiantil, periodoActivo)?.toFixed(1) || '—'}
                             </td>
                       </tr>
                     );

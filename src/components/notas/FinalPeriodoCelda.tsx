@@ -31,7 +31,7 @@ const FinalPeriodoCelda = ({
     <td className="border-r border-b border-border p-1 text-center text-sm min-w-[100px] bg-primary/10 font-semibold relative group">
       <div className="relative flex items-center justify-center h-8">
         <span className={notaFinal !== null ? "" : "text-muted-foreground"}>
-          {notaFinal !== null ? notaFinal.toFixed(2) : "—"}
+          {notaFinal !== null ? notaFinal.toFixed(1) : "—"}
         </span>
         
         {/* Indicador de comentario */}
