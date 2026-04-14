@@ -805,7 +805,7 @@ const PanelControl = () => {
   );
 
   const filteredPerf = perfiles.filter((p) =>
-    normalize(`${getPerfilDisplayName(p)} ${getPerfilDisplayCode(p)} ${p.perfil} ${p.contrasena || ""}`)
+    normalize(`${getPerfilDisplayName(p)} ${getPerfilDisplayCode(p)} ${p.perfil} ${p.contrasena || ""} ${p.numero_de_telefono || ""}`)
       .includes(normalize(searchPerf))
   );
 
