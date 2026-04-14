@@ -1,7 +1,11 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getSession, isPadreDeFamilia, HijoData } from "@/hooks/useSession";
-import { BookOpen, ClipboardList, BarChart3, Megaphone, FileText } from "lucide-react";
+import iconNotas from "@/assets/icons/notas.webp";
+import iconActividades from "@/assets/icons/actividades.webp";
+import iconEstadisticas from "@/assets/icons/estadisticas.webp";
+import iconComunicados from "@/assets/icons/comunicados.webp";
+import iconDocumentos from "@/assets/icons/documentos.webp";
 import HeaderNormy from "@/components/HeaderNormy";
 import BuzonSugerencias from "@/components/BuzonSugerencias";
 import { supabase } from "@/integrations/supabase/client";
@@ -153,7 +157,7 @@ const DashboardPadre = () => {
               className="relative flex flex-col items-center justify-center gap-4 p-6 rounded-lg bg-emerald-100 shadow-[0_4px_12px_rgba(0,0,0,0.15)] border border-emerald-200 transition-all duration-200 hover:shadow-[0_6px_16px_rgba(0,0,0,0.2)] hover:scale-[1.03] hover:bg-emerald-200"
             >
               <Badge count={badges.notas} />
-              <BookOpen className="w-12 h-12 text-foreground" />
+              <img src={iconNotas} alt="" className="w-12 h-12 object-contain" />
               <span className="font-semibold text-foreground">Notas</span>
             </button>
 
@@ -162,7 +166,7 @@ const DashboardPadre = () => {
               className="relative flex flex-col items-center justify-center gap-4 p-6 rounded-lg bg-green-100 shadow-[0_4px_12px_rgba(0,0,0,0.15)] border border-green-200 transition-all duration-200 hover:shadow-[0_6px_16px_rgba(0,0,0,0.2)] hover:scale-[1.03] hover:bg-green-200"
             >
               <Badge count={badges.actividades} />
-              <ClipboardList className="w-12 h-12 text-foreground" />
+              <img src={iconActividades} alt="" className="w-12 h-12 object-contain" />
               <span className="font-semibold text-foreground text-center">Actividades</span>
             </button>
 
@@ -170,7 +174,7 @@ const DashboardPadre = () => {
               onClick={() => navigate("/padre/estadisticas")}
               className="flex flex-col items-center justify-center gap-4 p-6 rounded-lg bg-teal-100 shadow-[0_4px_12px_rgba(0,0,0,0.15)] border border-teal-200 transition-all duration-200 hover:shadow-[0_6px_16px_rgba(0,0,0,0.2)] hover:scale-[1.03] hover:bg-teal-200"
             >
-              <BarChart3 className="w-12 h-12 text-foreground" />
+              <img src={iconEstadisticas} alt="" className="w-12 h-12 object-contain" />
               <span className="font-semibold text-foreground text-center">Estadísticas</span>
             </button>
 
@@ -179,7 +183,7 @@ const DashboardPadre = () => {
               className="relative flex flex-col items-center justify-center gap-4 p-6 rounded-lg bg-lime-100 shadow-[0_4px_12px_rgba(0,0,0,0.15)] border border-lime-200 transition-all duration-200 hover:shadow-[0_6px_16px_rgba(0,0,0,0.2)] hover:scale-[1.03] hover:bg-lime-200"
             >
               <Badge count={badges.comunicados} />
-              <Megaphone className="w-12 h-12 text-foreground" />
+              <img src={iconComunicados} alt="" className="w-12 h-12 object-contain" />
               <span className="font-semibold text-foreground text-center">Comunicados</span>
             </button>
 
@@ -188,7 +192,7 @@ const DashboardPadre = () => {
               className="relative flex flex-col items-center justify-center gap-4 p-6 rounded-lg bg-cyan-100 shadow-[0_4px_12px_rgba(0,0,0,0.15)] border border-cyan-200 transition-all duration-200 hover:shadow-[0_6px_16px_rgba(0,0,0,0.2)] hover:scale-[1.03] hover:bg-cyan-200"
             >
               <Badge count={badges.documentos} />
-              <FileText className="w-12 h-12 text-foreground" />
+              <img src={iconDocumentos} alt="" className="w-12 h-12 object-contain" />
               <span className="font-semibold text-foreground text-center">Documentos</span>
             </button>
           </div>

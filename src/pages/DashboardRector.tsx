@@ -1,7 +1,12 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getSession, isAdmin, puedeAccederDashboard, isAdministrativo } from "@/hooks/useSession";
-import { BookOpen, BarChart3, Megaphone, Settings, UserCheck, Activity } from "lucide-react";
+import iconNotas from "@/assets/icons/notas.webp";
+import iconEstadisticas from "@/assets/icons/estadisticas.webp";
+import iconComunicados from "@/assets/icons/comunicados.webp";
+import iconPanelControl from "@/assets/icons/panel-de-control.webp";
+import iconRegistroAgente from "@/assets/icons/registro-agente.webp";
+import iconUsoAgente from "@/assets/icons/uso-agente.webp";
 import HeaderNormy from "@/components/HeaderNormy";
 
 const DashboardRector = () => {
@@ -66,7 +71,7 @@ const DashboardRector = () => {
                 onClick={() => navigate("/rector/seleccionar-grado")}
                 className="flex flex-col items-center justify-center gap-4 p-8 rounded-lg bg-emerald-100 transition-all duration-200 hover:shadow-md hover:bg-emerald-200"
               >
-                <BookOpen className="w-16 h-16 text-foreground" />
+                <img src={iconNotas} alt="" className="w-16 h-16 object-contain" />
                 <span className="font-semibold text-lg text-foreground">Notas</span>
               </button>
             )}
@@ -75,7 +80,7 @@ const DashboardRector = () => {
               onClick={() => navigate("/rector/estadisticas")}
               className="flex flex-col items-center justify-center gap-4 p-8 rounded-lg bg-green-100 transition-all duration-200 hover:shadow-md hover:bg-green-200"
             >
-              <BarChart3 className="w-16 h-16 text-foreground" />
+              <img src={iconEstadisticas} alt="" className="w-16 h-16 object-contain" />
               <span className="font-semibold text-lg text-foreground">Estadísticas</span>
             </button>
 
@@ -83,7 +88,7 @@ const DashboardRector = () => {
               onClick={() => navigate("/enviar-comunicado")}
               className="flex flex-col items-center justify-center gap-4 p-8 rounded-lg bg-teal-100 transition-all duration-200 hover:shadow-md hover:bg-teal-200"
             >
-              <Megaphone className="w-16 h-16 text-foreground" />
+              <img src={iconComunicados} alt="" className="w-16 h-16 object-contain" />
               <span className="font-semibold text-lg text-foreground text-center">Enviar Comunicado</span>
             </button>
 
@@ -91,7 +96,7 @@ const DashboardRector = () => {
               onClick={() => navigate("/rector/panel-control")}
               className="flex flex-col items-center justify-center gap-4 p-8 rounded-lg bg-purple-100 transition-all duration-200 hover:shadow-md hover:bg-purple-200"
             >
-              <Settings className="w-16 h-16 text-foreground" />
+              <img src={iconPanelControl} alt="" className="w-16 h-16 object-contain" />
               <span className="font-semibold text-lg text-foreground text-center">Panel de Control</span>
             </button>
 
@@ -99,7 +104,7 @@ const DashboardRector = () => {
               onClick={() => navigate("/rector/uso-normy")}
               className="flex flex-col items-center justify-center gap-4 p-8 rounded-lg bg-orange-100 transition-all duration-200 hover:shadow-md hover:bg-orange-200"
             >
-              <Activity className="w-16 h-16 text-foreground" />
+              <img src={iconUsoAgente} alt="" className="w-16 h-16 object-contain" />
               <span className="font-semibold text-lg text-foreground text-center">Uso de Normy</span>
             </button>
 
@@ -107,7 +112,7 @@ const DashboardRector = () => {
               onClick={() => navigate("/registro-normy")}
               className="flex flex-col items-center justify-center gap-4 p-8 rounded-lg bg-cyan-100 transition-all duration-200 hover:shadow-md hover:bg-cyan-200"
             >
-              <UserCheck className="w-16 h-16 text-foreground" />
+              <img src={iconRegistroAgente} alt="" className="w-16 h-16 object-contain" />
               <span className="font-semibold text-lg text-foreground text-center">Registro en Normy</span>
             </button>
           </div>
