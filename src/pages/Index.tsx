@@ -69,35 +69,38 @@ const Index = () => {
         return;
       }
 
+      // Track si el id existe en alguna tabla, para distinguir "id inexistente"
+      // vs "id existente pero contraseña equivocada" al final.
+      let idExisteEnAlgunaTabla = false;
+
       if (usuario) {
+        idExisteEnAlgunaTabla = true;
         // Verificar contraseña de interno
         const contrasenaCorrecta = usuario.contrasena
           ? usuario.contrasena === passInput
           : String(usuario.codigo) === passInput;
 
-        if (!contrasenaCorrecta) {
-          toast({ title: "Error", description: "Contraseña incorrecta", variant: "destructive" });
-          setLoading(false);
+        if (contrasenaCorrecta) {
+          const cargosPermitidos = ['Profesor(a)', 'Rector', 'Coordinador(a)', 'Administrador', 'Administrativo(a)'];
+          if (!cargosPermitidos.includes(usuario.cargo)) {
+            toast({ title: "Acceso denegado", description: "No tienes permisos de acceso", variant: "destructive" });
+            setLoading(false);
+            return;
+          }
+
+          saveSession(String(usuario.codigo), usuario.nombres || "", usuario.apellidos || "", usuario.cargo || "");
+
+          if (usuario.cargo === 'Administrador') {
+            navigate("/dashboard-admin");
+          } else if (usuario.cargo === 'Rector' || usuario.cargo === 'Coordinador(a)' || usuario.cargo === 'Administrativo(a)') {
+            navigate("/dashboard-rector");
+          } else {
+            navigate("/dashboard");
+          }
           return;
         }
-
-        const cargosPermitidos = ['Profesor(a)', 'Rector', 'Coordinador(a)', 'Administrador', 'Administrativo(a)'];
-        if (!cargosPermitidos.includes(usuario.cargo)) {
-          toast({ title: "Acceso denegado", description: "No tienes permisos de acceso", variant: "destructive" });
-          setLoading(false);
-          return;
-        }
-
-        saveSession(String(usuario.codigo), usuario.nombres || "", usuario.apellidos || "", usuario.cargo || "");
-
-        if (usuario.cargo === 'Administrador') {
-          navigate("/dashboard-admin");
-        } else if (usuario.cargo === 'Rector' || usuario.cargo === 'Coordinador(a)' || usuario.cargo === 'Administrativo(a)') {
-          navigate("/dashboard-rector");
-        } else {
-          navigate("/dashboard");
-        }
-        return;
+        // Contraseña de interno NO coincide — no rechazamos aún; el mismo id
+        // podría estar también en Perfiles_Generales (profesor que es padre, etc.).
       }
 
       // 2. Buscar en Perfiles_Generales como Estudiante
@@ -115,28 +118,26 @@ const Index = () => {
       }
 
       if (perfilEstudiante) {
-        if (perfilEstudiante.contrasena !== passInput) {
-          toast({ title: "Error", description: "Contraseña incorrecta", variant: "destructive" });
-          setLoading(false);
+        idExisteEnAlgunaTabla = true;
+        if (perfilEstudiante.contrasena === passInput) {
+          // Buscar datos del estudiante en tabla Estudiantes
+          const { data: estData } = await supabase
+            .from('Estudiantes')
+            .select('*')
+            .eq('codigo_estudiantil', idInput)
+            .maybeSingle();
+
+          const nivel = estData?.nivel_estudiante || perfilEstudiante.estudiante_nivel || '';
+          const grado = estData?.grado_estudiante || perfilEstudiante.estudiante_grado || '';
+          const salon = estData?.salon_estudiante || perfilEstudiante.estudiante_salon || '';
+          const nombre = estData?.nombre_estudiante || perfilEstudiante.estudiante_nombre || '';
+          const apellidos = estData?.apellidos_estudiante || perfilEstudiante.estudiante_apellidos || '';
+
+          saveSession(idInput, nombre, apellidos, 'Estudiante', nivel, grado, salon);
+          navigate("/dashboard-estudiante");
           return;
         }
-
-        // Buscar datos del estudiante en tabla Estudiantes
-        const { data: estData } = await supabase
-          .from('Estudiantes')
-          .select('*')
-          .eq('codigo_estudiantil', idInput)
-          .maybeSingle();
-
-        const nivel = estData?.nivel_estudiante || perfilEstudiante.estudiante_nivel || '';
-        const grado = estData?.grado_estudiante || perfilEstudiante.estudiante_grado || '';
-        const salon = estData?.salon_estudiante || perfilEstudiante.estudiante_salon || '';
-        const nombre = estData?.nombre_estudiante || perfilEstudiante.estudiante_nombre || '';
-        const apellidos = estData?.apellidos_estudiante || perfilEstudiante.estudiante_apellidos || '';
-
-        saveSession(idInput, nombre, apellidos, 'Estudiante', nivel, grado, salon);
-        navigate("/dashboard-estudiante");
-        return;
+        // Contraseña de estudiante no coincide — seguir a probar padre.
       }
 
       // 3. Buscar en Perfiles_Generales como Padre de familia
@@ -154,11 +155,10 @@ const Index = () => {
       }
 
       if (perfilPadre) {
+        idExisteEnAlgunaTabla = true;
         if (perfilPadre.contrasena !== passInput) {
-          toast({ title: "Error", description: "Contraseña incorrecta", variant: "destructive" });
-          setLoading(false);
-          return;
-        }
+          // Contraseña de padre tampoco coincide — cae al mensaje final.
+        } else {
 
         // Construir lista de hijos
         const hijos: HijoData[] = [];
@@ -202,10 +202,16 @@ const Index = () => {
         saveSession(idInput, nombrePadre, '', 'Padre de familia', null, null, null, hijos);
         navigate("/dashboard-padre");
         return;
+        }
       }
 
-      // 4. No encontrado en ninguna tabla
-      toast({ title: "Error", description: "Identificación no encontrada", variant: "destructive" });
+      // 4. Mensaje final: si el id existe en alguna tabla pero ninguna contraseña
+      // coincidió, el problema es la contraseña. Si el id no existe, problema del id.
+      if (idExisteEnAlgunaTabla) {
+        toast({ title: "Error", description: "Contraseña incorrecta", variant: "destructive" });
+      } else {
+        toast({ title: "Error", description: "Identificación no encontrada", variant: "destructive" });
+      }
     } catch {
       toast({
         title: "Error",
