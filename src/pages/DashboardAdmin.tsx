@@ -1,13 +1,14 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getSession, isAdmin } from "@/hooks/useSession";
-import { MessageSquare, MessagesSquare } from "lucide-react";
 import iconNotas from "@/assets/icons/notas.webp";
 import iconEstadisticas from "@/assets/icons/estadisticas.webp";
 import iconComunicados from "@/assets/icons/comunicados.webp";
 import iconPanelControl from "@/assets/icons/panel-de-control.webp";
 import iconRegistroAgente from "@/assets/icons/registro-agente.webp";
 import iconUsoAgente from "@/assets/icons/uso-agente.webp";
+import iconSugerencias from "@/assets/icons/sugerencias.webp";
+import iconConversaciones from "@/assets/icons/conversaciones.webp";
 import HeaderNormy from "@/components/HeaderNormy";
 
 const DashboardAdmin = () => {
@@ -91,7 +92,7 @@ const DashboardAdmin = () => {
               onClick={() => navigate("/admin/sugerencias")}
               className="flex flex-col items-center justify-center gap-4 p-8 rounded-lg bg-amber-100 transition-all duration-200 hover:shadow-md hover:bg-amber-200"
             >
-              <MessageSquare className="w-16 h-16 text-foreground" />
+              <img src={iconSugerencias} alt="" className="w-16 h-16 object-contain" />
               <span className="font-semibold text-lg text-foreground text-center">Sugerencias</span>
             </button>
 
@@ -115,7 +116,7 @@ const DashboardAdmin = () => {
               onClick={() => window.open("https://chat.notasnormy.com", "_blank")}
               className="flex flex-col items-center justify-center gap-4 p-8 rounded-lg bg-blue-100 transition-all duration-200 hover:shadow-md hover:bg-blue-200"
             >
-              <MessagesSquare className="w-16 h-16 text-foreground" />
+              <img src={iconConversaciones} alt="" className="w-16 h-16 object-contain" />
               <span className="font-semibold text-lg text-foreground text-center">Conversaciones</span>
             </button>
           </div>
