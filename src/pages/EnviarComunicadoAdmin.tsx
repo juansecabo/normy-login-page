@@ -664,24 +664,27 @@ const EnviarComunicadoAdmin = () => {
 
                 {(perfilesMarcados.Estudiantes || perfilesMarcados.Padres) &&
                   Object.values(gradosMarcados).some(Boolean) && (
-                  <div className="border-l-2 border-primary/30 pl-4 space-y-2">
+                  <div className="border-l-2 border-primary/30 pl-4 space-y-1">
+                    <Label className="text-xs">Estudiantes específicos</Label>
                     <button
                       type="button"
                       onClick={() => setMostrarEstudiantes(v => !v)}
-                      className="text-xs text-primary hover:underline flex items-center gap-2"
+                      className="w-full flex items-center justify-between px-3 py-2 text-sm border rounded cursor-pointer hover:bg-muted/40 bg-background"
                     >
-                      <span>{mostrarEstudiantes ? "▼" : "▶"}</span>
                       <span>
-                        Estudiantes específicos ({estudiantesSeleccionados.length} seleccionado{estudiantesSeleccionados.length !== 1 ? "s" : ""}, vacío = todos)
+                        Estudiantes {estudiantesSeleccionados.length > 0
+                          ? `(${estudiantesSeleccionados.length} seleccionado${estudiantesSeleccionados.length !== 1 ? "s" : ""})`
+                          : "(Todos)"}
                       </span>
+                      <span className="text-xs">{mostrarEstudiantes ? "▲" : "▼"}</span>
                     </button>
                     {mostrarEstudiantes && (
                       loadingListaEstudiantes ? (
-                        <p className="text-xs text-muted-foreground">Cargando estudiantes...</p>
+                        <div className="border rounded p-2 bg-muted/20 text-xs text-muted-foreground">Cargando estudiantes...</div>
                       ) : listaEstudiantesFiltrada.length === 0 ? (
-                        <p className="text-xs text-muted-foreground">No hay estudiantes en esos grados/salones</p>
+                        <div className="border rounded p-2 bg-muted/20 text-xs text-muted-foreground">No hay estudiantes en esos grados/salones</div>
                       ) : (
-                        <div className="space-y-1 max-h-52 overflow-y-auto border rounded p-2 bg-muted/30">
+                        <div className="border rounded p-2 bg-muted/20 flex flex-col gap-2 max-h-52 overflow-y-auto">
                           {listaEstudiantesFiltrada.map((e) => (
                             <label key={e.id} className="flex items-center gap-2 cursor-pointer text-sm">
                               <input
