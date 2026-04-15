@@ -522,9 +522,6 @@ const EnviarComunicadoAdmin = () => {
               </h2>
 
               <div className="space-y-4 mb-6">
-                <h3 className="text-lg font-semibold text-red-600">
-                  Destinatarios
-                </h3>
 
                 {(() => {
                   const count = PERFILES_UI.filter(p => perfilesMarcados[p.key]).length;
@@ -540,7 +537,7 @@ const EnviarComunicadoAdmin = () => {
                         <span className="text-xs">{openPerfiles ? '▲' : '▼'}</span>
                       </button>
                       {openPerfiles && (
-                        <div className="border rounded p-2 bg-muted/20 grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        <div className="border rounded p-2 bg-muted/20 flex flex-col gap-2">
                           {PERFILES_UI.map((p) => (
                             <label key={p.key} className="flex items-center gap-2 cursor-pointer select-none text-sm">
                               <input
@@ -585,7 +582,7 @@ const EnviarComunicadoAdmin = () => {
                         <Label className="text-xs">Nivel</Label>
                         {dropdownBtn("Nivel", nivelesSel.length, openNivel, () => setOpenNivel(v => !v), false)}
                         {openNivel && (
-                          <div className="border rounded p-2 bg-muted/20 grid grid-cols-2 gap-1">
+                          <div className="border rounded p-2 bg-muted/20 flex flex-col gap-2">
                             {Object.keys(NIVELES_GRADOS).map(n => (
                               <label key={n} className="flex items-center gap-2 cursor-pointer text-sm">
                                 <input
@@ -619,7 +616,7 @@ const EnviarComunicadoAdmin = () => {
                             {nivelesSel.map(niv => (
                               <div key={niv} className="space-y-1">
                                 <p className="text-xs font-medium text-muted-foreground">{niv}</p>
-                                <div className="grid grid-cols-2 sm:grid-cols-3 gap-1 pl-2">
+                                <div className="flex flex-col gap-2 pl-2">
                                   {(NIVELES_GRADOS[niv] || []).map(g => (
                                     <label key={g} className="flex items-center gap-2 cursor-pointer text-sm">
                                       <input
@@ -644,7 +641,7 @@ const EnviarComunicadoAdmin = () => {
                         <Label className="text-xs">Salón</Label>
                         {dropdownBtn("Salón", salonesSelCount, openSalon, () => setOpenSalon(v => !v), false)}
                         {openSalon && (
-                          <div className="border rounded p-2 bg-muted/20 grid grid-cols-6 gap-1">
+                          <div className="border rounded p-2 bg-muted/20 flex flex-col gap-2">
                             {SALONES.map(s => (
                               <label key={s} className="flex items-center gap-2 cursor-pointer text-sm">
                                 <input
@@ -733,9 +730,9 @@ const EnviarComunicadoAdmin = () => {
                 ))}
 
                 {algunPerfilMarcado && (
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-sm text-red-600">
                     Destinatarios:{" "}
-                    <span className="font-medium text-foreground">
+                    <span className="font-semibold">
                       {destinatariosTexto}
                     </span>
                   </p>
