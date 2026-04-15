@@ -135,6 +135,12 @@ const ListaComunicados = ({ comunicados, loading, showDocumentLink = false }: Li
             <span className="font-medium text-foreground">De:</span>{" "}
             {c.remitente}
           </p>
+          {c.destinatarios && (
+            <p className="text-sm">
+              <span className="font-medium text-foreground">Para:</span>{" "}
+              <span className="text-muted-foreground">{c.destinatarios}</span>
+            </p>
+          )}
           {c.mensaje && (
             <p className="text-sm whitespace-pre-wrap bg-muted p-3 rounded-md max-h-32 overflow-y-auto">
               {c.mensaje}
