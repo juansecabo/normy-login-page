@@ -104,10 +104,9 @@ const EnviarComunicado = () => {
     Coordinadores: false, Rector: false, Administrativos: false, Secretaria: false,
   });
 
-  // Filtros compartidos para Estudiantes/Padres/Profesores
-  const [nivel, setNivel] = useState("");
-  const [grado, setGrado] = useState("");
-  const [salon, setSalon] = useState("");
+  // Filtros con checkboxes para Estudiantes/Padres/Profesores
+  const [gradosMarcados, setGradosMarcados] = useState<Record<string, boolean>>({});
+  const [salonesMarcados, setSalonesMarcados] = useState<Record<string, boolean>>({});
 
   // Selección específica de internos (por cargo)
   const [listaCoordinadores, setListaCoordinadores] = useState<{ id: string; nombre: string }[]>([]);
@@ -117,6 +116,12 @@ const EnviarComunicado = () => {
   const [administrativosSeleccionados, setAdministrativosSeleccionados] = useState<string[]>([]);
   const [secretariasSeleccionadas, setSecretariasSeleccionadas] = useState<string[]>([]);
   const [loadingInternos, setLoadingInternos] = useState(false);
+
+  // Estudiantes específicos (filtrados por grados/salones marcados)
+  const [listaEstudiantesFiltrada, setListaEstudiantesFiltrada] = useState<{ id: string; nombre: string; grado: string; salon: string }[]>([]);
+  const [estudiantesSeleccionados, setEstudiantesSeleccionados] = useState<string[]>([]);
+  const [loadingListaEstudiantes, setLoadingListaEstudiantes] = useState(false);
+  const [mostrarEstudiantes, setMostrarEstudiantes] = useState(false);
 
   // Mensaje y archivos
   const [mensaje, setMensaje] = useState("");
@@ -147,6 +152,45 @@ const EnviarComunicado = () => {
     setCodigoRemitente(session.codigo!);
     setCargo(session.cargo || "");
   }, [navigate]);
+
+  // Cargar estudiantes según grados/salones marcados (solo si Est o Padres está marcado)
+  useEffect(() => {
+    const gradosSel = Object.keys(gradosMarcados).filter(g => gradosMarcados[g]);
+    const salonesSel = Object.keys(salonesMarcados).filter(s => salonesMarcados[s]);
+    const necesita = (perfilesMarcados.Estudiantes || perfilesMarcados.Padres) && gradosSel.length > 0;
+
+    if (!necesita) {
+      setListaEstudiantesFiltrada([]);
+      setEstudiantesSeleccionados([]);
+      setMostrarEstudiantes(false);
+      return;
+    }
+
+    const fetchLista = async () => {
+      setLoadingListaEstudiantes(true);
+      let q = supabase
+        .from("Estudiantes")
+        .select("codigo_estudiantil, apellidos_estudiante, nombre_estudiante, grado_estudiante, salon_estudiante")
+        .in("grado_estudiante", gradosSel);
+      if (salonesSel.length > 0) q = q.in("salon_estudiante", salonesSel);
+      const { data } = await q
+        .order("grado_estudiante", { ascending: true })
+        .order("salon_estudiante", { ascending: true })
+        .order("apellidos_estudiante", { ascending: true })
+        .order("nombre_estudiante", { ascending: true });
+      setListaEstudiantesFiltrada(
+        (data || []).map(e => ({
+          id: String(e.codigo_estudiantil),
+          nombre: `${e.apellidos_estudiante} ${e.nombre_estudiante}`,
+          grado: e.grado_estudiante || "",
+          salon: e.salon_estudiante || "",
+        }))
+      );
+      setEstudiantesSeleccionados(prev => prev.filter(id => (data || []).some(e => String(e.codigo_estudiantil) === id)));
+      setLoadingListaEstudiantes(false);
+    };
+    fetchLista();
+  }, [gradosMarcados, salonesMarcados, perfilesMarcados.Estudiantes, perfilesMarcados.Padres]);
 
   // Cargar las 3 listas de internos (Coordinadores, Administrativos, Secretaria General)
   useEffect(() => {
@@ -198,36 +242,55 @@ const EnviarComunicado = () => {
     setter(lista.includes(id) ? lista.filter(x => x !== id) : [...lista, id]);
   };
 
-  const handleNivelChange = (value: string) => {
-    setNivel(value);
-    setGrado("");
-    setSalon("");
-  };
-
-  const handleGradoChange = (value: string) => {
-    setGrado(value);
-    setSalon("");
-  };
-
-  const buildSufijoGrado = (): string => {
-    if (!nivel || nivel === "Todos") return "";
-    if (!grado) return ` de ${nivel}`;
-    let s = ` de ${grado}`;
-    if (salon && salon !== "Todos") s += ` ${salon}`;
-    return s;
+  const toggleEnRecord = (record: Record<string, boolean>, key: string, setter: (v: Record<string, boolean>) => void) => {
+    setter({ ...record, [key]: !record[key] });
   };
 
   const listaANombres = (ids: string[], lista: { id: string; nombre: string }[]) =>
     ids.map(id => lista.find(x => x.id === id)?.nombre).filter(Boolean) as string[];
 
+  const joinConY = (arr: string[]): string => {
+    if (arr.length === 0) return "";
+    if (arr.length === 1) return arr[0];
+    return arr.slice(0, -1).join(", ") + " y " + arr[arr.length - 1];
+  };
+
+  const getAulasTexto = (): string[] => {
+    const gradosSel = Object.keys(gradosMarcados).filter(g => gradosMarcados[g]);
+    const salonesSel = Object.keys(salonesMarcados).filter(s => salonesMarcados[s]);
+    if (gradosSel.length === 0) return [];
+    if (salonesSel.length === 0) return gradosSel.map(g => g);
+    const res: string[] = [];
+    for (const g of gradosSel) for (const s of salonesSel) res.push(`${g} ${s}`);
+    return res;
+  };
+
   const buildDestinatarios = (): string => {
     const sel = perfilesMarcados;
-    const sufijo = buildSufijoGrado();
     const partes: string[] = [];
 
-    if (sel.Estudiantes) partes.push(`Estudiantes${sufijo}`);
-    if (sel.Padres) partes.push(`Padres de familia${sufijo}`);
-    if (sel.Profesores) partes.push(`Profesores${sufijo}`);
+    if ((sel.Estudiantes || sel.Padres) && estudiantesSeleccionados.length > 0) {
+      for (const id of estudiantesSeleccionados) {
+        if (sel.Estudiantes && sel.Padres) partes.push(`Estudiante y padres de estudiante con código ${id}`);
+        else if (sel.Estudiantes) partes.push(`Estudiante con código ${id}`);
+        else partes.push(`Padres de estudiante con código ${id}`);
+      }
+    } else {
+      const aulas = getAulasTexto();
+      const perfilesAcad: string[] = [];
+      if (sel.Estudiantes) perfilesAcad.push("Estudiantes");
+      if (sel.Padres) perfilesAcad.push("Padres de familia");
+      if (perfilesAcad.length > 0) {
+        if (aulas.length === 0) partes.push(joinConY(perfilesAcad));
+        else for (const aula of aulas) partes.push(`${joinConY(perfilesAcad)} de ${aula}`);
+      }
+    }
+
+    if (sel.Profesores) {
+      const aulas = getAulasTexto();
+      if (aulas.length === 0) partes.push("Profesores");
+      else for (const aula of aulas) partes.push(`Profesores de ${aula}`);
+    }
 
     if (sel.Coordinadores) {
       if (coordinadoresSeleccionados.length === 0) partes.push("Coordinadores");
@@ -243,8 +306,7 @@ const EnviarComunicado = () => {
       else listaANombres(secretariasSeleccionadas, listaSecretarias).forEach(n => partes.push(`Secretaria ${n}`));
     }
 
-    if (partes.length <= 1) return partes.join("");
-    return partes.slice(0, -1).join(", ") + " y " + partes[partes.length - 1];
+    return joinConY(partes);
   };
 
   const destinatariosTexto = buildDestinatarios();
@@ -297,9 +359,9 @@ const EnviarComunicado = () => {
           mensaje: mensaje.trim(),
           codigo_remitente: codigoRemitente,
           perfil: null,
-          nivel: (nivel && nivel !== "Todos") ? nivel : null,
-          grado: grado || null,
-          salon: (salon && salon !== "Todos") ? salon : null,
+          nivel: null,
+          grado: null,
+          salon: null,
           codigo_estudiantil: null,
           ...(archivoUrl ? { archivo_url: archivoUrl } : {}),
         }),
@@ -489,44 +551,83 @@ const EnviarComunicado = () => {
                 {(perfilesMarcados.Estudiantes || perfilesMarcados.Padres || perfilesMarcados.Profesores) && (
                   <div className="border-l-2 border-primary/30 pl-4 space-y-3">
                     <p className="text-xs text-muted-foreground">
-                      Filtros aplican a Estudiantes, Padres y Profesores marcados
+                      Filtros aplican a Estudiantes, Padres y Profesores marcados. Vacío = todos.
                     </p>
                     <div className="space-y-2">
-                      <Label>Nivel</Label>
-                      <ResponsiveSelect
-                        value={nivel}
-                        onValueChange={handleNivelChange}
-                        placeholder="Selecciona el nivel"
-                        options={[
-                          { value: "Todos", label: "Todos los niveles" },
-                          ...Object.keys(NIVELES_GRADOS).map((n) => ({ value: n, label: n })),
-                        ]}
-                      />
+                      <Label>Grados</Label>
+                      <div className="space-y-2">
+                        {Object.entries(NIVELES_GRADOS).map(([niv, grados]) => (
+                          <div key={niv} className="space-y-1">
+                            <p className="text-xs font-medium text-muted-foreground">{niv}</p>
+                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-1 pl-2">
+                              {grados.map((g) => (
+                                <label key={g} className="flex items-center gap-2 cursor-pointer text-sm">
+                                  <input
+                                    type="checkbox"
+                                    checked={!!gradosMarcados[g]}
+                                    onChange={() => toggleEnRecord(gradosMarcados, g, setGradosMarcados)}
+                                    className="w-4 h-4 accent-primary cursor-pointer"
+                                  />
+                                  <span>{g}</span>
+                                </label>
+                              ))}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
                     </div>
-                    {nivel && nivel !== "Todos" && (
-                      <div className="space-y-2">
-                        <Label>Grado</Label>
-                        <ResponsiveSelect
-                          value={grado}
-                          onValueChange={handleGradoChange}
-                          placeholder="Selecciona el grado"
-                          options={(NIVELES_GRADOS[nivel] || []).map((g) => ({ value: g, label: g }))}
-                        />
+                    <div className="space-y-2">
+                      <Label>Salones</Label>
+                      <div className="grid grid-cols-6 gap-1 pl-2">
+                        {SALONES.map((s) => (
+                          <label key={s} className="flex items-center gap-2 cursor-pointer text-sm">
+                            <input
+                              type="checkbox"
+                              checked={!!salonesMarcados[s]}
+                              onChange={() => toggleEnRecord(salonesMarcados, s, setSalonesMarcados)}
+                              className="w-4 h-4 accent-primary cursor-pointer"
+                            />
+                            <span>{s}</span>
+                          </label>
+                        ))}
                       </div>
-                    )}
-                    {grado && (
-                      <div className="space-y-2">
-                        <Label>Salón</Label>
-                        <ResponsiveSelect
-                          value={salon}
-                          onValueChange={setSalon}
-                          placeholder="Selecciona el salón"
-                          options={[
-                            { value: "Todos", label: "Todos" },
-                            ...SALONES.map((s) => ({ value: s, label: s })),
-                          ]}
-                        />
-                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {(perfilesMarcados.Estudiantes || perfilesMarcados.Padres) &&
+                  Object.values(gradosMarcados).some(Boolean) && (
+                  <div className="border-l-2 border-primary/30 pl-4 space-y-2">
+                    <button
+                      type="button"
+                      onClick={() => setMostrarEstudiantes(v => !v)}
+                      className="text-xs text-primary hover:underline flex items-center gap-2"
+                    >
+                      <span>{mostrarEstudiantes ? "▼" : "▶"}</span>
+                      <span>
+                        Estudiantes específicos ({estudiantesSeleccionados.length} seleccionado{estudiantesSeleccionados.length !== 1 ? "s" : ""}, vacío = todos)
+                      </span>
+                    </button>
+                    {mostrarEstudiantes && (
+                      loadingListaEstudiantes ? (
+                        <p className="text-xs text-muted-foreground">Cargando estudiantes...</p>
+                      ) : listaEstudiantesFiltrada.length === 0 ? (
+                        <p className="text-xs text-muted-foreground">No hay estudiantes en esos grados/salones</p>
+                      ) : (
+                        <div className="space-y-1 max-h-52 overflow-y-auto border rounded p-2 bg-muted/30">
+                          {listaEstudiantesFiltrada.map((e) => (
+                            <label key={e.id} className="flex items-center gap-2 cursor-pointer text-sm">
+                              <input
+                                type="checkbox"
+                                checked={estudiantesSeleccionados.includes(e.id)}
+                                onChange={() => toggleInterno(estudiantesSeleccionados, e.id, setEstudiantesSeleccionados)}
+                                className="w-4 h-4 accent-primary cursor-pointer shrink-0"
+                              />
+                              <span>{e.nombre} <span className="text-xs text-muted-foreground">({e.grado} {e.salon})</span></span>
+                            </label>
+                          ))}
+                        </div>
+                      )
                     )}
                   </div>
                 )}
