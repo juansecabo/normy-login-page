@@ -244,7 +244,8 @@ const EnviarComunicadoAdmin = () => {
       else listaANombres(secretariasSeleccionadas, listaSecretarias).forEach(n => partes.push(`Secretaria ${n}`));
     }
 
-    return partes.join(" y ");
+    if (partes.length <= 1) return partes.join("");
+    return partes.slice(0, -1).join(", ") + " y " + partes[partes.length - 1];
   };
 
   const destinatariosTexto = buildDestinatarios();
