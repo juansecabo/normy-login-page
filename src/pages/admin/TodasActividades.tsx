@@ -98,6 +98,7 @@ const TodasActividades = () => {
   const [mesActual, setMesActual] = useState(new Date());
   const [diaSeleccionado, setDiaSeleccionado] = useState<Date | undefined>(new Date());
 
+  const [detalle, setDetalle] = useState<Actividad | null>(null);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [editing, setEditing] = useState<Actividad | null>(null);
   const [descripcion, setDescripcion] = useState("");
@@ -256,7 +257,11 @@ const TodasActividades = () => {
                     </p>
                     <div className="space-y-3">
                       {actividadesDelDia.map(a => (
-                        <div key={a.column_id} className="border rounded-lg p-4 hover:border-primary/50 transition-colors">
+                        <div
+                          key={a.column_id}
+                          onClick={() => setDetalle(a)}
+                          className="border rounded-lg p-4 hover:border-primary/50 hover:bg-muted/30 transition-colors cursor-pointer"
+                        >
                           <div className="flex items-start justify-between gap-2 mb-2">
                             <div className="flex flex-wrap gap-1">
                               <span className="inline-block px-2 py-0.5 text-xs font-medium bg-primary/10 text-primary rounded-full">
@@ -267,32 +272,22 @@ const TodasActividades = () => {
                               </span>
                             </div>
                             <div className="flex gap-1 shrink-0">
-                              <button onClick={() => handleEditar(a)} className="p-1.5 rounded hover:bg-muted" title="Editar">
+                              <button onClick={(e) => { e.stopPropagation(); handleEditar(a); }} className="p-1.5 rounded hover:bg-muted" title="Editar">
                                 <Pencil className="w-4 h-4 text-muted-foreground" />
                               </button>
-                              <button onClick={() => setDeleteId(a.column_id)} className="p-1.5 rounded hover:bg-destructive/10" title="Eliminar">
+                              <button onClick={(e) => { e.stopPropagation(); setDeleteId(a.column_id); }} className="p-1.5 rounded hover:bg-destructive/10" title="Eliminar">
                                 <Trash2 className="w-4 h-4 text-destructive" />
                               </button>
                             </div>
                           </div>
-                          <p className="font-medium text-foreground whitespace-pre-wrap">{a.Descripción}</p>
+                          <p className="font-medium text-foreground whitespace-pre-wrap line-clamp-3">{a.Descripción}</p>
                           <p className="text-sm text-muted-foreground mt-1">
                             Prof. {a.Nombres} {a.Apellidos}
                           </p>
-                          {a.archivo_url && a.archivo_url.split('\n').filter(Boolean).map((url, i) => (
-                            <div key={i} className="mt-2 space-y-1">
-                              <div className="flex items-center gap-1.5">
-                                <Paperclip className="h-4 w-4 text-muted-foreground shrink-0" />
-                                <span className="text-sm text-foreground truncate">{getCleanFilename(url)}</span>
-                              </div>
-                              <div className="flex gap-2">
-                                <button onClick={() => handleVerArchivo(url)} className="px-3 py-1.5 text-sm font-medium text-blue-700 bg-blue-50 border border-blue-200 rounded-md hover:bg-blue-100 flex items-center gap-1.5">
-                                  <Eye className="h-4 w-4" /> Ver
-                                </button>
-                                <button onClick={() => handleDescargarArchivo(url)} className="px-3 py-1.5 text-sm font-medium text-green-700 bg-green-50 border border-green-200 rounded-md hover:bg-green-100 flex items-center gap-1.5">
-                                  <Download className="h-4 w-4" /> Descargar
-                                </button>
-                              </div>
+                          {a.archivo_url && a.archivo_url.split('\n').filter(Boolean).slice(0, 1).map((url, i) => (
+                            <div key={i} className="mt-2 flex items-center gap-1.5 text-xs text-muted-foreground">
+                              <Paperclip className="h-3 w-3 shrink-0" />
+                              <span className="truncate">Archivo adjunto</span>
                             </div>
                           ))}
                         </div>
@@ -315,6 +310,61 @@ const TodasActividades = () => {
           )}
         </div>
       </main>
+
+      <Dialog open={!!detalle} onOpenChange={(open) => !open && setDetalle(null)}>
+        <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
+          {detalle && (
+            <>
+              <DialogHeader>
+                <DialogTitle>Detalle de actividad</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-3">
+                <div className="flex flex-wrap gap-1">
+                  <span className="inline-block px-2 py-0.5 text-xs font-medium bg-primary/10 text-primary rounded-full">
+                    {detalle.Grado} {detalle.Salon}
+                  </span>
+                  <span className="inline-block px-2 py-0.5 text-xs font-medium bg-secondary text-secondary-foreground rounded-full">
+                    {detalle.Asignatura}
+                  </span>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  📅 {detalle.fecha_de_presentacion && parsearFecha(detalle.fecha_de_presentacion)?.toLocaleDateString("es-CO", { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Profesor(a): <span className="text-foreground font-medium">{detalle.Nombres} {detalle.Apellidos}</span>
+                </p>
+                <div className="text-sm whitespace-pre-wrap bg-muted p-3 rounded-md">
+                  {detalle.Descripción}
+                </div>
+                {detalle.archivo_url && detalle.archivo_url.split('\n').filter(Boolean).map((url, i) => (
+                  <div key={i} className="space-y-1">
+                    <div className="flex items-center gap-1.5">
+                      <Paperclip className="h-4 w-4 text-muted-foreground shrink-0" />
+                      <span className="text-sm text-foreground truncate">{getCleanFilename(url)}</span>
+                    </div>
+                    <div className="flex gap-2">
+                      <button onClick={() => handleVerArchivo(url)} className="px-3 py-1.5 text-sm font-medium text-blue-700 bg-blue-50 border border-blue-200 rounded-md hover:bg-blue-100 flex items-center gap-1.5">
+                        <Eye className="h-4 w-4" /> Ver
+                      </button>
+                      <button onClick={() => handleDescargarArchivo(url)} className="px-3 py-1.5 text-sm font-medium text-green-700 bg-green-50 border border-green-200 rounded-md hover:bg-green-100 flex items-center gap-1.5">
+                        <Download className="h-4 w-4" /> Descargar
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => { setDetalle(null); handleEditar(detalle); }}>
+                  <Pencil className="w-4 h-4 mr-1" /> Editar
+                </Button>
+                <Button variant="destructive" onClick={() => { setDeleteId(detalle.column_id); setDetalle(null); }}>
+                  <Trash2 className="w-4 h-4 mr-1" /> Eliminar
+                </Button>
+              </DialogFooter>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={editModalOpen} onOpenChange={setEditModalOpen}>
         <DialogContent className="max-w-lg">
