@@ -93,6 +93,14 @@ const DashboardRector = () => {
             </button>
 
             <button
+              onClick={() => navigate("/rector/comunicados-recibidos")}
+              className="flex flex-col items-center justify-center gap-4 p-8 rounded-lg bg-teal-100 transition-all duration-200 hover:shadow-md hover:bg-teal-200"
+            >
+              <img src={iconComunicados} alt="" className="w-16 h-16 object-contain" />
+              <span className="font-semibold text-lg text-foreground text-center">Comunicados Recibidos</span>
+            </button>
+
+            <button
               onClick={() => navigate("/rector/panel-control")}
               className="flex flex-col items-center justify-center gap-4 p-8 rounded-lg bg-purple-100 transition-all duration-200 hover:shadow-md hover:bg-purple-200"
             >

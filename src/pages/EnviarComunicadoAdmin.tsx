@@ -388,6 +388,18 @@ const EnviarComunicadoAdmin = () => {
         ...secretariasSeleccionadas,
       ];
 
+      // Guardar directo en Comunicados (el workflow admin no lo hace)
+      await supabase.from("Comunicados").insert({
+        remitente: "Normy",
+        destinatarios: destinatariosTexto,
+        mensaje: mensaje.trim(),
+        codigo_remitente: codigoRemitente,
+        perfil: perfilArray.length > 0 ? perfilArray : null,
+        id_destinatarios: idDestinatariosArray.length > 0 ? idDestinatariosArray : null,
+        tipo: 'comunicado',
+        archivo_url: archivoUrl,
+      });
+
       const response = await fetch(WEBHOOK_URL, {
         method: "POST",
         mode: "cors",
