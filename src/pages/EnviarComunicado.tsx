@@ -739,9 +739,9 @@ const EnviarComunicado = () => {
                 ))}
 
                 {algunPerfilMarcado && (
-                  <p className="text-sm text-red-600">
-                    Destinatarios:{" "}
-                    <span className="font-semibold">
+                  <p className="text-sm text-muted-foreground">
+                    <span className="font-bold text-red-600">Destinatarios:</span>{" "}
+                    <span className="font-medium text-foreground">
                       {destinatariosTexto}
                     </span>
                   </p>
