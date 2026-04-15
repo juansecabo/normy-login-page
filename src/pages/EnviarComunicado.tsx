@@ -240,7 +240,25 @@ const EnviarComunicado = () => {
   };
 
   const togglePerfil = (key: PerfilKey) => {
-    setPerfilesMarcados(prev => ({ ...prev, [key]: !prev[key] }));
+    setPerfilesMarcados(prev => {
+      const nuevo = { ...prev, [key]: !prev[key] };
+      if (!nuevo[key]) {
+        if (key === 'Coordinadores') setCoordinadoresSeleccionados([]);
+        if (key === 'Administrativos') setAdministrativosSeleccionados([]);
+        if (key === 'Secretaria') setSecretariasSeleccionadas([]);
+        if (!nuevo.Estudiantes && !nuevo.Padres && !nuevo.Profesores) {
+          setNivelesMarcados({});
+          setGradosMarcados({});
+          setSalonesMarcados({});
+          setEstudiantesSeleccionados([]);
+          setOpenNivel(false);
+          setOpenGrado(false);
+          setOpenSalon(false);
+          setMostrarEstudiantes(false);
+        }
+      }
+      return nuevo;
+    });
   };
 
   const toggleInterno = (lista: string[], id: string, setter: (v: string[]) => void) => {
