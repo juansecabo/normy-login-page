@@ -13,11 +13,12 @@ interface Comunicado {
   mensaje: string;
   fecha: string;
   archivo_url: string | null;
-  perfil: string | null;
+  perfil: string[] | null;
   nivel: string | null;
   grado: string | null;
   salon: string | null;
   codigo_estudiantil: string | null;
+  id_destinatarios: string[] | null;
 }
 
 const ComunicadosEstudiante = () => {
@@ -37,12 +38,14 @@ const ComunicadosEstudiante = () => {
         const { data, error } = await supabase
           .from('Comunicados')
           .select('*')
-          .in('perfil', ['Estudiantes', 'Estudiantes y Padres de familia'])
+          .overlaps('perfil', ['Estudiantes'])
           .order('fecha', { ascending: false });
 
         if (!error && data) {
-          // Filtrar client-side por nivel/grado/salon/codigo
           const filtrados = data.filter((c: Comunicado) => {
+            if (c.id_destinatarios && c.id_destinatarios.length > 0) {
+              return c.id_destinatarios.includes(String(session.codigo));
+            }
             if (c.codigo_estudiantil && c.codigo_estudiantil !== session.codigo) return false;
             if (c.nivel && c.nivel !== session.nivel) return false;
             if (c.grado && c.grado !== session.grado) return false;

@@ -372,6 +372,22 @@ const EnviarComunicado = () => {
         archivoUrl = urls.join("\n");
       }
 
+      const perfilArray: string[] = [];
+      if (perfilesMarcados.Estudiantes) perfilArray.push("Estudiantes");
+      if (perfilesMarcados.Padres) perfilArray.push("Padres de familia");
+      if (perfilesMarcados.Profesores) perfilArray.push("Profesores");
+      if (perfilesMarcados.Coordinadores) perfilArray.push("Coordinadores");
+      if (perfilesMarcados.Rector) perfilArray.push("Rector");
+      if (perfilesMarcados.Administrativos) perfilArray.push("Administrativos");
+      if (perfilesMarcados.Secretaria) perfilArray.push("Secretaria General");
+
+      const idDestinatariosArray: string[] = [
+        ...estudiantesSeleccionados,
+        ...coordinadoresSeleccionados,
+        ...administrativosSeleccionados,
+        ...secretariasSeleccionadas,
+      ];
+
       const webhookUrl = ['Rector', 'Coordinador(a)'].includes(cargo) ? WEBHOOK_RECTOR_URL : WEBHOOK_URL;
       const response = await fetch(webhookUrl, {
         method: "POST",
@@ -382,7 +398,8 @@ const EnviarComunicado = () => {
           destinatarios: destinatariosTexto,
           mensaje: mensaje.trim(),
           codigo_remitente: codigoRemitente,
-          perfil: null,
+          perfil: perfilArray.length > 0 ? perfilArray : null,
+          id_destinatarios: idDestinatariosArray.length > 0 ? idDestinatariosArray : null,
           nivel: null,
           grado: null,
           salon: null,

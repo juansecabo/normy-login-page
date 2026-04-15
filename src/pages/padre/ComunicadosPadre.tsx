@@ -13,11 +13,12 @@ interface Comunicado {
   mensaje: string;
   fecha: string;
   archivo_url: string | null;
-  perfil: string | null;
+  perfil: string[] | null;
   nivel: string | null;
   grado: string | null;
   salon: string | null;
   codigo_estudiantil: string | null;
+  id_destinatarios: string[] | null;
 }
 
 const ComunicadosPadre = () => {
@@ -39,19 +40,18 @@ const ComunicadosPadre = () => {
         const { data, error } = await supabase
           .from('Comunicados')
           .select('*')
-          .in('perfil', ['Padres de familia', 'Estudiantes y Padres de familia'])
+          .overlaps('perfil', ['Padres de familia'])
           .order('fecha', { ascending: false });
 
         if (!error && data) {
-          // Filtrar client-side: el comunicado debe coincidir con al menos un hijo
           const filtrados = data.filter((c: Comunicado) => {
-            // Si tiene codigo_estudiantil específico, debe coincidir con algún hijo
+            if (c.id_destinatarios && c.id_destinatarios.length > 0) {
+              return hijos.some(h => c.id_destinatarios!.includes(String(h.codigo)));
+            }
             if (c.codigo_estudiantil) {
               return hijos.some(h => h.codigo === c.codigo_estudiantil);
             }
-            // Si no tiene filtros específicos (es general), incluir
             if (!c.nivel && !c.grado && !c.salon) return true;
-            // Si tiene filtros, al menos un hijo debe coincidir
             return hijos.some(h => {
               if (c.nivel && c.nivel !== h.nivel) return false;
               if (c.grado && c.grado !== h.grado) return false;

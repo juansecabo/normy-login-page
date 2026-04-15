@@ -13,8 +13,9 @@ interface Comunicado {
   mensaje: string;
   fecha: string;
   archivo_url: string | null;
-  perfil: string | null;
+  perfil: string[] | null;
   codigo_estudiantil: string | null;
+  id_destinatarios: string[] | null;
 }
 
 const ComunicadosProfesor = () => {
@@ -34,11 +35,14 @@ const ComunicadosProfesor = () => {
         const { data, error } = await supabase
           .from('Comunicados')
           .select('*')
-          .in('perfil', ['Profesores', 'Todo el personal interno', 'Toda la comunidad'])
+          .overlaps('perfil', ['Profesores'])
           .order('fecha', { ascending: false });
 
         if (!error && data) {
           const filtrados = data.filter((c: Comunicado) => {
+            if (c.id_destinatarios && c.id_destinatarios.length > 0) {
+              return c.id_destinatarios.includes(String(session.codigo));
+            }
             if (c.codigo_estudiantil && c.codigo_estudiantil !== session.codigo) return false;
             return true;
           });
