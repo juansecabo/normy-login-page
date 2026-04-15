@@ -261,10 +261,11 @@ const EnviarComunicado = () => {
   };
 
   const getAulasTexto = (): string[] => {
+    const nivelesSel = Object.keys(nivelesMarcados).filter(n => nivelesMarcados[n]);
     const gradosSel = Object.keys(gradosMarcados).filter(g => gradosMarcados[g]);
     const salonesSel = Object.keys(salonesMarcados).filter(s => salonesMarcados[s]);
-    if (gradosSel.length === 0) return [];
-    if (salonesSel.length === 0) return gradosSel.map(g => g);
+    if (gradosSel.length === 0) return nivelesSel.length > 0 ? nivelesSel : [];
+    if (salonesSel.length === 0) return gradosSel.slice();
     const res: string[] = [];
     for (const g of gradosSel) for (const s of salonesSel) res.push(`${g} ${s}`);
     return res;
@@ -273,6 +274,7 @@ const EnviarComunicado = () => {
   const buildDestinatarios = (): string => {
     const sel = perfilesMarcados;
     const partes: string[] = [];
+    const aulas = getAulasTexto();
 
     if ((sel.Estudiantes || sel.Padres) && estudiantesSeleccionados.length > 0) {
       for (const id of estudiantesSeleccionados) {
@@ -281,20 +283,19 @@ const EnviarComunicado = () => {
         else partes.push(`Padres de estudiante con código ${id}`);
       }
     } else {
-      const aulas = getAulasTexto();
-      const perfilesAcad: string[] = [];
-      if (sel.Estudiantes) perfilesAcad.push("Estudiantes");
-      if (sel.Padres) perfilesAcad.push("Padres de familia");
-      if (perfilesAcad.length > 0) {
-        if (aulas.length === 0) partes.push(joinConY(perfilesAcad));
-        else for (const aula of aulas) partes.push(`${joinConY(perfilesAcad)} de ${aula}`);
+      if (sel.Estudiantes) {
+        if (aulas.length === 0) partes.push("Estudiantes");
+        else aulas.forEach(a => partes.push(`Estudiantes de ${a}`));
+      }
+      if (sel.Padres) {
+        if (aulas.length === 0) partes.push("Padres de familia");
+        else aulas.forEach(a => partes.push(`Padres de familia de ${a}`));
       }
     }
 
     if (sel.Profesores) {
-      const aulas = getAulasTexto();
       if (aulas.length === 0) partes.push("Profesores");
-      else for (const aula of aulas) partes.push(`Profesores de ${aula}`);
+      else aulas.forEach(a => partes.push(`Profesores de ${a}`));
     }
 
     if (sel.Coordinadores) {
