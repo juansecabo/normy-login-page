@@ -959,7 +959,7 @@ const EnviarComunicadoAdmin = () => {
 
             <TabsContent value="historial">
               <h2 className="text-2xl font-bold text-foreground mb-6 text-center mt-4">
-                Comunicados Enviados
+                Historial de Comunicados
               </h2>
 
               {loadingHistorial ? (
@@ -978,7 +978,7 @@ const EnviarComunicadoAdmin = () => {
                     <Input
                       value={busqueda}
                       onChange={(e) => setBusqueda(e.target.value)}
-                      placeholder="Buscar por destinatario o mensaje..."
+                      placeholder="Buscar por remitente, destinatario o mensaje..."
                       className="pl-9"
                     />
                   </div>
@@ -986,7 +986,7 @@ const EnviarComunicadoAdmin = () => {
                     if (!busqueda.trim()) return true;
                     const normalize = (s: string) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
                     const term = normalize(busqueda);
-                    return normalize(c.destinatarios).includes(term) || normalize(c.mensaje).includes(term);
+                    return normalize(c.destinatarios).includes(term) || normalize(c.mensaje).includes(term) || normalize(c.remitente || '').includes(term);
                   }).map((c) => (
                     <div key={c.id} className="border rounded-lg p-4 space-y-2 cursor-pointer hover:bg-muted/50 transition-colors" onClick={() => setSelectedHistorial(c)}>
                       <div className="flex items-center justify-between">
@@ -1002,6 +1002,12 @@ const EnviarComunicadoAdmin = () => {
                           <Trash2 className="w-4 h-4" />
                         </button>
                       </div>
+                      {c.remitente && (
+                        <p className="text-sm">
+                          <span className="font-medium text-foreground">De:</span>{" "}
+                          {c.remitente}
+                        </p>
+                      )}
                       <p className="text-sm">
                         <span className="font-medium text-foreground">Para:</span>{" "}
                         {c.destinatarios}
@@ -1138,8 +1144,14 @@ const EnviarComunicadoAdmin = () => {
             <>
               <DialogHeader>
                 <DialogTitle className="text-base">
-                  Para: {selectedHistorial.destinatarios}
+                  {selectedHistorial.remitente ? `De: ${selectedHistorial.remitente}` : `Para: ${selectedHistorial.destinatarios}`}
                 </DialogTitle>
+                {selectedHistorial.remitente && (
+                  <p className="text-sm text-left">
+                    <span className="font-medium text-foreground">Para:</span>{" "}
+                    <span className="text-muted-foreground">{selectedHistorial.destinatarios}</span>
+                  </p>
+                )}
                 <div className="flex items-center gap-2 text-xs text-muted-foreground">
                   <Clock className="w-3 h-3" />
                   {formatFecha(selectedHistorial.fecha)}
