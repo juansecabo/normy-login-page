@@ -33,6 +33,18 @@ const NIVELES_GRADOS: Record<string, string[]> = {
 
 const SALONES = ["1", "2", "3", "4", "5", "6"];
 
+type PerfilKey = 'Estudiantes' | 'Padres' | 'Profesores' | 'Coordinadores' | 'Rector' | 'Administrativos' | 'Secretaria';
+
+const PERFILES_UI: { key: PerfilKey; label: string }[] = [
+  { key: 'Estudiantes', label: 'Estudiantes' },
+  { key: 'Padres', label: 'Padres de familia' },
+  { key: 'Profesores', label: 'Profesores' },
+  { key: 'Coordinadores', label: 'Coordinadores' },
+  { key: 'Rector', label: 'Rector' },
+  { key: 'Administrativos', label: 'Administrativos' },
+  { key: 'Secretaria', label: 'Secretaria General' },
+];
+
 interface ComunicadoEnviado {
   id: number;
   remitente: string;
@@ -87,14 +99,23 @@ const EnviarComunicadoAdmin = () => {
   const [showConfirm, setShowConfirm] = useState(false);
   const [deleteId, setDeleteId] = useState<number | null>(null);
 
-  // Destinatarios state
-  const [perfil, setPerfil] = useState("");
+  // Destinatarios state — perfiles (multi-select con checkboxes)
+  const [perfilesMarcados, setPerfilesMarcados] = useState<Record<PerfilKey, boolean>>({
+    Estudiantes: false, Padres: false, Profesores: false,
+    Coordinadores: false, Rector: false, Administrativos: false, Secretaria: false,
+  });
+
   const [nivel, setNivel] = useState("");
   const [grado, setGrado] = useState("");
   const [salon, setSalon] = useState("");
-  const [estudiante, setEstudiante] = useState("");
-  const [estudiantes, setEstudiantes] = useState<{ codigo: string; nombre: string }[]>([]);
-  const [loadingEstudiantes, setLoadingEstudiantes] = useState(false);
+
+  const [listaCoordinadores, setListaCoordinadores] = useState<{ id: string; nombre: string }[]>([]);
+  const [listaAdministrativos, setListaAdministrativos] = useState<{ id: string; nombre: string }[]>([]);
+  const [listaSecretarias, setListaSecretarias] = useState<{ id: string; nombre: string }[]>([]);
+  const [coordinadoresSeleccionados, setCoordinadoresSeleccionados] = useState<string[]>([]);
+  const [administrativosSeleccionados, setAdministrativosSeleccionados] = useState<string[]>([]);
+  const [secretariasSeleccionadas, setSecretariasSeleccionadas] = useState<string[]>([]);
+  const [loadingInternos, setLoadingInternos] = useState(false);
 
   // Mensaje y archivos
   const [mensaje, setMensaje] = useState("");
@@ -128,32 +149,29 @@ const EnviarComunicadoAdmin = () => {
     setCodigoRemitente(session.codigo!);
   }, [navigate]);
 
-  // Fetch estudiantes cuando cambia grado + salón
+  // Cargar las 3 listas de internos
   useEffect(() => {
-    if (!grado || !salon || salon === "Todos") {
-      setEstudiantes([]);
-      setEstudiante("");
-      return;
-    }
-    const fetchEstudiantes = async () => {
-      setLoadingEstudiantes(true);
+    const necesitaLista =
+      perfilesMarcados.Coordinadores || perfilesMarcados.Administrativos || perfilesMarcados.Secretaria;
+    if (!necesitaLista) return;
+    if (listaCoordinadores.length || listaAdministrativos.length || listaSecretarias.length) return;
+
+    const fetchInternos = async () => {
+      setLoadingInternos(true);
       const { data } = await supabase
-        .from("Estudiantes")
-        .select("codigo_estudiantil, apellidos_estudiante, nombre_estudiante")
-        .eq("grado_estudiante", grado)
-        .eq("salon_estudiante", salon)
-        .order("apellidos_estudiante", { ascending: true })
-        .order("nombre_estudiante", { ascending: true });
-      setEstudiantes(
-        data?.map((e) => ({
-          codigo: e.codigo_estudiantil,
-          nombre: `${e.apellidos_estudiante} ${e.nombre_estudiante}`,
-        })) || []
-      );
-      setLoadingEstudiantes(false);
+        .from("Internos")
+        .select("codigo, nombres, apellidos, cargo")
+        .in("cargo", ["Coordinador(a)", "Administrativo(a)", "Secretaria General"])
+        .order("apellidos", { ascending: true })
+        .order("nombres", { ascending: true });
+      const rows = data || [];
+      setListaCoordinadores(rows.filter(r => r.cargo === "Coordinador(a)").map(r => ({ id: String(r.codigo), nombre: `${r.apellidos} ${r.nombres}` })));
+      setListaAdministrativos(rows.filter(r => r.cargo === "Administrativo(a)").map(r => ({ id: String(r.codigo), nombre: `${r.apellidos} ${r.nombres}` })));
+      setListaSecretarias(rows.filter(r => r.cargo === "Secretaria General").map(r => ({ id: String(r.codigo), nombre: `${r.apellidos} ${r.nombres}` })));
+      setLoadingInternos(false);
     };
-    fetchEstudiantes();
-  }, [grado, salon]);
+    fetchInternos();
+  }, [perfilesMarcados, listaCoordinadores.length, listaAdministrativos.length, listaSecretarias.length]);
 
   const fetchHistorial = async () => {
     setLoadingHistorial(true);
@@ -173,66 +191,66 @@ const EnviarComunicadoAdmin = () => {
     setDeleteId(null);
   };
 
-  const handlePerfilChange = (value: string) => {
-    setPerfil(value);
-    setNivel("");
-    setGrado("");
-    setSalon("");
-    setEstudiante("");
+  const togglePerfil = (key: PerfilKey) => {
+    setPerfilesMarcados(prev => ({ ...prev, [key]: !prev[key] }));
+  };
+
+  const toggleInterno = (lista: string[], id: string, setter: (v: string[]) => void) => {
+    setter(lista.includes(id) ? lista.filter(x => x !== id) : [...lista, id]);
   };
 
   const handleNivelChange = (value: string) => {
     setNivel(value);
     setGrado("");
     setSalon("");
-    setEstudiante("");
   };
 
   const handleGradoChange = (value: string) => {
     setGrado(value);
     setSalon("");
-    setEstudiante("");
   };
 
-  const handleSalonChange = (value: string) => {
-    setSalon(value);
-    setEstudiante("");
+  const buildSufijoGrado = (): string => {
+    if (!nivel || nivel === "Todos") return "";
+    if (!grado) return ` de ${nivel}`;
+    let s = ` de ${grado}`;
+    if (salon && salon !== "Todos") s += ` ${salon}`;
+    return s;
   };
+
+  const listaANombres = (ids: string[], lista: { id: string; nombre: string }[]) =>
+    ids.map(id => lista.find(x => x.id === id)?.nombre).filter(Boolean) as string[];
 
   const buildDestinatarios = (): string => {
-    if (estudiante && estudiante !== "Todos") {
-      if (perfil === "Estudiantes") {
-        return `Estudiante con código ${estudiante}`;
-      } else if (perfil === "Padres de familia") {
-        return `Padres de estudiante con código ${estudiante}`;
-      } else {
-        return `Estudiante y padres de estudiante con código ${estudiante}`;
-      }
+    const sel = perfilesMarcados;
+    const sufijo = buildSufijoGrado();
+    const partes: string[] = [];
+
+    if (sel.Estudiantes) partes.push(`Estudiantes${sufijo}`);
+    if (sel.Padres) partes.push(`Padres de familia${sufijo}`);
+    if (sel.Profesores) partes.push(`Profesores${sufijo}`);
+
+    if (sel.Coordinadores) {
+      if (coordinadoresSeleccionados.length === 0) partes.push("Coordinadores");
+      else listaANombres(coordinadoresSeleccionados, listaCoordinadores).forEach(n => partes.push(`Coordinador(a) ${n}`));
+    }
+    if (sel.Rector) partes.push("Rector");
+    if (sel.Administrativos) {
+      if (administrativosSeleccionados.length === 0) partes.push("Administrativos");
+      else listaANombres(administrativosSeleccionados, listaAdministrativos).forEach(n => partes.push(`Administrativo(a) ${n}`));
+    }
+    if (sel.Secretaria) {
+      if (secretariasSeleccionadas.length === 0) partes.push("Secretaria General");
+      else listaANombres(secretariasSeleccionadas, listaSecretarias).forEach(n => partes.push(`Secretaria ${n}`));
     }
 
-    let texto = perfil;
-
-    if (!nivel || nivel === "Todos") {
-      return texto;
-    }
-
-    if (!grado) {
-      texto += ` de ${nivel}`;
-      return texto;
-    }
-
-    texto += ` de ${grado}`;
-
-    if (salon && salon !== "Todos") {
-      texto += ` ${salon}`;
-    }
-
-    return texto;
+    return partes.join(" y ");
   };
 
   const destinatariosTexto = buildDestinatarios();
+  const algunPerfilMarcado = Object.values(perfilesMarcados).some(Boolean);
 
-  const canSend = perfil && (mensaje.trim() || archivosSeleccionados.length > 0);
+  const canSend = algunPerfilMarcado && (mensaje.trim() || archivosSeleccionados.length > 0);
 
   const handleEnviar = async () => {
     setShowConfirm(false);
@@ -277,11 +295,11 @@ const EnviarComunicadoAdmin = () => {
           destinatarios: destinatariosTexto,
           mensaje: mensaje.trim(),
           codigo_remitente: codigoRemitente,
-          perfil: perfil || null,
+          perfil: null,
           nivel: (nivel && nivel !== "Todos") ? nivel : null,
           grado: grado || null,
           salon: (salon && salon !== "Todos") ? salon : null,
-          codigo_estudiantil: (estudiante && estudiante !== "Todos") ? estudiante : null,
+          codigo_estudiantil: null,
           ...(archivoUrl ? { archivo_url: archivoUrl } : {}),
         }),
       });
@@ -442,107 +460,107 @@ const EnviarComunicadoAdmin = () => {
                 </h3>
 
                 <div className="space-y-2">
-                  <Label>Perfil</Label>
-                  <Select value={perfil} onValueChange={handlePerfilChange}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecciona el perfil" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Estudiantes">Estudiantes</SelectItem>
-                      <SelectItem value="Padres de familia">
-                        Padres de familia
-                      </SelectItem>
-                      <SelectItem value="Estudiantes y Padres de familia">
-                        Estudiantes y Padres de familia
-                      </SelectItem>
-                      <SelectItem value="Profesores">Profesores</SelectItem>
-                      <SelectItem value="Coordinadores">Coordinadores</SelectItem>
-                      <SelectItem value="Todo el personal interno">
-                        Todo el personal interno
-                      </SelectItem>
-                      <SelectItem value="Toda la comunidad">
-                        Toda la comunidad
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <Label>Perfiles</Label>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {PERFILES_UI.map((p) => (
+                      <label key={p.key} className="flex items-center gap-2 cursor-pointer select-none text-sm">
+                        <input
+                          type="checkbox"
+                          checked={perfilesMarcados[p.key]}
+                          onChange={() => togglePerfil(p.key)}
+                          className="w-4 h-4 accent-primary cursor-pointer"
+                        />
+                        <span>{p.label}</span>
+                      </label>
+                    ))}
+                  </div>
                 </div>
 
-                {perfil && !['Profesores', 'Coordinadores', 'Todo el personal interno', 'Toda la comunidad'].includes(perfil) && (
-                  <div className="space-y-2">
-                    <Label>Nivel</Label>
-                    <Select value={nivel} onValueChange={handleNivelChange}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecciona el nivel" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Todos">Todos los niveles</SelectItem>
-                        {Object.keys(NIVELES_GRADOS).map((n) => (
-                          <SelectItem key={n} value={n}>
-                            {n}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                {(perfilesMarcados.Estudiantes || perfilesMarcados.Padres || perfilesMarcados.Profesores) && (
+                  <div className="border-l-2 border-primary/30 pl-4 space-y-3">
+                    <p className="text-xs text-muted-foreground">
+                      Filtros aplican a Estudiantes, Padres y Profesores marcados
+                    </p>
+                    <div className="space-y-2">
+                      <Label>Nivel</Label>
+                      <Select value={nivel} onValueChange={handleNivelChange}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecciona el nivel" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Todos">Todos los niveles</SelectItem>
+                          {Object.keys(NIVELES_GRADOS).map((n) => (
+                            <SelectItem key={n} value={n}>{n}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    {nivel && nivel !== "Todos" && (
+                      <div className="space-y-2">
+                        <Label>Grado</Label>
+                        <Select value={grado} onValueChange={handleGradoChange}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecciona el grado" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {NIVELES_GRADOS[nivel]?.map((g) => (
+                              <SelectItem key={g} value={g}>{g}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
+                    {grado && (
+                      <div className="space-y-2">
+                        <Label>Salón</Label>
+                        <Select value={salon} onValueChange={setSalon}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecciona el salón" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Todos">Todos</SelectItem>
+                            {SALONES.map((s) => (
+                              <SelectItem key={s} value={s}>{s}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
                   </div>
                 )}
 
-                {nivel && nivel !== "Todos" && (
-                  <div className="space-y-2">
-                    <Label>Grado</Label>
-                    <Select value={grado} onValueChange={handleGradoChange}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecciona el grado" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {NIVELES_GRADOS[nivel]?.map((g) => (
-                          <SelectItem key={g} value={g}>
-                            {g}
-                          </SelectItem>
+                {[
+                  { on: perfilesMarcados.Coordinadores, label: "Coordinadores", lista: listaCoordinadores, sel: coordinadoresSeleccionados, setter: setCoordinadoresSeleccionados },
+                  { on: perfilesMarcados.Administrativos, label: "Administrativos", lista: listaAdministrativos, sel: administrativosSeleccionados, setter: setAdministrativosSeleccionados },
+                  { on: perfilesMarcados.Secretaria, label: "Secretaria General", lista: listaSecretarias, sel: secretariasSeleccionadas, setter: setSecretariasSeleccionadas },
+                ].filter(x => x.on).map((grupo) => (
+                  <div key={grupo.label} className="border-l-2 border-primary/30 pl-4 space-y-2">
+                    <p className="text-xs text-muted-foreground">
+                      {grupo.label} específicos (vacío = todos)
+                    </p>
+                    {loadingInternos && grupo.lista.length === 0 ? (
+                      <p className="text-xs text-muted-foreground">Cargando...</p>
+                    ) : grupo.lista.length === 0 ? (
+                      <p className="text-xs text-muted-foreground">No hay personas con este cargo</p>
+                    ) : (
+                      <div className="space-y-1 max-h-40 overflow-y-auto">
+                        {grupo.lista.map((p) => (
+                          <label key={p.id} className="flex items-center gap-2 cursor-pointer text-sm">
+                            <input
+                              type="checkbox"
+                              checked={grupo.sel.includes(p.id)}
+                              onChange={() => toggleInterno(grupo.sel, p.id, grupo.setter)}
+                              className="w-4 h-4 accent-primary cursor-pointer"
+                            />
+                            <span>{p.nombre}</span>
+                          </label>
                         ))}
-                      </SelectContent>
-                    </Select>
+                      </div>
+                    )}
                   </div>
-                )}
+                ))}
 
-                {grado && (
-                  <div className="space-y-2">
-                    <Label>Salón</Label>
-                    <Select value={salon} onValueChange={handleSalonChange}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecciona el salón" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Todos">Todos</SelectItem>
-                        {SALONES.map((s) => (
-                          <SelectItem key={s} value={s}>
-                            {s}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                )}
-
-                {salon && salon !== "Todos" && (
-                  <div className="space-y-2">
-                    <Label>Estudiante</Label>
-                    <Select value={estudiante} onValueChange={setEstudiante}>
-                      <SelectTrigger>
-                        <SelectValue placeholder={loadingEstudiantes ? "Cargando..." : "Todos los estudiantes"} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Todos">Todos</SelectItem>
-                        {estudiantes.map((e) => (
-                          <SelectItem key={e.codigo} value={e.codigo}>
-                            {e.nombre}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                )}
-
-                {perfil && (
+                {algunPerfilMarcado && (
                   <p className="text-sm text-muted-foreground">
                     Destinatarios:{" "}
                     <span className="font-medium text-foreground">

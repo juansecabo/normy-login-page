@@ -18,7 +18,17 @@ const WEBHOOK_URL =
 const WEBHOOK_RECTOR_URL =
   "https://n8n.notasnormy.com/webhook/enviar-comunicado-rector-coordinadores";
 
-const PERFILES_INTERNOS = ['Profesores', 'Coordinadores', 'Todo el personal interno', 'Toda la comunidad'];
+type PerfilKey = 'Estudiantes' | 'Padres' | 'Profesores' | 'Coordinadores' | 'Rector' | 'Administrativos' | 'Secretaria';
+
+const PERFILES_UI: { key: PerfilKey; label: string }[] = [
+  { key: 'Estudiantes', label: 'Estudiantes' },
+  { key: 'Padres', label: 'Padres de familia' },
+  { key: 'Profesores', label: 'Profesores' },
+  { key: 'Coordinadores', label: 'Coordinadores' },
+  { key: 'Rector', label: 'Rector' },
+  { key: 'Administrativos', label: 'Administrativos' },
+  { key: 'Secretaria', label: 'Secretaria General' },
+];
 
 const WEBHOOK_MASIVO_URL =
   "https://n8n.notasnormy.com/webhook/masivo-personalizado";
@@ -88,18 +98,24 @@ const EnviarComunicado = () => {
   const [showConfirm, setShowConfirm] = useState(false);
   const [deleteId, setDeleteId] = useState<number | null>(null);
 
-  // Destinatarios state
-  const [perfil, setPerfil] = useState("");
+  // Destinatarios state — perfiles (multi-select con checkboxes)
+  const [perfilesMarcados, setPerfilesMarcados] = useState<Record<PerfilKey, boolean>>({
+    Estudiantes: false, Padres: false, Profesores: false,
+    Coordinadores: false, Rector: false, Administrativos: false, Secretaria: false,
+  });
+
+  // Filtros compartidos para Estudiantes/Padres/Profesores
   const [nivel, setNivel] = useState("");
   const [grado, setGrado] = useState("");
   const [salon, setSalon] = useState("");
-  const [estudiante, setEstudiante] = useState("");
-  const [estudiantes, setEstudiantes] = useState<{ codigo: string; nombre: string }[]>([]);
-  const [loadingEstudiantes, setLoadingEstudiantes] = useState(false);
 
-  // Internos (para selección individual)
-  const [internos, setInternos] = useState<{ codigo: string; nombre: string }[]>([]);
-  const [internoSeleccionado, setInternoSeleccionado] = useState("");
+  // Selección específica de internos (por cargo)
+  const [listaCoordinadores, setListaCoordinadores] = useState<{ id: string; nombre: string }[]>([]);
+  const [listaAdministrativos, setListaAdministrativos] = useState<{ id: string; nombre: string }[]>([]);
+  const [listaSecretarias, setListaSecretarias] = useState<{ id: string; nombre: string }[]>([]);
+  const [coordinadoresSeleccionados, setCoordinadoresSeleccionados] = useState<string[]>([]);
+  const [administrativosSeleccionados, setAdministrativosSeleccionados] = useState<string[]>([]);
+  const [secretariasSeleccionadas, setSecretariasSeleccionadas] = useState<string[]>([]);
   const [loadingInternos, setLoadingInternos] = useState(false);
 
   // Mensaje y archivos
@@ -132,66 +148,29 @@ const EnviarComunicado = () => {
     setCargo(session.cargo || "");
   }, [navigate]);
 
-  // Fetch estudiantes cuando cambia grado + salón
+  // Cargar las 3 listas de internos (Coordinadores, Administrativos, Secretaria General)
   useEffect(() => {
-    if (!grado || !salon || salon === "Todos") {
-      setEstudiantes([]);
-      setEstudiante("");
-      return;
-    }
-    const fetchEstudiantes = async () => {
-      setLoadingEstudiantes(true);
-      const { data } = await supabase
-        .from("Estudiantes")
-        .select("codigo_estudiantil, apellidos_estudiante, nombre_estudiante")
-        .eq("grado_estudiante", grado)
-        .eq("salon_estudiante", salon)
-        .order("apellidos_estudiante", { ascending: true })
-        .order("nombre_estudiante", { ascending: true });
-      setEstudiantes(
-        data?.map((e) => ({
-          codigo: e.codigo_estudiantil,
-          nombre: `${e.apellidos_estudiante} ${e.nombre_estudiante}`,
-        })) || []
-      );
-      setLoadingEstudiantes(false);
-    };
-    fetchEstudiantes();
-  }, [grado, salon]);
+    const necesitaLista =
+      perfilesMarcados.Coordinadores || perfilesMarcados.Administrativos || perfilesMarcados.Secretaria;
+    if (!necesitaLista) return;
+    if (listaCoordinadores.length || listaAdministrativos.length || listaSecretarias.length) return;
 
-  // Fetch internos cuando se selecciona un perfil interno
-  useEffect(() => {
-    if (!PERFILES_INTERNOS.includes(perfil)) {
-      setInternos([]);
-      setInternoSeleccionado("");
-      return;
-    }
     const fetchInternos = async () => {
       setLoadingInternos(true);
-      let query = supabase
+      const { data } = await supabase
         .from("Internos")
         .select("codigo, nombres, apellidos, cargo")
+        .in("cargo", ["Coordinador(a)", "Administrativo(a)", "Secretaria General"])
         .order("apellidos", { ascending: true })
         .order("nombres", { ascending: true });
-
-      if (perfil === "Profesores") {
-        query = query.eq("cargo", "Profesor(a)");
-      } else if (perfil === "Coordinadores") {
-        query = query.eq("cargo", "Coordinador(a)");
-      }
-      // "Todo el personal interno" y "Toda la comunidad" → todos los internos
-
-      const { data } = await query;
-      setInternos(
-        data?.map((i) => ({
-          codigo: String(i.codigo),
-          nombre: `${i.apellidos} ${i.nombres}`,
-        })) || []
-      );
+      const rows = data || [];
+      setListaCoordinadores(rows.filter(r => r.cargo === "Coordinador(a)").map(r => ({ id: String(r.codigo), nombre: `${r.apellidos} ${r.nombres}` })));
+      setListaAdministrativos(rows.filter(r => r.cargo === "Administrativo(a)").map(r => ({ id: String(r.codigo), nombre: `${r.apellidos} ${r.nombres}` })));
+      setListaSecretarias(rows.filter(r => r.cargo === "Secretaria General").map(r => ({ id: String(r.codigo), nombre: `${r.apellidos} ${r.nombres}` })));
       setLoadingInternos(false);
     };
     fetchInternos();
-  }, [perfil]);
+  }, [perfilesMarcados, listaCoordinadores.length, listaAdministrativos.length, listaSecretarias.length]);
 
   const fetchHistorial = async () => {
     setLoadingHistorial(true);
@@ -211,76 +190,66 @@ const EnviarComunicado = () => {
     setDeleteId(null);
   };
 
-  // Reset dependientes al cambiar perfil
-  const handlePerfilChange = (value: string) => {
-    setPerfil(value);
-    setNivel("");
-    setGrado("");
-    setSalon("");
-    setEstudiante("");
-    setInternoSeleccionado("");
+  const togglePerfil = (key: PerfilKey) => {
+    setPerfilesMarcados(prev => ({ ...prev, [key]: !prev[key] }));
+  };
+
+  const toggleInterno = (lista: string[], id: string, setter: (v: string[]) => void) => {
+    setter(lista.includes(id) ? lista.filter(x => x !== id) : [...lista, id]);
   };
 
   const handleNivelChange = (value: string) => {
     setNivel(value);
     setGrado("");
     setSalon("");
-    setEstudiante("");
   };
 
   const handleGradoChange = (value: string) => {
     setGrado(value);
     setSalon("");
-    setEstudiante("");
   };
 
-  const handleSalonChange = (value: string) => {
-    setSalon(value);
-    setEstudiante("");
+  const buildSufijoGrado = (): string => {
+    if (!nivel || nivel === "Todos") return "";
+    if (!grado) return ` de ${nivel}`;
+    let s = ` de ${grado}`;
+    if (salon && salon !== "Todos") s += ` ${salon}`;
+    return s;
   };
 
-  // Construir texto de destinatarios
+  const listaANombres = (ids: string[], lista: { id: string; nombre: string }[]) =>
+    ids.map(id => lista.find(x => x.id === id)?.nombre).filter(Boolean) as string[];
+
   const buildDestinatarios = (): string => {
-    // Interno individual
-    if (PERFILES_INTERNOS.includes(perfil) && internoSeleccionado && internoSeleccionado !== "Todos") {
-      const interno = internos.find(i => i.codigo === internoSeleccionado);
-      return interno ? `${interno.nombre}` : perfil;
+    const sel = perfilesMarcados;
+    const sufijo = buildSufijoGrado();
+    const partes: string[] = [];
+
+    if (sel.Estudiantes) partes.push(`Estudiantes${sufijo}`);
+    if (sel.Padres) partes.push(`Padres de familia${sufijo}`);
+    if (sel.Profesores) partes.push(`Profesores${sufijo}`);
+
+    if (sel.Coordinadores) {
+      if (coordinadoresSeleccionados.length === 0) partes.push("Coordinadores");
+      else listaANombres(coordinadoresSeleccionados, listaCoordinadores).forEach(n => partes.push(`Coordinador(a) ${n}`));
+    }
+    if (sel.Rector) partes.push("Rector");
+    if (sel.Administrativos) {
+      if (administrativosSeleccionados.length === 0) partes.push("Administrativos");
+      else listaANombres(administrativosSeleccionados, listaAdministrativos).forEach(n => partes.push(`Administrativo(a) ${n}`));
+    }
+    if (sel.Secretaria) {
+      if (secretariasSeleccionadas.length === 0) partes.push("Secretaria General");
+      else listaANombres(secretariasSeleccionadas, listaSecretarias).forEach(n => partes.push(`Secretaria ${n}`));
     }
 
-    if (estudiante && estudiante !== "Todos") {
-      // Estudiante específico - pasar código para búsqueda directa
-      if (perfil === "Estudiantes") {
-        return `Estudiante con código ${estudiante}`;
-      } else if (perfil === "Padres de familia") {
-        return `Padres de estudiante con código ${estudiante}`;
-      } else {
-        return `Estudiante y padres de estudiante con código ${estudiante}`;
-      }
-    }
-
-    let texto = perfil;
-
-    if (!nivel || nivel === "Todos") {
-      return texto;
-    }
-
-    if (!grado) {
-      texto += ` de ${nivel}`;
-      return texto;
-    }
-
-    texto += ` de ${grado}`;
-
-    if (salon && salon !== "Todos") {
-      texto += ` ${salon}`;
-    }
-
-    return texto;
+    return partes.join(" y ");
   };
 
   const destinatariosTexto = buildDestinatarios();
+  const algunPerfilMarcado = Object.values(perfilesMarcados).some(Boolean);
 
-  const canSend = perfil && (mensaje.trim() || archivosSeleccionados.length > 0);
+  const canSend = algunPerfilMarcado && (mensaje.trim() || archivosSeleccionados.length > 0);
 
   const handleEnviar = async () => {
     setShowConfirm(false);
@@ -326,11 +295,11 @@ const EnviarComunicado = () => {
           destinatarios: destinatariosTexto,
           mensaje: mensaje.trim(),
           codigo_remitente: codigoRemitente,
-          perfil: perfil || null,
+          perfil: null,
           nivel: (nivel && nivel !== "Todos") ? nivel : null,
           grado: grado || null,
           salon: (salon && salon !== "Todos") ? salon : null,
-          codigo_estudiantil: (internoSeleccionado && internoSeleccionado !== "Todos") ? internoSeleccionado : (estudiante && estudiante !== "Todos") ? estudiante : null,
+          codigo_estudiantil: null,
           ...(archivoUrl ? { archivo_url: archivoUrl } : {}),
         }),
       });
@@ -498,106 +467,101 @@ const EnviarComunicado = () => {
                   Destinatarios
                 </h3>
 
-                {/* Perfil */}
+                {/* Perfiles (multi-check) */}
                 <div className="space-y-2">
-                  <Label>Perfil</Label>
-                  <ResponsiveSelect
-                    value={perfil}
-                    onValueChange={handlePerfilChange}
-                    placeholder="Selecciona el perfil"
-                    options={[
-                      { value: "Estudiantes", label: "Estudiantes" },
-                      { value: "Padres de familia", label: "Padres de familia" },
-                      { value: "Estudiantes y Padres de familia", label: "Estudiantes y Padres de familia" },
-                      ...(['Rector', 'Coordinador(a)'].includes(cargo) ? [
-                        { value: "Profesores", label: "Profesores" },
-                        { value: "Coordinadores", label: "Coordinadores" },
-                        { value: "Todo el personal interno", label: "Todo el personal interno" },
-                        { value: "Toda la comunidad", label: "Toda la comunidad" },
-                      ] : []),
-                    ]}
-                  />
+                  <Label>Perfiles</Label>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {PERFILES_UI.map((p) => (
+                      <label key={p.key} className="flex items-center gap-2 cursor-pointer select-none text-sm">
+                        <input
+                          type="checkbox"
+                          checked={perfilesMarcados[p.key]}
+                          onChange={() => togglePerfil(p.key)}
+                          className="w-4 h-4 accent-primary cursor-pointer"
+                        />
+                        <span>{p.label}</span>
+                      </label>
+                    ))}
+                  </div>
                 </div>
 
-                {/* Selección individual de interno */}
-                {PERFILES_INTERNOS.includes(perfil) && perfil !== 'Toda la comunidad' && (
-                  <div className="space-y-2">
-                    <Label>Persona</Label>
-                    <ResponsiveSelect
-                      value={internoSeleccionado}
-                      onValueChange={setInternoSeleccionado}
-                      placeholder={loadingInternos ? "Cargando..." : "Todos"}
-                      options={[
-                        { value: "Todos", label: "Todos" },
-                        ...internos.map((i) => ({ value: i.codigo, label: i.nombre })),
-                      ]}
-                    />
+                {(perfilesMarcados.Estudiantes || perfilesMarcados.Padres || perfilesMarcados.Profesores) && (
+                  <div className="border-l-2 border-primary/30 pl-4 space-y-3">
+                    <p className="text-xs text-muted-foreground">
+                      Filtros aplican a Estudiantes, Padres y Profesores marcados
+                    </p>
+                    <div className="space-y-2">
+                      <Label>Nivel</Label>
+                      <ResponsiveSelect
+                        value={nivel}
+                        onValueChange={handleNivelChange}
+                        placeholder="Selecciona el nivel"
+                        options={[
+                          { value: "Todos", label: "Todos los niveles" },
+                          ...Object.keys(NIVELES_GRADOS).map((n) => ({ value: n, label: n })),
+                        ]}
+                      />
+                    </div>
+                    {nivel && nivel !== "Todos" && (
+                      <div className="space-y-2">
+                        <Label>Grado</Label>
+                        <ResponsiveSelect
+                          value={grado}
+                          onValueChange={handleGradoChange}
+                          placeholder="Selecciona el grado"
+                          options={(NIVELES_GRADOS[nivel] || []).map((g) => ({ value: g, label: g }))}
+                        />
+                      </div>
+                    )}
+                    {grado && (
+                      <div className="space-y-2">
+                        <Label>Salón</Label>
+                        <ResponsiveSelect
+                          value={salon}
+                          onValueChange={setSalon}
+                          placeholder="Selecciona el salón"
+                          options={[
+                            { value: "Todos", label: "Todos" },
+                            ...SALONES.map((s) => ({ value: s, label: s })),
+                          ]}
+                        />
+                      </div>
+                    )}
                   </div>
                 )}
 
-                {/* Nivel */}
-                {perfil && !PERFILES_INTERNOS.includes(perfil) && (
-                  <div className="space-y-2">
-                    <Label>Nivel</Label>
-                    <ResponsiveSelect
-                      value={nivel}
-                      onValueChange={handleNivelChange}
-                      placeholder="Selecciona el nivel"
-                      options={[
-                        { value: "Todos", label: "Todos los niveles" },
-                        ...Object.keys(NIVELES_GRADOS).map((n) => ({ value: n, label: n })),
-                      ]}
-                    />
+                {[
+                  { on: perfilesMarcados.Coordinadores, label: "Coordinadores", lista: listaCoordinadores, sel: coordinadoresSeleccionados, setter: setCoordinadoresSeleccionados },
+                  { on: perfilesMarcados.Administrativos, label: "Administrativos", lista: listaAdministrativos, sel: administrativosSeleccionados, setter: setAdministrativosSeleccionados },
+                  { on: perfilesMarcados.Secretaria, label: "Secretaria General", lista: listaSecretarias, sel: secretariasSeleccionadas, setter: setSecretariasSeleccionadas },
+                ].filter(x => x.on).map((grupo) => (
+                  <div key={grupo.label} className="border-l-2 border-primary/30 pl-4 space-y-2">
+                    <p className="text-xs text-muted-foreground">
+                      {grupo.label} específicos (vacío = todos)
+                    </p>
+                    {loadingInternos && grupo.lista.length === 0 ? (
+                      <p className="text-xs text-muted-foreground">Cargando...</p>
+                    ) : grupo.lista.length === 0 ? (
+                      <p className="text-xs text-muted-foreground">No hay personas con este cargo</p>
+                    ) : (
+                      <div className="space-y-1 max-h-40 overflow-y-auto">
+                        {grupo.lista.map((p) => (
+                          <label key={p.id} className="flex items-center gap-2 cursor-pointer text-sm">
+                            <input
+                              type="checkbox"
+                              checked={grupo.sel.includes(p.id)}
+                              onChange={() => toggleInterno(grupo.sel, p.id, grupo.setter)}
+                              className="w-4 h-4 accent-primary cursor-pointer"
+                            />
+                            <span>{p.nombre}</span>
+                          </label>
+                        ))}
+                      </div>
+                    )}
                   </div>
-                )}
+                ))}
 
-                {/* Grado - solo si se eligió un nivel específico */}
-                {nivel && nivel !== "Todos" && (
-                  <div className="space-y-2">
-                    <Label>Grado</Label>
-                    <ResponsiveSelect
-                      value={grado}
-                      onValueChange={handleGradoChange}
-                      placeholder="Selecciona el grado"
-                      options={(NIVELES_GRADOS[nivel] || []).map((g) => ({ value: g, label: g }))}
-                    />
-                  </div>
-                )}
-
-                {/* Salón - solo si se eligió grado */}
-                {grado && (
-                  <div className="space-y-2">
-                    <Label>Salón</Label>
-                    <ResponsiveSelect
-                      value={salon}
-                      onValueChange={handleSalonChange}
-                      placeholder="Selecciona el salón"
-                      options={[
-                        { value: "Todos", label: "Todos" },
-                        ...SALONES.map((s) => ({ value: s, label: s })),
-                      ]}
-                    />
-                  </div>
-                )}
-
-                {/* Estudiante - solo si se eligió salón específico */}
-                {salon && salon !== "Todos" && (
-                  <div className="space-y-2">
-                    <Label>Estudiante</Label>
-                    <ResponsiveSelect
-                      value={estudiante}
-                      onValueChange={setEstudiante}
-                      placeholder={loadingEstudiantes ? "Cargando..." : "Todos los estudiantes"}
-                      options={[
-                        { value: "Todos", label: "Todos los estudiantes" },
-                        ...estudiantes.map((e) => ({ value: e.codigo, label: e.nombre })),
-                      ]}
-                    />
-                  </div>
-                )}
-
-                {/* Preview de destinatarios */}
-                {perfil && (
+                {algunPerfilMarcado && (
                   <p className="text-sm text-muted-foreground">
                     Destinatarios:{" "}
                     <span className="font-medium text-foreground">
