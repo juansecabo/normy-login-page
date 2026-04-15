@@ -105,8 +105,12 @@ const EnviarComunicadoAdmin = () => {
     Coordinadores: false, Rector: false, Administrativos: false, Secretaria: false,
   });
 
+  const [nivelesMarcados, setNivelesMarcados] = useState<Record<string, boolean>>({});
   const [gradosMarcados, setGradosMarcados] = useState<Record<string, boolean>>({});
   const [salonesMarcados, setSalonesMarcados] = useState<Record<string, boolean>>({});
+  const [openNivel, setOpenNivel] = useState(false);
+  const [openGrado, setOpenGrado] = useState(false);
+  const [openSalon, setOpenSalon] = useState(false);
 
   const [listaCoordinadores, setListaCoordinadores] = useState<{ id: string; nombre: string }[]>([]);
   const [listaAdministrativos, setListaAdministrativos] = useState<{ id: string; nombre: string }[]>([]);
@@ -538,52 +542,110 @@ const EnviarComunicadoAdmin = () => {
                   </div>
                 </div>
 
-                {(perfilesMarcados.Estudiantes || perfilesMarcados.Padres || perfilesMarcados.Profesores) && (
-                  <div className="border-l-2 border-primary/30 pl-4 space-y-3">
-                    <p className="text-xs text-muted-foreground">
-                      Filtros aplican a Estudiantes, Padres y Profesores marcados. Vacío = todos.
-                    </p>
-                    <div className="space-y-2">
-                      <Label>Grados</Label>
-                      <div className="space-y-2">
-                        {Object.entries(NIVELES_GRADOS).map(([niv, grados]) => (
-                          <div key={niv} className="space-y-1">
-                            <p className="text-xs font-medium text-muted-foreground">{niv}</p>
-                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-1 pl-2">
-                              {grados.map((g) => (
-                                <label key={g} className="flex items-center gap-2 cursor-pointer text-sm">
-                                  <input
-                                    type="checkbox"
-                                    checked={!!gradosMarcados[g]}
-                                    onChange={() => toggleEnRecord(gradosMarcados, g, setGradosMarcados)}
-                                    className="w-4 h-4 accent-primary cursor-pointer"
-                                  />
-                                  <span>{g}</span>
-                                </label>
-                              ))}
-                            </div>
+                {(() => {
+                  if (!(perfilesMarcados.Estudiantes || perfilesMarcados.Padres || perfilesMarcados.Profesores)) return null;
+
+                  const nivelesSel = Object.keys(nivelesMarcados).filter(n => nivelesMarcados[n]);
+                  const gradosDisponibles = nivelesSel.flatMap(n => NIVELES_GRADOS[n] || []);
+                  const gradosSelCount = Object.keys(gradosMarcados).filter(g => gradosMarcados[g] && gradosDisponibles.includes(g)).length;
+                  const salonesSelCount = Object.keys(salonesMarcados).filter(s => salonesMarcados[s]).length;
+
+                  const dropdownBtn = (label: string, count: number, open: boolean, onToggle: () => void, disabled: boolean) => (
+                    <button
+                      type="button"
+                      disabled={disabled}
+                      onClick={onToggle}
+                      className={`w-full flex items-center justify-between px-3 py-2 text-sm border rounded ${disabled ? 'opacity-50 cursor-not-allowed bg-muted/30' : 'cursor-pointer hover:bg-muted/40 bg-background'}`}
+                    >
+                      <span>{label} {disabled ? '(bloqueado)' : count > 0 ? `(${count} seleccionado${count !== 1 ? 's' : ''})` : '(Todos)'}</span>
+                      <span className="text-xs">{open && !disabled ? '▲' : '▼'}</span>
+                    </button>
+                  );
+
+                  return (
+                    <div className="border-l-2 border-primary/30 pl-4 space-y-3">
+                      <p className="text-xs text-muted-foreground">
+                        Filtros aplican a Estudiantes, Padres y Profesores marcados. Vacío = todos.
+                      </p>
+
+                      <div className="space-y-1">
+                        <Label className="text-xs">Nivel</Label>
+                        {dropdownBtn("Nivel", nivelesSel.length, openNivel, () => setOpenNivel(v => !v), false)}
+                        {openNivel && (
+                          <div className="border rounded p-2 bg-muted/20 grid grid-cols-2 gap-1">
+                            {Object.keys(NIVELES_GRADOS).map(n => (
+                              <label key={n} className="flex items-center gap-2 cursor-pointer text-sm">
+                                <input
+                                  type="checkbox"
+                                  checked={!!nivelesMarcados[n]}
+                                  onChange={() => {
+                                    const nuevo = !nivelesMarcados[n];
+                                    setNivelesMarcados({ ...nivelesMarcados, [n]: nuevo });
+                                    if (!nuevo) {
+                                      const gradosDeEseNivel = NIVELES_GRADOS[n] || [];
+                                      const nuevosGrados = { ...gradosMarcados };
+                                      gradosDeEseNivel.forEach(g => { delete nuevosGrados[g]; });
+                                      setGradosMarcados(nuevosGrados);
+                                    }
+                                  }}
+                                  className="w-4 h-4 accent-primary cursor-pointer"
+                                />
+                                <span>{n}</span>
+                              </label>
+                            ))}
                           </div>
-                        ))}
+                        )}
+                      </div>
+
+                      <div className="space-y-1">
+                        <Label className="text-xs">Grado</Label>
+                        {dropdownBtn("Grado", gradosSelCount, openGrado, () => setOpenGrado(v => !v), nivelesSel.length === 0)}
+                        {openGrado && nivelesSel.length > 0 && (
+                          <div className="border rounded p-2 bg-muted/20 space-y-2">
+                            {nivelesSel.map(niv => (
+                              <div key={niv} className="space-y-1">
+                                <p className="text-xs font-medium text-muted-foreground">{niv}</p>
+                                <div className="grid grid-cols-2 sm:grid-cols-3 gap-1 pl-2">
+                                  {(NIVELES_GRADOS[niv] || []).map(g => (
+                                    <label key={g} className="flex items-center gap-2 cursor-pointer text-sm">
+                                      <input
+                                        type="checkbox"
+                                        checked={!!gradosMarcados[g]}
+                                        onChange={() => toggleEnRecord(gradosMarcados, g, setGradosMarcados)}
+                                        className="w-4 h-4 accent-primary cursor-pointer"
+                                      />
+                                      <span>{g}</span>
+                                    </label>
+                                  ))}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="space-y-1">
+                        <Label className="text-xs">Salón</Label>
+                        {dropdownBtn("Salón", salonesSelCount, openSalon, () => setOpenSalon(v => !v), gradosSelCount === 0)}
+                        {openSalon && gradosSelCount > 0 && (
+                          <div className="border rounded p-2 bg-muted/20 grid grid-cols-6 gap-1">
+                            {SALONES.map(s => (
+                              <label key={s} className="flex items-center gap-2 cursor-pointer text-sm">
+                                <input
+                                  type="checkbox"
+                                  checked={!!salonesMarcados[s]}
+                                  onChange={() => toggleEnRecord(salonesMarcados, s, setSalonesMarcados)}
+                                  className="w-4 h-4 accent-primary cursor-pointer"
+                                />
+                                <span>{s}</span>
+                              </label>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     </div>
-                    <div className="space-y-2">
-                      <Label>Salones</Label>
-                      <div className="grid grid-cols-6 gap-1 pl-2">
-                        {SALONES.map((s) => (
-                          <label key={s} className="flex items-center gap-2 cursor-pointer text-sm">
-                            <input
-                              type="checkbox"
-                              checked={!!salonesMarcados[s]}
-                              onChange={() => toggleEnRecord(salonesMarcados, s, setSalonesMarcados)}
-                              className="w-4 h-4 accent-primary cursor-pointer"
-                            />
-                            <span>{s}</span>
-                          </label>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                )}
+                  );
+                })()}
 
                 {(perfilesMarcados.Estudiantes || perfilesMarcados.Padres) &&
                   Object.values(gradosMarcados).some(Boolean) && (
