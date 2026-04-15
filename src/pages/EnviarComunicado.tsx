@@ -108,6 +108,7 @@ const EnviarComunicado = () => {
   const [nivelesMarcados, setNivelesMarcados] = useState<Record<string, boolean>>({});
   const [gradosMarcados, setGradosMarcados] = useState<Record<string, boolean>>({});
   const [salonesMarcados, setSalonesMarcados] = useState<Record<string, boolean>>({});
+  const [openPerfiles, setOpenPerfiles] = useState(false);
   const [openNivel, setOpenNivel] = useState(false);
   const [openGrado, setOpenGrado] = useState(false);
   const [openSalon, setOpenSalon] = useState(false);
@@ -530,27 +531,41 @@ const EnviarComunicado = () => {
 
               {/* Destinatarios */}
               <div className="space-y-4 mb-6">
-                <h3 className="text-lg font-semibold text-foreground">
+                <h3 className="text-lg font-semibold text-red-600">
                   Destinatarios
                 </h3>
 
-                {/* Perfiles (multi-check) */}
-                <div className="space-y-2">
-                  <Label>Perfiles</Label>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    {PERFILES_UI.map((p) => (
-                      <label key={p.key} className="flex items-center gap-2 cursor-pointer select-none text-sm">
-                        <input
-                          type="checkbox"
-                          checked={perfilesMarcados[p.key]}
-                          onChange={() => togglePerfil(p.key)}
-                          className="w-4 h-4 accent-primary cursor-pointer"
-                        />
-                        <span>{p.label}</span>
-                      </label>
-                    ))}
-                  </div>
-                </div>
+                {(() => {
+                  const count = PERFILES_UI.filter(p => perfilesMarcados[p.key]).length;
+                  return (
+                    <div className="space-y-1">
+                      <Label>Perfiles</Label>
+                      <button
+                        type="button"
+                        onClick={() => setOpenPerfiles(v => !v)}
+                        className="w-full flex items-center justify-between px-3 py-2 text-sm border rounded cursor-pointer hover:bg-muted/40 bg-background"
+                      >
+                        <span>Perfiles {count > 0 ? `(${count} seleccionado${count !== 1 ? 's' : ''})` : '(Ninguno)'}</span>
+                        <span className="text-xs">{openPerfiles ? '▲' : '▼'}</span>
+                      </button>
+                      {openPerfiles && (
+                        <div className="border rounded p-2 bg-muted/20 grid grid-cols-1 sm:grid-cols-2 gap-2">
+                          {PERFILES_UI.map((p) => (
+                            <label key={p.key} className="flex items-center gap-2 cursor-pointer select-none text-sm">
+                              <input
+                                type="checkbox"
+                                checked={perfilesMarcados[p.key]}
+                                onChange={() => togglePerfil(p.key)}
+                                className="w-4 h-4 accent-primary cursor-pointer"
+                              />
+                              <span>{p.label}</span>
+                            </label>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
 
                 {(() => {
                   if (!(perfilesMarcados.Estudiantes || perfilesMarcados.Padres || perfilesMarcados.Profesores)) return null;
@@ -573,10 +588,7 @@ const EnviarComunicado = () => {
                   );
 
                   return (
-                    <div className="border-l-2 border-primary/30 pl-4 space-y-3">
-                      <p className="text-xs text-muted-foreground">
-                        Filtros aplican a Estudiantes, Padres y Profesores marcados. Vacío = todos.
-                      </p>
+                    <div className="border-l-2 border-primary/30 pl-4 space-y-5">
 
                       <div className="space-y-1">
                         <Label className="text-xs">Nivel</Label>
@@ -607,10 +619,11 @@ const EnviarComunicado = () => {
                         )}
                       </div>
 
+                      {nivelesSel.length > 0 && (
                       <div className="space-y-1">
                         <Label className="text-xs">Grado</Label>
-                        {dropdownBtn("Grado", gradosSelCount, openGrado, () => setOpenGrado(v => !v), nivelesSel.length === 0)}
-                        {openGrado && nivelesSel.length > 0 && (
+                        {dropdownBtn("Grado", gradosSelCount, openGrado, () => setOpenGrado(v => !v), false)}
+                        {openGrado && (
                           <div className="border rounded p-2 bg-muted/20 space-y-2">
                             {nivelesSel.map(niv => (
                               <div key={niv} className="space-y-1">
@@ -633,11 +646,13 @@ const EnviarComunicado = () => {
                           </div>
                         )}
                       </div>
+                      )}
 
+                      {gradosSelCount > 0 && (
                       <div className="space-y-1">
                         <Label className="text-xs">Salón</Label>
-                        {dropdownBtn("Salón", salonesSelCount, openSalon, () => setOpenSalon(v => !v), gradosSelCount === 0)}
-                        {openSalon && gradosSelCount > 0 && (
+                        {dropdownBtn("Salón", salonesSelCount, openSalon, () => setOpenSalon(v => !v), false)}
+                        {openSalon && (
                           <div className="border rounded p-2 bg-muted/20 grid grid-cols-6 gap-1">
                             {SALONES.map(s => (
                               <label key={s} className="flex items-center gap-2 cursor-pointer text-sm">
@@ -653,6 +668,7 @@ const EnviarComunicado = () => {
                           </div>
                         )}
                       </div>
+                      )}
                     </div>
                   );
                 })()}
