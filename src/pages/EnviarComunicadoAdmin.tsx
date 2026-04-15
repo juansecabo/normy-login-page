@@ -226,7 +226,6 @@ const EnviarComunicadoAdmin = () => {
     const { data } = await supabase
       .from("Comunicados")
       .select("*")
-      .eq("codigo_remitente", codigoRemitente)
       .order("fecha", { ascending: false });
     setHistorial((data as ComunicadoEnviado[]) || []);
     setLoadingHistorial(false);

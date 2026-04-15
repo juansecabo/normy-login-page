@@ -9,6 +9,7 @@ import iconRegistroAgente from "@/assets/icons/registro-agente.webp";
 import iconUsoAgente from "@/assets/icons/uso-agente.webp";
 import iconSugerencias from "@/assets/icons/sugerencias.webp";
 import iconConversaciones from "@/assets/icons/conversaciones.webp";
+import iconActividades from "@/assets/icons/actividades.webp";
 import HeaderNormy from "@/components/HeaderNormy";
 
 const DashboardAdmin = () => {
@@ -81,12 +82,13 @@ const DashboardAdmin = () => {
             </button>
 
             <button
-              onClick={() => navigate("/admin/todos-comunicados")}
-              className="flex flex-col items-center justify-center gap-4 p-8 rounded-lg bg-teal-100 transition-all duration-200 hover:shadow-md hover:bg-teal-200"
+              onClick={() => navigate("/admin/todas-actividades")}
+              className="flex flex-col items-center justify-center gap-4 p-8 rounded-lg bg-emerald-100 transition-all duration-200 hover:shadow-md hover:bg-emerald-200"
             >
-              <img src={iconComunicados} alt="" className="w-16 h-16 object-contain" />
-              <span className="font-semibold text-lg text-foreground text-center">Todos los Comunicados</span>
+              <img src={iconActividades} alt="" className="w-16 h-16 object-contain" />
+              <span className="font-semibold text-lg text-foreground text-center">Todas las Actividades</span>
             </button>
+
 
             <button
               onClick={() => navigate("/rector/panel-control")}

@@ -33,7 +33,7 @@ import ComunicadosRecibidos from "./pages/rector/ComunicadosRecibidos";
 
 // Rutas para Admin
 import Sugerencias from "./pages/admin/Sugerencias";
-import TodosComunicados from "./pages/admin/TodosComunicados";
+import TodasActividades from "./pages/admin/TodasActividades";
 
 // Rutas para Profesor
 import EstadisticasProfesor from "./pages/profesor/EstadisticasProfesor";
@@ -106,7 +106,7 @@ const App = () => (
 
           {/* Rutas para Admin */}
           <Route path="/admin/sugerencias" element={<Sugerencias />} />
-          <Route path="/admin/todos-comunicados" element={<TodosComunicados />} />
+          <Route path="/admin/todas-actividades" element={<TodasActividades />} />
 
           {/* Rutas para Profesor */}
           <Route path="/profesor/estadisticas" element={<EstadisticasProfesor />} />
