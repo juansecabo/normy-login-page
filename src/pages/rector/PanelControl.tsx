@@ -18,7 +18,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Loader2, Plus, Pencil, Trash2, Search } from "lucide-react";
+import { Loader2, Plus, Pencil, Trash2, Search, X } from "lucide-react";
 
 // ─── Enums ───────────────────────────────────────────────────────────────────
 
@@ -897,8 +897,18 @@ const PanelControl = () => {
                     placeholder="Buscar por nombre, código, grado..."
                     value={searchEst}
                     onChange={(e) => setSearchEst(e.target.value)}
-                    className="pl-9"
+                    className="pl-9 pr-9"
                   />
+                  {searchEst && (
+                    <button
+                      type="button"
+                      onClick={() => setSearchEst("")}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                      aria-label="Limpiar búsqueda"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  )}
                 </div>
                 <Button onClick={() => openEstDialog()}>
                   <Plus className="w-4 h-4 mr-2" /> Agregar
@@ -963,8 +973,18 @@ const PanelControl = () => {
                     placeholder="Buscar por nombre, código, cargo..."
                     value={searchInt}
                     onChange={(e) => setSearchInt(e.target.value)}
-                    className="pl-9"
+                    className="pl-9 pr-9"
                   />
+                  {searchInt && (
+                    <button
+                      type="button"
+                      onClick={() => setSearchInt("")}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                      aria-label="Limpiar búsqueda"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  )}
                 </div>
                 <Button onClick={() => openIntDialog()}>
                   <Plus className="w-4 h-4 mr-2" /> Agregar
@@ -1029,8 +1049,18 @@ const PanelControl = () => {
                     placeholder="Buscar por nombre, asignatura, grado..."
                     value={searchAsig}
                     onChange={(e) => setSearchAsig(e.target.value)}
-                    className="pl-9"
+                    className="pl-9 pr-9"
                   />
+                  {searchAsig && (
+                    <button
+                      type="button"
+                      onClick={() => setSearchAsig("")}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                      aria-label="Limpiar búsqueda"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  )}
                 </div>
                 <Button onClick={() => openAsigDialog()}>
                   <Plus className="w-4 h-4 mr-2" /> Agregar
@@ -1101,8 +1131,18 @@ const PanelControl = () => {
                     placeholder="Buscar por nombre, código, tipo..."
                     value={searchPerf}
                     onChange={(e) => setSearchPerf(e.target.value)}
-                    className="pl-9"
+                    className="pl-9 pr-9"
                   />
+                  {searchPerf && (
+                    <button
+                      type="button"
+                      onClick={() => setSearchPerf("")}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                      aria-label="Limpiar búsqueda"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  )}
                 </div>
                 <Button onClick={() => openPerfDialog()}>
                   <Plus className="w-4 h-4 mr-2" /> Agregar
