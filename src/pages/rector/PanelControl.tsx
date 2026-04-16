@@ -139,6 +139,15 @@ function normalize(str: string): string {
   return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
 }
 
+// Search helper: splits query into tokens; every token must appear somewhere in the haystack.
+// Allows matching "jesus abad" against "Abad Arrieta Jesús Andrés".
+function matchesSearch(haystack: string, search: string): boolean {
+  const h = normalize(haystack);
+  const tokens = normalize(search).split(/\s+/).filter(Boolean);
+  if (tokens.length === 0) return true;
+  return tokens.every((t) => h.includes(t));
+}
+
 function toggleItem(arr: string[], item: string): string[] {
   return arr.includes(item) ? arr.filter((v) => v !== item) : [...arr, item];
 }
@@ -790,23 +799,28 @@ const PanelControl = () => {
   // ═══════════════════════════════════════════════════════════════════════════
 
   const filteredEst = estudiantes.filter((e) =>
-    normalize(`${e.apellidos_estudiante} ${e.nombre_estudiante} ${e.codigo_estudiantil} ${e.grado_estudiante} ${e.salon_estudiante}`)
-      .includes(normalize(searchEst))
+    matchesSearch(
+      `${e.apellidos_estudiante} ${e.nombre_estudiante} ${e.codigo_estudiantil} ${e.grado_estudiante} ${e.salon_estudiante}`,
+      searchEst
+    )
   );
 
   const filteredInt = internos.filter((i) =>
-    normalize(`${i.apellidos} ${i.nombres} ${i.codigo} ${i.cargo}`)
-      .includes(normalize(searchInt))
+    matchesSearch(`${i.apellidos} ${i.nombres} ${i.codigo} ${i.cargo}`, searchInt)
   );
 
   const filteredAsig = asignaciones.filter((a) =>
-    normalize(`${a.apellidos} ${a.nombres} ${(a["Asignatura(s)"] || []).join(" ")} ${(a["Grado(s)"] || []).join(" ")}`)
-      .includes(normalize(searchAsig))
+    matchesSearch(
+      `${a.apellidos} ${a.nombres} ${(a["Asignatura(s)"] || []).join(" ")} ${(a["Grado(s)"] || []).join(" ")}`,
+      searchAsig
+    )
   );
 
   const filteredPerf = perfiles.filter((p) =>
-    normalize(`${getPerfilDisplayName(p)} ${getPerfilDisplayCode(p)} ${p.perfil} ${p.contrasena || ""} ${p.numero_de_telefono || ""}`)
-      .includes(normalize(searchPerf))
+    matchesSearch(
+      `${getPerfilDisplayName(p)} ${getPerfilDisplayCode(p)} ${p.perfil} ${p.contrasena || ""} ${p.numero_de_telefono || ""}`,
+      searchPerf
+    )
   );
 
   // Helper: render hijo fields for Asignacion dialog
