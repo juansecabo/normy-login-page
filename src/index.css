@@ -99,6 +99,15 @@
   body {
     @apply bg-background text-foreground font-sans antialiased;
     font-family: 'Poppins', sans-serif;
+    background-image: url('/education-pattern.svg');
+    background-repeat: repeat;
+    background-size: 260px 260px;
+    background-attachment: fixed;
+  }
+
+  /* Allow the body pattern to show through page-level wrappers while keeping cards/modals opaque */
+  .min-h-screen.bg-background {
+    background-color: transparent !important;
   }
 }
 
