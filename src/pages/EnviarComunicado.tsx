@@ -363,8 +363,13 @@ const EnviarComunicado = () => {
     }
 
     if (sel.Profesores) {
-      if (aulas.length === 0) partes.push("Profesores");
-      else aulas.forEach(a => partes.push(`Profesores de ${a}`));
+      if (profesoresSeleccionados.length > 0) {
+        for (const id of profesoresSeleccionados) partes.push(`Profesor(a) con id ${id}`);
+      } else if (aulas.length === 0) {
+        partes.push("Profesores");
+      } else {
+        aulas.forEach(a => partes.push(`Profesores de ${a}`));
+      }
     }
 
     if (sel.Coordinadores) {
