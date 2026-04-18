@@ -126,6 +126,12 @@ const EnviarComunicadoAdmin = () => {
   const [loadingListaEstudiantes, setLoadingListaEstudiantes] = useState(false);
   const [mostrarEstudiantes, setMostrarEstudiantes] = useState(false);
 
+  // Profesores específicos (filtrados por grados/salones marcados)
+  const [listaProfesoresFiltrada, setListaProfesoresFiltrada] = useState<{ id: string; nombre: string; grados: string[]; salones: string[] }[]>([]);
+  const [profesoresSeleccionados, setProfesoresSeleccionados] = useState<string[]>([]);
+  const [loadingListaProfesores, setLoadingListaProfesores] = useState(false);
+  const [mostrarProfesores, setMostrarProfesores] = useState(false);
+
   // Mensaje y archivos
   const [mensaje, setMensaje] = useState("");
   const [archivosSeleccionados, setArchivosSeleccionados] = useState<File[]>([]);
@@ -197,6 +203,50 @@ const EnviarComunicadoAdmin = () => {
     fetchLista();
   }, [gradosMarcados, salonesMarcados, perfilesMarcados.Estudiantes, perfilesMarcados.Padres]);
 
+  // Cargar profesores según grados/salones marcados (solo si Profesores está marcado)
+  useEffect(() => {
+    if (!perfilesMarcados.Profesores) {
+      setListaProfesoresFiltrada([]);
+      setProfesoresSeleccionados([]);
+      setMostrarProfesores(false);
+      return;
+    }
+
+    const gradosSel = Object.keys(gradosMarcados).filter(g => gradosMarcados[g]);
+    const salonesSel = Object.keys(salonesMarcados).filter(s => salonesMarcados[s]);
+
+    const fetchProfes = async () => {
+      setLoadingListaProfesores(true);
+      let q = supabase
+        .from("Asignación Profesores")
+        .select("codigo, nombres, apellidos, \"Grado(s)\", \"Salon(es)\"");
+      if (gradosSel.length > 0) q = q.overlaps("Grado(s)", gradosSel);
+      if (salonesSel.length > 0) q = q.overlaps("Salon(es)", salonesSel);
+      const { data } = await q;
+      const byId = new Map<string, { id: string; nombre: string; grados: string[]; salones: string[] }>();
+      for (const r of data || []) {
+        const rid = String(r.codigo);
+        if (!byId.has(rid)) {
+          byId.set(rid, {
+            id: rid,
+            nombre: `${r.apellidos || ""} ${r.nombres || ""}`.trim(),
+            grados: [...(r["Grado(s)"] as string[] || [])],
+            salones: [...(r["Salon(es)"] as string[] || [])],
+          });
+        } else {
+          const existing = byId.get(rid)!;
+          for (const g of (r["Grado(s)"] as string[] || [])) if (!existing.grados.includes(g)) existing.grados.push(g);
+          for (const s of (r["Salon(es)"] as string[] || [])) if (!existing.salones.includes(s)) existing.salones.push(s);
+        }
+      }
+      const list = [...byId.values()].sort((a, b) => a.nombre.localeCompare(b.nombre));
+      setListaProfesoresFiltrada(list);
+      setProfesoresSeleccionados(prev => prev.filter(id => byId.has(id)));
+      setLoadingListaProfesores(false);
+    };
+    fetchProfes();
+  }, [gradosMarcados, salonesMarcados, perfilesMarcados.Profesores]);
+
   // Cargar las 3 listas de internos
   useEffect(() => {
     const necesitaLista =
@@ -245,6 +295,7 @@ const EnviarComunicadoAdmin = () => {
         if (key === 'Coordinadores') setCoordinadoresSeleccionados([]);
         if (key === 'Administrativos') setAdministrativosSeleccionados([]);
         if (key === 'Secretaria') setSecretariasSeleccionadas([]);
+        if (key === 'Profesores') { setProfesoresSeleccionados([]); setMostrarProfesores(false); }
         if (!nuevo.Estudiantes && !nuevo.Padres && !nuevo.Profesores) {
           setNivelesMarcados({});
           setGradosMarcados({});
@@ -382,6 +433,7 @@ const EnviarComunicadoAdmin = () => {
 
       const idDestinatariosArray: string[] = [
         ...estudiantesSeleccionados,
+        ...profesoresSeleccionados,
         ...coordinadoresSeleccionados,
         ...administrativosSeleccionados,
         ...secretariasSeleccionadas,
@@ -728,6 +780,53 @@ const EnviarComunicadoAdmin = () => {
                                 className="w-4 h-4 accent-primary cursor-pointer shrink-0"
                               />
                               <span>{e.nombre} <span className="text-xs text-muted-foreground">({e.grado} {e.salon})</span></span>
+                            </label>
+                          ))}
+                        </div>
+                      )
+                    )}
+                  </div>
+                )}
+
+                {/* Profesores específicos (desplegable) */}
+                {perfilesMarcados.Profesores && (
+                  <div className="border-l-2 border-primary/30 pl-4 space-y-1">
+                    <Label className="text-xs">Profesores específicos (vacío = todos los que coinciden con los filtros)</Label>
+                    <button
+                      type="button"
+                      onClick={() => setMostrarProfesores(v => !v)}
+                      className="w-full flex items-center justify-between px-3 py-2 text-sm border rounded cursor-pointer hover:bg-muted/40 bg-background"
+                    >
+                      <span>
+                        Profesores {profesoresSeleccionados.length > 0
+                          ? `(${profesoresSeleccionados.length} seleccionado${profesoresSeleccionados.length !== 1 ? "s" : ""})`
+                          : "(Todos)"}
+                      </span>
+                      <span className="text-xs">{mostrarProfesores ? "▲" : "▼"}</span>
+                    </button>
+                    {mostrarProfesores && (
+                      loadingListaProfesores ? (
+                        <div className="border rounded p-2 bg-muted/20 text-xs text-muted-foreground">Cargando profesores...</div>
+                      ) : listaProfesoresFiltrada.length === 0 ? (
+                        <div className="border rounded p-2 bg-muted/20 text-xs text-muted-foreground">No hay profesores con esos filtros</div>
+                      ) : (
+                        <div className="border rounded p-2 bg-muted/20 flex flex-col gap-2 max-h-52 overflow-y-auto">
+                          {listaProfesoresFiltrada.map((p) => (
+                            <label key={p.id} className="flex items-center gap-2 cursor-pointer text-sm">
+                              <input
+                                type="checkbox"
+                                checked={profesoresSeleccionados.includes(p.id)}
+                                onChange={() => toggleInterno(profesoresSeleccionados, p.id, setProfesoresSeleccionados)}
+                                className="w-4 h-4 accent-primary cursor-pointer shrink-0"
+                              />
+                              <span>
+                                {p.nombre}
+                                {(p.grados.length > 0 || p.salones.length > 0) && (
+                                  <span className="text-xs text-muted-foreground">
+                                    {" "}({[p.grados.join(", "), p.salones.length > 0 ? `Salón ${p.salones.join(", ")}` : ""].filter(Boolean).join(" — ")})
+                                  </span>
+                                )}
+                              </span>
                             </label>
                           ))}
                         </div>
