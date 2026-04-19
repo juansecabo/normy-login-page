@@ -217,14 +217,19 @@ const EnviarComunicadoAdmin = () => {
 
     const fetchProfes = async () => {
       setLoadingListaProfesores(true);
-      let q = supabase
+      // PostgREST malinterpreta "Grado(s)" (con paréntesis) en .overlaps, filtramos en JS
+      const { data } = await supabase
         .from("Asignación Profesores")
         .select("codigo, nombres, apellidos, \"Grado(s)\", \"Salon(es)\"");
-      if (gradosSel.length > 0) q = q.overlaps("Grado(s)", gradosSel);
-      if (salonesSel.length > 0) q = q.overlaps("Salon(es)", salonesSel);
-      const { data } = await q;
+      const filtered = (data || []).filter(r => {
+        const grados = (r["Grado(s)"] as string[]) || [];
+        const salones = (r["Salon(es)"] as string[]) || [];
+        if (gradosSel.length > 0 && !gradosSel.some(g => grados.includes(g))) return false;
+        if (salonesSel.length > 0 && !salonesSel.some(s => salones.includes(s))) return false;
+        return true;
+      });
       const byId = new Map<string, { id: string; nombre: string; grados: string[]; salones: string[] }>();
-      for (const r of data || []) {
+      for (const r of filtered) {
         const rid = String(r.codigo);
         if (!byId.has(rid)) {
           byId.set(rid, {
