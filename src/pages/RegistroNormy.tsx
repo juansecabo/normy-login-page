@@ -94,6 +94,7 @@ const RegistroNormy = () => {
   const [loading, setLoading] = useState(true);
   const [gradoFilter, setGradoFilter] = useState("todos");
   const [salonFilter, setSalonFilter] = useState("todos");
+  const [estadoFilter, setEstadoFilter] = useState("todos");
   const [search, setSearch] = useState("");
   const [activeTab, setActiveTab] = useState("estudiantes");
 
@@ -168,7 +169,7 @@ const RegistroNormy = () => {
     });
   }, [estudiantes, gradoFilter, salonFilter, search]);
 
-  // Stats
+  // Stats (based on filtered before estado filter, so the summary stays meaningful)
   const estRegistrados = useMemo(
     () => filtered.filter((e) => estudianteCodigosRegistrados.has(e.codigo_estudiantil)).length,
     [filtered, estudianteCodigosRegistrados]
@@ -177,6 +178,23 @@ const RegistroNormy = () => {
     () => filtered.filter((e) => padreInfoPorCodigo.has(e.codigo_estudiantil)).length,
     [filtered, padreInfoPorCodigo]
   );
+
+  // Displayed rows per tab (apply estadoFilter on top of filtered)
+  const displayedEstudiantes = useMemo(() => {
+    if (estadoFilter === "todos") return filtered;
+    return filtered.filter((e) => {
+      const reg = estudianteCodigosRegistrados.has(e.codigo_estudiantil);
+      return estadoFilter === "registrados" ? reg : !reg;
+    });
+  }, [filtered, estadoFilter, estudianteCodigosRegistrados]);
+
+  const displayedPadres = useMemo(() => {
+    if (estadoFilter === "todos") return filtered;
+    return filtered.filter((e) => {
+      const reg = padreInfoPorCodigo.has(e.codigo_estudiantil);
+      return estadoFilter === "registrados" ? reg : !reg;
+    });
+  }, [filtered, estadoFilter, padreInfoPorCodigo]);
 
   const [selectedParents, setSelectedParents] = useState<{ padres: ParentInfo[]; estudiante: string } | null>(null);
 
@@ -203,7 +221,7 @@ const RegistroNormy = () => {
         { header: "Estado", key: "estado", width: 16 },
       ];
       ws.getRow(1).font = { bold: true };
-      for (const e of filtered) {
+      for (const e of displayedEstudiantes) {
         ws.addRow({
           id: e.codigo_estudiantil,
           apellidos: e.apellidos_estudiante,
@@ -226,7 +244,7 @@ const RegistroNormy = () => {
         { header: "Teléfono", key: "telefono", width: 16 },
       ];
       ws.getRow(1).font = { bold: true };
-      for (const e of filtered) {
+      for (const e of displayedPadres) {
         const padres = padreInfoPorCodigo.get(e.codigo_estudiantil);
         if (!padres || padres.length === 0) {
           ws.addRow({
@@ -329,6 +347,17 @@ const RegistroNormy = () => {
             </SelectContent>
           </Select>
 
+          <Select value={estadoFilter} onValueChange={setEstadoFilter}>
+            <SelectTrigger className="w-full sm:w-44">
+              <SelectValue placeholder="Estado" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="todos">Todos</SelectItem>
+              <SelectItem value="registrados">Registrados</SelectItem>
+              <SelectItem value="no-registrados">No registrados</SelectItem>
+            </SelectContent>
+          </Select>
+
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
@@ -342,7 +371,12 @@ const RegistroNormy = () => {
 
         {/* Download button */}
         <div className="flex justify-end mb-3 max-w-4xl mx-auto">
-          <Button onClick={handleExport} variant="outline" size="sm" disabled={filtered.length === 0}>
+          <Button
+            onClick={handleExport}
+            variant="outline"
+            size="sm"
+            disabled={(activeTab === "estudiantes" ? displayedEstudiantes : displayedPadres).length === 0}
+          >
             <Download className="w-4 h-4 mr-2" />
             Descargar Excel
           </Button>
@@ -379,14 +413,14 @@ const RegistroNormy = () => {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filtered.length === 0 ? (
+                    {displayedEstudiantes.length === 0 ? (
                       <TableRow>
                         <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
                           No se encontraron estudiantes
                         </TableCell>
                       </TableRow>
                     ) : (
-                      filtered.map((e, i) => {
+                      displayedEstudiantes.map((e, i) => {
                         const registrado = estudianteCodigosRegistrados.has(e.codigo_estudiantil);
                         return (
                           <TableRow key={e.codigo_estudiantil}>
@@ -438,14 +472,14 @@ const RegistroNormy = () => {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filtered.length === 0 ? (
+                    {displayedPadres.length === 0 ? (
                       <TableRow>
                         <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
                           No se encontraron estudiantes
                         </TableCell>
                       </TableRow>
                     ) : (
-                      filtered.map((e, i) => {
+                      displayedPadres.map((e, i) => {
                         const parentInfo = padreInfoPorCodigo.get(e.codigo_estudiantil);
                         return (
                           <TableRow key={e.codigo_estudiantil}>
