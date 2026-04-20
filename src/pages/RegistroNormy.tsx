@@ -485,8 +485,18 @@ const RegistroNormy = () => {
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="max-w-4xl mx-auto">
           <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="estudiantes">Estudiantes</TabsTrigger>
-            <TabsTrigger value="padres">Padres</TabsTrigger>
+            <TabsTrigger
+              value="estudiantes"
+              className="data-[state=active]:bg-green-600 data-[state=active]:text-white data-[state=active]:shadow-sm font-medium"
+            >
+              Estudiantes
+            </TabsTrigger>
+            <TabsTrigger
+              value="padres"
+              className="data-[state=active]:bg-green-600 data-[state=active]:text-white data-[state=active]:shadow-sm font-medium"
+            >
+              Padres
+            </TabsTrigger>
           </TabsList>
 
           {/* Tab Estudiantes */}
