@@ -348,13 +348,13 @@ const RegistroNormy = () => {
           </Select>
 
           <Select value={estadoFilter} onValueChange={setEstadoFilter}>
-            <SelectTrigger className="w-full sm:w-44">
+            <SelectTrigger className="w-full sm:w-48">
               <SelectValue placeholder="Estado" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="todos">Todos</SelectItem>
-              <SelectItem value="registrados">Registrados</SelectItem>
-              <SelectItem value="no-registrados">No registrados</SelectItem>
+              <SelectItem value="todos">Todos los estados</SelectItem>
+              <SelectItem value="registrados">Solo registrados</SelectItem>
+              <SelectItem value="no-registrados">Solo no registrados</SelectItem>
             </SelectContent>
           </Select>
 
