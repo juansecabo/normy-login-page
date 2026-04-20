@@ -12,8 +12,9 @@ import {
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { Loader2, Search } from "lucide-react";
+import { Loader2, Search, Download } from "lucide-react";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -94,6 +95,7 @@ const RegistroNormy = () => {
   const [gradoFilter, setGradoFilter] = useState("todos");
   const [salonFilter, setSalonFilter] = useState("todos");
   const [search, setSearch] = useState("");
+  const [activeTab, setActiveTab] = useState("estudiantes");
 
   // Fetch data
   useEffect(() => {
@@ -178,6 +180,96 @@ const RegistroNormy = () => {
 
   const [selectedParents, setSelectedParents] = useState<{ padres: ParentInfo[]; estudiante: string } | null>(null);
 
+  const handleExport = async () => {
+    const { default: ExcelJS } = await import("exceljs");
+    const workbook = new ExcelJS.Workbook();
+    workbook.creator = "Normy";
+    workbook.created = new Date();
+
+    const filterParts = [
+      gradoFilter !== "todos" ? gradoFilter : null,
+      salonFilter !== "todos" ? `Salon ${salonFilter}` : null,
+    ].filter(Boolean);
+    const filterSuffix = filterParts.length > 0 ? filterParts.join("-") : "Todos";
+
+    if (activeTab === "estudiantes") {
+      const ws = workbook.addWorksheet("Estudiantes");
+      ws.columns = [
+        { header: "Código", key: "id", width: 12 },
+        { header: "Apellidos", key: "apellidos", width: 28 },
+        { header: "Nombres", key: "nombres", width: 28 },
+        { header: "Grado", key: "grado", width: 14 },
+        { header: "Salón", key: "salon", width: 8 },
+        { header: "Estado", key: "estado", width: 16 },
+      ];
+      ws.getRow(1).font = { bold: true };
+      for (const e of filtered) {
+        ws.addRow({
+          id: e.codigo_estudiantil,
+          apellidos: e.apellidos_estudiante,
+          nombres: e.nombre_estudiante,
+          grado: e.grado_estudiante,
+          salon: e.salon_estudiante,
+          estado: estudianteCodigosRegistrados.has(e.codigo_estudiantil) ? "Registrado" : "No registrado",
+        });
+      }
+    } else {
+      const ws = workbook.addWorksheet("Padres");
+      ws.columns = [
+        { header: "Código estudiante", key: "id", width: 12 },
+        { header: "Apellidos estudiante", key: "apellidos", width: 28 },
+        { header: "Nombres estudiante", key: "nombres", width: 28 },
+        { header: "Grado", key: "grado", width: 14 },
+        { header: "Salón", key: "salon", width: 8 },
+        { header: "Estado padre", key: "estado", width: 16 },
+        { header: "Nombre del padre", key: "padre", width: 28 },
+        { header: "Teléfono", key: "telefono", width: 16 },
+      ];
+      ws.getRow(1).font = { bold: true };
+      for (const e of filtered) {
+        const padres = padreInfoPorCodigo.get(e.codigo_estudiantil);
+        if (!padres || padres.length === 0) {
+          ws.addRow({
+            id: e.codigo_estudiantil,
+            apellidos: e.apellidos_estudiante,
+            nombres: e.nombre_estudiante,
+            grado: e.grado_estudiante,
+            salon: e.salon_estudiante,
+            estado: "No registrado",
+            padre: "",
+            telefono: "",
+          });
+        } else {
+          for (const p of padres) {
+            ws.addRow({
+              id: e.codigo_estudiantil,
+              apellidos: e.apellidos_estudiante,
+              nombres: e.nombre_estudiante,
+              grado: e.grado_estudiante,
+              salon: e.salon_estudiante,
+              estado: "Registrado",
+              padre: p.padre_nombre,
+              telefono: p.telefono,
+            });
+          }
+        }
+      }
+    }
+
+    const buffer = await workbook.xlsx.writeBuffer();
+    const blob = new Blob([buffer], {
+      type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `Registro-Normy-${activeTab === "estudiantes" ? "Estudiantes" : "Padres"}-${filterSuffix}.xlsx`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
   const total = filtered.length;
   const estPct = total > 0 ? Math.round((estRegistrados / total) * 100) : 0;
   const padPct = total > 0 ? Math.round((padRegistrados / total) * 100) : 0;
@@ -248,8 +340,16 @@ const RegistroNormy = () => {
           </div>
         </div>
 
+        {/* Download button */}
+        <div className="flex justify-end mb-3 max-w-4xl mx-auto">
+          <Button onClick={handleExport} variant="outline" size="sm" disabled={filtered.length === 0}>
+            <Download className="w-4 h-4 mr-2" />
+            Descargar Excel
+          </Button>
+        </div>
+
         {/* Tabs */}
-        <Tabs defaultValue="estudiantes" className="max-w-4xl mx-auto">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="max-w-4xl mx-auto">
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="estudiantes">Estudiantes</TabsTrigger>
             <TabsTrigger value="padres">Padres</TabsTrigger>
