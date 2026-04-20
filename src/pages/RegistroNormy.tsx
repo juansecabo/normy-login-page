@@ -204,50 +204,149 @@ const RegistroNormy = () => {
     workbook.creator = "Normy";
     workbook.created = new Date();
 
-    const filterParts = [
-      gradoFilter !== "todos" ? gradoFilter : null,
-      salonFilter !== "todos" ? `Salon ${salonFilter}` : null,
-    ].filter(Boolean);
-    const filterSuffix = filterParts.length > 0 ? filterParts.join("-") : "Todos";
+    const filterParts: string[] = [];
+    if (gradoFilter !== "todos") filterParts.push(`Grado: ${gradoFilter}`);
+    if (salonFilter !== "todos") filterParts.push(`Salón ${salonFilter}`);
+    if (estadoFilter === "registrados") filterParts.push("Solo registrados");
+    else if (estadoFilter === "no-registrados") filterParts.push("Solo no registrados");
+    const filterLabel = filterParts.length > 0 ? filterParts.join("   •   ") : "Todos los estudiantes";
+
+    const dateStr = new Intl.DateTimeFormat("es-CO", {
+      day: "numeric", month: "long", year: "numeric",
+      hour: "numeric", minute: "2-digit", hour12: true,
+    }).format(new Date());
+
+    const filenameParts = filterParts.map((p) => p.replace(/[^\p{L}\p{N}]+/gu, "")).filter(Boolean);
+    const fileFilterSuffix = filenameParts.length > 0 ? filenameParts.join("-") : "Todos";
+
+    type ColSpec = { header: string; key: string; width: number };
+    type RowData = Record<string, string | number>;
+
+    const buildSheet = (
+      sheetName: string,
+      title: string,
+      cols: ColSpec[],
+      rows: RowData[],
+      estadoKey: string,
+    ) => {
+      const ws = workbook.addWorksheet(sheetName);
+      const nCols = cols.length;
+
+      // Row 1: Title (merged, bold green, centered)
+      ws.mergeCells(1, 1, 1, nCols);
+      const titleCell = ws.getCell(1, 1);
+      titleCell.value = title;
+      titleCell.font = { bold: true, size: 18, color: { argb: "FF15803D" } };
+      titleCell.alignment = { horizontal: "center", vertical: "middle" };
+      ws.getRow(1).height = 36;
+
+      // Row 2: Subtitle (merged, small grey italic, centered)
+      ws.mergeCells(2, 1, 2, nCols);
+      const subtitleCell = ws.getCell(2, 1);
+      subtitleCell.value = `${filterLabel}   —   Generado el ${dateStr}`;
+      subtitleCell.font = { size: 10, color: { argb: "FF6B7280" }, italic: true };
+      subtitleCell.alignment = { horizontal: "center", vertical: "middle" };
+      ws.getRow(2).height = 20;
+
+      // Row 3: thin spacer
+      ws.getRow(3).height = 6;
+
+      // Column widths
+      cols.forEach((c, i) => { ws.getColumn(i + 1).width = c.width; });
+
+      // Row 4: Header
+      const headerRow = ws.getRow(4);
+      headerRow.values = cols.map((c) => c.header);
+      headerRow.height = 28;
+      cols.forEach((_c, i) => {
+        const cell = headerRow.getCell(i + 1);
+        cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF15803D" } };
+        cell.font = { bold: true, color: { argb: "FFFFFFFF" }, size: 11 };
+        cell.alignment = { vertical: "middle", horizontal: "left", indent: 1 };
+        cell.border = {
+          top: { style: "medium", color: { argb: "FF14532D" } },
+          bottom: { style: "medium", color: { argb: "FF14532D" } },
+          left: { style: "thin", color: { argb: "FF14532D" } },
+          right: { style: "thin", color: { argb: "FF14532D" } },
+        };
+      });
+
+      const estadoIdx = cols.findIndex((c) => c.key === estadoKey) + 1;
+
+      // Data rows start at row 5
+      rows.forEach((data, i) => {
+        const r = ws.getRow(5 + i);
+        r.height = 22;
+        cols.forEach((c, j) => { r.getCell(j + 1).value = data[c.key] ?? ""; });
+        const isAlt = i % 2 === 1;
+        cols.forEach((_c, j) => {
+          const cell = r.getCell(j + 1);
+          cell.alignment = { vertical: "middle", horizontal: "left", indent: 1 };
+          cell.border = {
+            top: { style: "hair", color: { argb: "FFE5E7EB" } },
+            bottom: { style: "hair", color: { argb: "FFE5E7EB" } },
+            left: { style: "hair", color: { argb: "FFE5E7EB" } },
+            right: { style: "hair", color: { argb: "FFE5E7EB" } },
+          };
+          if (isAlt) {
+            cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFF3F4F6" } };
+          }
+        });
+        const estadoCell = r.getCell(estadoIdx);
+        const val = String(estadoCell.value ?? "");
+        if (val === "Registrado") {
+          estadoCell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFDCFCE7" } };
+          estadoCell.font = { color: { argb: "FF14532D" }, bold: true };
+        } else if (val === "No registrado") {
+          estadoCell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFFEE2E2" } };
+          estadoCell.font = { color: { argb: "FF991B1B" }, bold: true };
+        }
+      });
+
+      // Freeze title + subtitle + spacer + header
+      ws.views = [{ state: "frozen", ySplit: 4 }];
+
+      // AutoFilter on header row
+      ws.autoFilter = {
+        from: { row: 4, column: 1 },
+        to: { row: 4, column: nCols },
+      };
+    };
 
     if (activeTab === "estudiantes") {
-      const ws = workbook.addWorksheet("Estudiantes");
-      ws.columns = [
-        { header: "Código", key: "id", width: 12 },
+      const cols: ColSpec[] = [
+        { header: "Código", key: "id", width: 14 },
         { header: "Apellidos", key: "apellidos", width: 28 },
         { header: "Nombres", key: "nombres", width: 28 },
         { header: "Grado", key: "grado", width: 14 },
-        { header: "Salón", key: "salon", width: 8 },
-        { header: "Estado", key: "estado", width: 16 },
+        { header: "Salón", key: "salon", width: 10 },
+        { header: "Estado", key: "estado", width: 18 },
       ];
-      ws.getRow(1).font = { bold: true };
-      for (const e of displayedEstudiantes) {
-        ws.addRow({
-          id: e.codigo_estudiantil,
-          apellidos: e.apellidos_estudiante,
-          nombres: e.nombre_estudiante,
-          grado: e.grado_estudiante,
-          salon: e.salon_estudiante,
-          estado: estudianteCodigosRegistrados.has(e.codigo_estudiantil) ? "Registrado" : "No registrado",
-        });
-      }
+      const rows: RowData[] = displayedEstudiantes.map((e) => ({
+        id: e.codigo_estudiantil,
+        apellidos: e.apellidos_estudiante,
+        nombres: e.nombre_estudiante,
+        grado: e.grado_estudiante,
+        salon: e.salon_estudiante,
+        estado: estudianteCodigosRegistrados.has(e.codigo_estudiantil) ? "Registrado" : "No registrado",
+      }));
+      buildSheet("Estudiantes", "Registro en Normy — Estudiantes", cols, rows, "estado");
     } else {
-      const ws = workbook.addWorksheet("Padres");
-      ws.columns = [
-        { header: "Código estudiante", key: "id", width: 12 },
+      const cols: ColSpec[] = [
+        { header: "Código estudiante", key: "id", width: 14 },
         { header: "Apellidos estudiante", key: "apellidos", width: 28 },
         { header: "Nombres estudiante", key: "nombres", width: 28 },
         { header: "Grado", key: "grado", width: 14 },
-        { header: "Salón", key: "salon", width: 8 },
-        { header: "Estado padre", key: "estado", width: 16 },
-        { header: "Nombre del padre", key: "padre", width: 28 },
-        { header: "Teléfono", key: "telefono", width: 16 },
+        { header: "Salón", key: "salon", width: 10 },
+        { header: "Estado padre", key: "estado", width: 18 },
+        { header: "Nombre del padre", key: "padre", width: 30 },
+        { header: "Teléfono", key: "telefono", width: 18 },
       ];
-      ws.getRow(1).font = { bold: true };
+      const rows: RowData[] = [];
       for (const e of displayedPadres) {
         const padres = padreInfoPorCodigo.get(e.codigo_estudiantil);
         if (!padres || padres.length === 0) {
-          ws.addRow({
+          rows.push({
             id: e.codigo_estudiantil,
             apellidos: e.apellidos_estudiante,
             nombres: e.nombre_estudiante,
@@ -259,7 +358,7 @@ const RegistroNormy = () => {
           });
         } else {
           for (const p of padres) {
-            ws.addRow({
+            rows.push({
               id: e.codigo_estudiantil,
               apellidos: e.apellidos_estudiante,
               nombres: e.nombre_estudiante,
@@ -272,6 +371,7 @@ const RegistroNormy = () => {
           }
         }
       }
+      buildSheet("Padres", "Registro en Normy — Padres", cols, rows, "estado");
     }
 
     const buffer = await workbook.xlsx.writeBuffer();
@@ -281,7 +381,7 @@ const RegistroNormy = () => {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `Registro-Normy-${activeTab === "estudiantes" ? "Estudiantes" : "Padres"}-${filterSuffix}.xlsx`;
+    a.download = `Registro-Normy-${activeTab === "estudiantes" ? "Estudiantes" : "Padres"}-${fileFilterSuffix}.xlsx`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
