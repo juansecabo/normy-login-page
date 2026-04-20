@@ -395,10 +395,14 @@ const RegistroNormy = () => {
               <div className="mb-4">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-sm font-medium text-foreground">
-                    {estRegistrados} de {total} registrados ({estPct}%)
+                    {estadoFilter === "todos"
+                      ? `${estRegistrados} de ${total} registrados (${estPct}%)`
+                      : estadoFilter === "registrados"
+                        ? `Mostrando ${displayedEstudiantes.length} registrado${displayedEstudiantes.length === 1 ? "" : "s"} de ${total}`
+                        : `Mostrando ${displayedEstudiantes.length} no registrado${displayedEstudiantes.length === 1 ? "" : "s"} de ${total}`}
                   </span>
                 </div>
-                <Progress value={estPct} className="h-3" />
+                {estadoFilter === "todos" && <Progress value={estPct} className="h-3" />}
               </div>
 
               <div className="overflow-x-auto">
@@ -454,10 +458,14 @@ const RegistroNormy = () => {
               <div className="mb-4">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-sm font-medium text-foreground">
-                    {padRegistrados} de {total} con padre registrado ({padPct}%)
+                    {estadoFilter === "todos"
+                      ? `${padRegistrados} de ${total} con padre registrado (${padPct}%)`
+                      : estadoFilter === "registrados"
+                        ? `Mostrando ${displayedPadres.length} con padre registrado de ${total}`
+                        : `Mostrando ${displayedPadres.length} sin padre registrado de ${total}`}
                   </span>
                 </div>
-                <Progress value={padPct} className="h-3" />
+                {estadoFilter === "todos" && <Progress value={padPct} className="h-3" />}
               </div>
 
               <div className="overflow-x-auto">
