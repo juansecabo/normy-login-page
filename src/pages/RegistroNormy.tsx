@@ -192,71 +192,17 @@ const RegistroNormy = () => {
     ].filter(Boolean);
     const filterSuffix = filterParts.length > 0 ? filterParts.join("-") : "Todos";
 
-    const styleSheet = (ws: ExcelJS.Worksheet) => {
-      // Header row styling
-      const header = ws.getRow(1);
-      header.height = 26;
-      header.eachCell((cell) => {
-        cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF15803D" } };
-        cell.font = { bold: true, color: { argb: "FFFFFFFF" }, size: 11 };
-        cell.alignment = { vertical: "middle", horizontal: "left", indent: 1 };
-        cell.border = {
-          top: { style: "thin", color: { argb: "FF14532D" } },
-          bottom: { style: "medium", color: { argb: "FF14532D" } },
-          left: { style: "thin", color: { argb: "FF14532D" } },
-          right: { style: "thin", color: { argb: "FF14532D" } },
-        };
-      });
-
-      // Freeze header
-      ws.views = [{ state: "frozen", ySplit: 1 }];
-
-      // AutoFilter on all columns
-      ws.autoFilter = {
-        from: { row: 1, column: 1 },
-        to: { row: 1, column: ws.columns.length },
-      };
-
-      // Data row styling (borders + Estado color + alternating rows)
-      const estadoCol = ws.getColumn("estado").number;
-      for (let r = 2; r <= ws.rowCount; r++) {
-        const row = ws.getRow(r);
-        const isAlt = r % 2 === 0;
-        row.eachCell((cell) => {
-          cell.alignment = { vertical: "middle", horizontal: "left", indent: 1 };
-          cell.border = {
-            top: { style: "hair", color: { argb: "FFE5E7EB" } },
-            bottom: { style: "hair", color: { argb: "FFE5E7EB" } },
-            left: { style: "hair", color: { argb: "FFE5E7EB" } },
-            right: { style: "hair", color: { argb: "FFE5E7EB" } },
-          };
-          if (isAlt) {
-            cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFF9FAFB" } };
-          }
-        });
-        const estadoCell = row.getCell(estadoCol);
-        const val = String(estadoCell.value ?? "");
-        if (val === "Registrado") {
-          estadoCell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFDCFCE7" } };
-          estadoCell.font = { color: { argb: "FF166534" }, bold: true };
-        } else if (val === "No registrado") {
-          estadoCell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFFEE2E2" } };
-          estadoCell.font = { color: { argb: "FF991B1B" }, bold: true };
-        }
-        row.height = 20;
-      }
-    };
-
     if (activeTab === "estudiantes") {
       const ws = workbook.addWorksheet("Estudiantes");
       ws.columns = [
-        { header: "Código", key: "id", width: 14 },
+        { header: "Código", key: "id", width: 12 },
         { header: "Apellidos", key: "apellidos", width: 28 },
         { header: "Nombres", key: "nombres", width: 28 },
         { header: "Grado", key: "grado", width: 14 },
-        { header: "Salón", key: "salon", width: 10 },
-        { header: "Estado", key: "estado", width: 18 },
+        { header: "Salón", key: "salon", width: 8 },
+        { header: "Estado", key: "estado", width: 16 },
       ];
+      ws.getRow(1).font = { bold: true };
       for (const e of filtered) {
         ws.addRow({
           id: e.codigo_estudiantil,
@@ -267,19 +213,19 @@ const RegistroNormy = () => {
           estado: estudianteCodigosRegistrados.has(e.codigo_estudiantil) ? "Registrado" : "No registrado",
         });
       }
-      styleSheet(ws);
     } else {
       const ws = workbook.addWorksheet("Padres");
       ws.columns = [
-        { header: "Código estudiante", key: "id", width: 14 },
+        { header: "Código estudiante", key: "id", width: 12 },
         { header: "Apellidos estudiante", key: "apellidos", width: 28 },
         { header: "Nombres estudiante", key: "nombres", width: 28 },
         { header: "Grado", key: "grado", width: 14 },
-        { header: "Salón", key: "salon", width: 10 },
-        { header: "Estado padre", key: "estado", width: 18 },
-        { header: "Nombre del padre", key: "padre", width: 30 },
-        { header: "Teléfono", key: "telefono", width: 18 },
+        { header: "Salón", key: "salon", width: 8 },
+        { header: "Estado padre", key: "estado", width: 16 },
+        { header: "Nombre del padre", key: "padre", width: 28 },
+        { header: "Teléfono", key: "telefono", width: 16 },
       ];
+      ws.getRow(1).font = { bold: true };
       for (const e of filtered) {
         const padres = padreInfoPorCodigo.get(e.codigo_estudiantil);
         if (!padres || padres.length === 0) {
@@ -308,7 +254,6 @@ const RegistroNormy = () => {
           }
         }
       }
-      styleSheet(ws);
     }
 
     const buffer = await workbook.xlsx.writeBuffer();
