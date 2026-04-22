@@ -3,18 +3,40 @@ import { useNavigate, Link } from "react-router-dom";
 import { Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import escudoImg from "@/assets/escudo.webp";
-import { clearSession } from "@/hooks/useSession";
+import { clearSession, getSession } from "@/hooks/useSession";
 import CambiarContrasenaModal from "@/components/CambiarContrasenaModal";
 import { useInstallPrompt } from "@/hooks/useInstallPrompt";
 
 interface HeaderNormyProps {
-  backLink: string;
+  /**
+   * Destino del clic en el logo. Si se omite, se calcula automáticamente
+   * según el cargo del usuario logueado (admin → /dashboard-admin,
+   * rector/coord/admvo → /dashboard-rector, etc.).
+   */
+  backLink?: string;
 }
+
+const computeBackLinkFromSession = (): string => {
+  const { cargo } = getSession();
+  if (cargo === "Administrador") return "/dashboard-admin";
+  if (
+    cargo === "Rector" ||
+    cargo === "Coordinador(a)" ||
+    cargo === "Administrativo(a)"
+  ) {
+    return "/dashboard-rector";
+  }
+  if (cargo === "Padre de familia") return "/dashboard-padre";
+  if (cargo === "Estudiante") return "/dashboard-estudiante";
+  return "/dashboard";
+};
 
 const HeaderNormy = ({ backLink }: HeaderNormyProps) => {
   const navigate = useNavigate();
   const [showCambiarContrasena, setShowCambiarContrasena] = useState(false);
   const { canInstall, installApp } = useInstallPrompt();
+
+  const finalBackLink = backLink || computeBackLinkFromSession();
 
   const handleLogout = () => {
     clearSession();
@@ -25,7 +47,7 @@ const HeaderNormy = ({ backLink }: HeaderNormyProps) => {
     <>
       <header className="bg-primary text-primary-foreground py-2 md:py-3 px-3 md:px-4 shadow-md">
         <div className="container mx-auto flex items-center justify-between">
-          <Link to={backLink} className="flex items-center gap-2 md:gap-3 hover:opacity-80 transition-opacity cursor-pointer">
+          <Link to={finalBackLink} className="flex items-center gap-2 md:gap-3 hover:opacity-80 transition-opacity cursor-pointer">
             <img
               src={escudoImg}
               alt="Escudo"
