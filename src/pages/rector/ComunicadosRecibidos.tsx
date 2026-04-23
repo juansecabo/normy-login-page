@@ -79,7 +79,7 @@ const ComunicadosRecibidos = () => {
       <HeaderNormy backLink="/dashboard-rector" />
 
       <main className="flex-1 container mx-auto p-4 md:p-8">
-        <div className="bg-card rounded-lg shadow-soft p-4 mb-6 max-w-2xl mx-auto">
+        <div className="bg-card rounded-lg shadow-soft p-4 mb-6">
           <div className="flex items-center gap-2 text-sm">
             <button onClick={() => navigate("/dashboard-rector")} className="text-primary hover:underline">
               Inicio
