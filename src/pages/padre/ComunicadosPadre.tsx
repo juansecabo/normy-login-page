@@ -44,6 +44,9 @@ const ComunicadosPadre = () => {
           .order('fecha', { ascending: false });
 
         if (!error && data) {
+          const norm = (s: string) =>
+            s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
           const filtrados = data.filter((c: Comunicado) => {
             if (c.id_destinatarios && c.id_destinatarios.length > 0) {
               return hijos.some(h => c.id_destinatarios!.includes(String(h.codigo)));
@@ -51,12 +54,24 @@ const ComunicadosPadre = () => {
             if (c.codigo_estudiantil) {
               return hijos.some(h => h.codigo === c.codigo_estudiantil);
             }
-            if (!c.nivel && !c.grado && !c.salon) return true;
+            if (c.nivel || c.grado || c.salon) {
+              return hijos.some(h => {
+                if (c.nivel && c.nivel !== h.nivel) return false;
+                if (c.grado && c.grado !== h.grado) return false;
+                if (c.salon && c.salon !== h.salon) return false;
+                return true;
+              });
+            }
+            const destLower = (c.destinatarios || "").trim().toLowerCase();
+            if (destLower === "padres de familia") return true;
+            const destNorm = norm(c.destinatarios || "");
             return hijos.some(h => {
-              if (c.nivel && c.nivel !== h.nivel) return false;
-              if (c.grado && c.grado !== h.grado) return false;
-              if (c.salon && c.salon !== h.salon) return false;
-              return true;
+              if (!h.nombre || !h.apellidos) return false;
+              const nombreNorm = norm(h.nombre);
+              const apellidosParts = norm(h.apellidos).split(/\s+/).filter(p => p.length > 2);
+              const hasNombre = nombreNorm.length > 0 && destNorm.includes(nombreNorm);
+              const hasApellido = apellidosParts.some(p => destNorm.includes(p));
+              return hasNombre && hasApellido;
             });
           });
           setComunicados(filtrados);
