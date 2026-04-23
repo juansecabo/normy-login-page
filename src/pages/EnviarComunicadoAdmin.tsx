@@ -347,47 +347,84 @@ const EnviarComunicadoAdmin = () => {
   const buildDestinatarios = (): string => {
     const sel = perfilesMarcados;
     const partes: string[] = [];
-    const aulas = getAulasTexto();
+    const nivelesSel = Object.keys(nivelesMarcados).filter((n) => nivelesMarcados[n]);
+    const gradosSel = Object.keys(gradosMarcados).filter((g) => gradosMarcados[g]);
+    const salonesSel = Object.keys(salonesMarcados).filter((s) => salonesMarcados[s]);
+
+    const aulaFrase = (prefijo: string): string => {
+      if (gradosSel.length === 0) {
+        if (nivelesSel.length === 0) return "";
+        return `${prefijo} de ${nivelesSel.join(", ")}`;
+      }
+      if (salonesSel.length === 0) {
+        return `${prefijo} de ${gradosSel.join(", ")}`;
+      }
+      if (gradosSel.length === 1 && salonesSel.length === 1) {
+        return `${prefijo} de ${gradosSel[0]} ${salonesSel[0]}`;
+      }
+      if (gradosSel.length === 1 && salonesSel.length > 1) {
+        return `${prefijo} de ${gradosSel[0]} salones ${salonesSel.join(", ")}`;
+      }
+      if (gradosSel.length > 1 && salonesSel.length === 1) {
+        return `${prefijo} de ${gradosSel.map((g) => `${g} ${salonesSel[0]}`).join(", ")}`;
+      }
+      return `${prefijo} de los grados ${gradosSel.join(", ")} salones ${salonesSel.join(", ")}`;
+    };
 
     if ((sel.Estudiantes || sel.Padres) && estudiantesSeleccionados.length > 0) {
-      for (const id of estudiantesSeleccionados) {
-        if (sel.Estudiantes && sel.Padres) partes.push(`Estudiante y padres de estudiante con código ${id}`);
-        else if (sel.Estudiantes) partes.push(`Estudiante con código ${id}`);
-        else partes.push(`Padres de estudiante con código ${id}`);
+      const ids = estudiantesSeleccionados;
+      const uno = ids.length === 1;
+      if (sel.Estudiantes && sel.Padres) {
+        partes.push(uno
+          ? `Estudiante y padres del estudiante con código ${ids[0]}`
+          : `Estudiantes y padres de los estudiantes con código: ${ids.join(", ")}`);
+      } else if (sel.Estudiantes) {
+        partes.push(uno ? `Estudiante con código ${ids[0]}` : `Estudiantes con código: ${ids.join(", ")}`);
+      } else {
+        partes.push(uno ? `Padres del estudiante con código ${ids[0]}` : `Padres de los estudiantes con código: ${ids.join(", ")}`);
       }
     } else {
       if (sel.Estudiantes) {
-        if (aulas.length === 0) partes.push("Estudiantes");
-        else aulas.forEach(a => partes.push(`Estudiantes de ${a}`));
+        const frase = aulaFrase("Estudiantes");
+        partes.push(frase || "Estudiantes");
       }
       if (sel.Padres) {
-        if (aulas.length === 0) partes.push("Padres de familia");
-        else aulas.forEach(a => partes.push(`Padres de familia de ${a}`));
+        const frase = aulaFrase("Padres de familia");
+        partes.push(frase || "Padres de familia");
       }
     }
 
     if (sel.Profesores) {
       if (profesoresSeleccionados.length > 0) {
-        for (const id of profesoresSeleccionados) partes.push(`Profesor(a) con id ${id}`);
-      } else if (aulas.length === 0) {
-        partes.push("Profesores");
+        const ids = profesoresSeleccionados;
+        partes.push(ids.length === 1 ? `Profesor(a) con id ${ids[0]}` : `Profesores con id: ${ids.join(", ")}`);
       } else {
-        aulas.forEach(a => partes.push(`Profesores de ${a}`));
+        const frase = aulaFrase("Profesores");
+        partes.push(frase || "Profesores");
       }
     }
 
     if (sel.Coordinadores) {
       if (coordinadoresSeleccionados.length === 0) partes.push("Coordinadores");
-      else listaANombres(coordinadoresSeleccionados, listaCoordinadores).forEach(n => partes.push(`Coordinador(a) ${n}`));
+      else {
+        const nombres = listaANombres(coordinadoresSeleccionados, listaCoordinadores);
+        partes.push(nombres.length === 1 ? `Coordinador(a) ${nombres[0]}` : `Coordinadores ${nombres.join(", ")}`);
+      }
     }
     if (sel.Rector) partes.push("Rector");
     if (sel.Administrativos) {
       if (administrativosSeleccionados.length === 0) partes.push("Administrativos");
-      else listaANombres(administrativosSeleccionados, listaAdministrativos).forEach(n => partes.push(`Administrativo(a) ${n}`));
+      else {
+        const nombres = listaANombres(administrativosSeleccionados, listaAdministrativos);
+        partes.push(nombres.length === 1 ? `Administrativo(a) ${nombres[0]}` : `Administrativos ${nombres.join(", ")}`);
+      }
     }
     if (sel.Secretaria) {
       if (secretariasSeleccionadas.length === 0) partes.push("Secretaria General");
-      else listaANombres(secretariasSeleccionadas, listaSecretarias).forEach(n => partes.push(`Secretaria ${n}`));
+      else {
+        const nombres = listaANombres(secretariasSeleccionadas, listaSecretarias);
+        partes.push(nombres.length === 1 ? `Secretaria ${nombres[0]}` : `Secretarias ${nombres.join(", ")}`);
+      }
     }
 
     return joinConY(partes);
