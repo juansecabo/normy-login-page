@@ -17,8 +17,6 @@ import HeaderNormy from "@/components/HeaderNormy";
 import { Loader2, Send, Clock, Trash2, Search, Users, Eye, Paperclip, X, FileText, Download } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import CharCircle from "@/components/CharCircle";
-import { buildTemplateBodyPreview, MAX_WA_TEMPLATE_BODY } from "@/lib/wapBody";
 
 const WEBHOOK_URL =
   "https://n8n.notasnormy.com/webhook/9bd1a575-84f9-4b7f-989a-b2a3d1814721";
@@ -434,14 +432,6 @@ const EnviarComunicadoAdmin = () => {
 
   const destinatariosTexto = buildDestinatarios();
   const algunPerfilMarcado = Object.values(perfilesMarcados).some(Boolean);
-
-  const templateBodyLength = buildTemplateBodyPreview({
-    remitente: "Normy",
-    destinatarios: destinatariosTexto,
-    mensaje,
-    archivos: archivosSeleccionados,
-  }).length;
-  const bodyOverLimit = templateBodyLength > MAX_WA_TEMPLATE_BODY;
 
   const canSend = algunPerfilMarcado && (mensaje.trim() || archivosSeleccionados.length > 0);
 
@@ -934,10 +924,7 @@ const EnviarComunicadoAdmin = () => {
               </div>
 
               <div className="space-y-2 mb-6">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-semibold text-foreground">Mensaje</h3>
-                  <CharCircle value={templateBodyLength} max={MAX_WA_TEMPLATE_BODY} />
-                </div>
+                <h3 className="text-lg font-semibold text-foreground">Mensaje</h3>
                 <Textarea
                   value={mensaje}
                   onChange={(e) => setMensaje(e.target.value)}
@@ -1000,22 +987,8 @@ const EnviarComunicadoAdmin = () => {
 
               <button
                 disabled={!canSend || enviando}
-                onClick={() => {
-                  if (bodyOverLimit) {
-                    toast({
-                      title: "Comunicado demasiado largo",
-                      description: `El contenido total (${templateBodyLength} caracteres) supera el límite de ${MAX_WA_TEMPLATE_BODY} caracteres de WhatsApp. Reduce el mensaje o los destinatarios.`,
-                      variant: "destructive",
-                    });
-                    return;
-                  }
-                  setShowConfirm(true);
-                }}
-                className={`w-full flex items-center justify-center gap-2 p-4 rounded-lg text-white font-bold text-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 ${
-                  bodyOverLimit
-                    ? "bg-gradient-to-r from-red-500 to-red-600 cursor-not-allowed hover:shadow-none"
-                    : "bg-gradient-to-r from-green-500 to-green-600 hover:shadow-md hover:scale-[1.01] hover:from-green-600 hover:to-green-500"
-                }`}
+                onClick={() => setShowConfirm(true)}
+                className="w-full flex items-center justify-center gap-2 p-4 rounded-lg bg-gradient-to-r from-green-500 to-green-600 text-white font-bold text-lg transition-all duration-200 hover:shadow-md hover:scale-[1.01] hover:from-green-600 hover:to-green-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
               >
                 {enviando ? (
                   <>
