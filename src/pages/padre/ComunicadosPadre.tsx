@@ -48,20 +48,27 @@ const ComunicadosPadre = () => {
             s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 
           const filtrados = data.filter((c: Comunicado) => {
-            if (c.id_destinatarios && c.id_destinatarios.length > 0) {
-              return hijos.some(h => c.id_destinatarios!.includes(String(h.codigo)));
-            }
-            if (c.codigo_estudiantil) {
-              return hijos.some(h => h.codigo === c.codigo_estudiantil);
-            }
-            if (c.nivel || c.grado || c.salon) {
-              return hijos.some(h => {
+            const matchIds =
+              (c.id_destinatarios && c.id_destinatarios.length > 0 &&
+                hijos.some(h => c.id_destinatarios!.includes(String(h.codigo)))) ||
+              (c.codigo_estudiantil && hijos.some(h => h.codigo === c.codigo_estudiantil));
+
+            const matchAula =
+              (c.nivel || c.grado || c.salon) &&
+              hijos.some(h => {
                 if (c.nivel && c.nivel !== h.nivel) return false;
                 if (c.grado && c.grado !== h.grado) return false;
                 if (c.salon && c.salon !== h.salon) return false;
                 return true;
               });
-            }
+
+            if (matchIds || matchAula) return true;
+
+            const noHayFiltros =
+              (!c.id_destinatarios || c.id_destinatarios.length === 0) &&
+              !c.codigo_estudiantil && !c.nivel && !c.grado && !c.salon;
+            if (!noHayFiltros) return false;
+
             const destLower = (c.destinatarios || "").trim().toLowerCase();
             if (destLower === "padres de familia") return true;
             const destNorm = norm(c.destinatarios || "");

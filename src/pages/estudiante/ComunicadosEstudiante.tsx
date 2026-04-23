@@ -48,18 +48,24 @@ const ComunicadosEstudiante = () => {
           const apellidosParts = norm(session.apellidos || "").split(/\s+/).filter(p => p.length > 2);
 
           const filtrados = data.filter((c: Comunicado) => {
-            if (c.id_destinatarios && c.id_destinatarios.length > 0) {
-              return c.id_destinatarios.includes(String(session.codigo));
-            }
-            if (c.codigo_estudiantil) {
-              return c.codigo_estudiantil === session.codigo;
-            }
-            if (c.nivel || c.grado || c.salon) {
-              if (c.nivel && c.nivel !== session.nivel) return false;
-              if (c.grado && c.grado !== session.grado) return false;
-              if (c.salon && c.salon !== session.salon) return false;
-              return true;
-            }
+            const matchIds =
+              (c.id_destinatarios && c.id_destinatarios.length > 0 &&
+                c.id_destinatarios.includes(String(session.codigo))) ||
+              (c.codigo_estudiantil && c.codigo_estudiantil === session.codigo);
+
+            const matchAula =
+              (c.nivel || c.grado || c.salon) &&
+              (!c.nivel || c.nivel === session.nivel) &&
+              (!c.grado || c.grado === session.grado) &&
+              (!c.salon || c.salon === session.salon);
+
+            if (matchIds || matchAula) return true;
+
+            const noHayFiltros =
+              (!c.id_destinatarios || c.id_destinatarios.length === 0) &&
+              !c.codigo_estudiantil && !c.nivel && !c.grado && !c.salon;
+            if (!noHayFiltros) return false;
+
             const destLower = (c.destinatarios || "").trim().toLowerCase();
             if (destLower === "estudiantes") return true;
             const destNorm = norm(c.destinatarios || "");
