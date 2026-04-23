@@ -984,7 +984,12 @@ const EnviarComunicado = () => {
                 )}
                 <button
                   type="button"
-                  onClick={() => fileInputRef.current?.click()}
+                  onClick={() => {
+                    if (fileInputRef.current) {
+                      fileInputRef.current.value = '';
+                      fileInputRef.current.click();
+                    }
+                  }}
                   className="flex items-center gap-2 px-4 py-2 rounded-md border text-sm font-medium hover:bg-muted transition-colors"
                 >
                   <Paperclip className="w-4 h-4" />
@@ -1000,7 +1005,6 @@ const EnviarComunicado = () => {
                     if (files && files.length > 0) {
                       setArchivosSeleccionados(prev => [...prev, ...Array.from(files)]);
                     }
-                    e.target.value = '';
                   }}
                 />
               </div>
