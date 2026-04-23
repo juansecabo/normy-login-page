@@ -51,7 +51,14 @@ const ComunicadosPadre = () => {
             const matchIds =
               (c.id_destinatarios && c.id_destinatarios.length > 0 &&
                 hijos.some(h => c.id_destinatarios!.includes(String(h.codigo)))) ||
-              (c.codigo_estudiantil && hijos.some(h => h.codigo === c.codigo_estudiantil));
+              (c.codigo_estudiantil && hijos.some(h => h.codigo === c.codigo_estudiantil)) ||
+              // Fallback: el AI a veces olvida poblar id_destinatarios aunque el
+              // texto diga "estudiante con código X" — extraemos el código del texto.
+              hijos.some(h => {
+                if (!h.codigo) return false;
+                const cod = String(h.codigo);
+                return new RegExp(`\\b${cod}\\b`).test(c.destinatarios || "");
+              });
 
             const matchAula =
               (c.nivel || c.grado || c.salon) &&

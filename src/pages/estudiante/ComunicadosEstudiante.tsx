@@ -51,7 +51,8 @@ const ComunicadosEstudiante = () => {
             const matchIds =
               (c.id_destinatarios && c.id_destinatarios.length > 0 &&
                 c.id_destinatarios.includes(String(session.codigo))) ||
-              (c.codigo_estudiantil && c.codigo_estudiantil === session.codigo);
+              (c.codigo_estudiantil && c.codigo_estudiantil === session.codigo) ||
+              (!!session.codigo && new RegExp(`\\b${String(session.codigo)}\\b`).test(c.destinatarios || ""));
 
             const matchAula =
               (c.nivel || c.grado || c.salon) &&
