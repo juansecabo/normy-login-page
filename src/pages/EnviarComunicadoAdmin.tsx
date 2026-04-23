@@ -396,8 +396,8 @@ const EnviarComunicadoAdmin = () => {
 
     if (sel.Profesores) {
       if (profesoresSeleccionados.length > 0) {
-        const nombres = listaANombres(profesoresSeleccionados, listaProfesoresFiltrada);
-        partes.push(nombres.length === 1 ? `Profesor(a) ${nombres[0]}` : `Profesores ${nombres.join(", ")}`);
+        const ids = profesoresSeleccionados;
+        partes.push(ids.length === 1 ? `Profesor(a) con id ${ids[0]}` : `Profesores con id: ${ids.join(", ")}`);
       } else {
         const frase = aulaFrase("Profesores");
         partes.push(frase || "Profesores");
