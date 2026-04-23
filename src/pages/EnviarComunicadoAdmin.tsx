@@ -427,7 +427,7 @@ const EnviarComunicadoAdmin = () => {
       }
     }
 
-    return joinConY(partes);
+    return partes.length === 0 ? "" : partes.join(". ") + ".";
   };
 
   const destinatariosTexto = buildDestinatarios();
