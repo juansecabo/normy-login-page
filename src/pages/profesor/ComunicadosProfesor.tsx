@@ -42,18 +42,18 @@ const ComunicadosProfesor = () => {
 
     const cargar = async () => {
       try {
-        // Traer las asignaciones del profesor para poder filtrar por aula
+        // Traer las asignaciones del profesor para poder filtrar por aula.
+        // Cada fila = (asignatura, grados[], salones[]); la combinación
+        // grado×salón aplica DENTRO de cada fila, no entre filas.
         const { data: asignaciones } = await supabase
           .from('Asignación Profesores')
           .select('"Grado(s)", "Salon(es)"')
           .eq('codigo', parseInt(session.codigo!));
 
-        const allGrados = new Set<string>();
-        const allSalones = new Set<string>();
-        for (const row of asignaciones || []) {
-          for (const g of (row["Grado(s)"] as string[] | null) || []) allGrados.add(g);
-          for (const s of (row["Salon(es)"] as string[] | null) || []) allSalones.add(s);
-        }
+        const rows = (asignaciones || []).map(row => ({
+          grados: ((row["Grado(s)"] as string[] | null) || []),
+          salones: ((row["Salon(es)"] as string[] | null) || []),
+        }));
 
         const { data, error } = await supabase
           .from('Comunicados')
@@ -68,14 +68,18 @@ const ComunicadosProfesor = () => {
             }
             if (c.codigo_estudiantil && c.codigo_estudiantil !== session.codigo) return false;
             // Si la fila tiene filtros de aula/nivel, el profesor solo la ve si
-            // tiene alguna asignación que cubra esa aula/nivel
+            // alguna de sus asignaciones (por fila) matchea todos los filtros.
             if (c.grado || c.salon || c.nivel) {
-              if (c.grado && !allGrados.has(c.grado)) return false;
-              if (c.salon && !allSalones.has(c.salon)) return false;
-              if (c.nivel) {
-                const gradosDelNivel = NIVELES_GRADOS[c.nivel] || [];
-                if (!gradosDelNivel.some(g => allGrados.has(g))) return false;
-              }
+              const algunaFilaMatch = rows.some(r => {
+                if (c.grado && !r.grados.includes(c.grado)) return false;
+                if (c.salon && !r.salones.includes(c.salon)) return false;
+                if (c.nivel) {
+                  const gradosDelNivel = NIVELES_GRADOS[c.nivel] || [];
+                  if (!r.grados.some(g => gradosDelNivel.includes(g))) return false;
+                }
+                return true;
+              });
+              if (!algunaFilaMatch) return false;
             }
             return true;
           });
