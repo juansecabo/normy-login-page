@@ -14,9 +14,19 @@ interface Comunicado {
   fecha: string;
   archivo_url: string | null;
   perfil: string[] | null;
+  nivel: string | null;
+  grado: string | null;
+  salon: string | null;
   codigo_estudiantil: string | null;
   id_destinatarios: string[] | null;
 }
+
+const NIVELES_GRADOS: Record<string, string[]> = {
+  Preescolar: ["Prejardín", "Jardín", "Transición"],
+  Primaria: ["Primero", "Segundo", "Tercero", "Cuarto", "Quinto"],
+  Secundaria: ["Sexto", "Séptimo", "Octavo", "Noveno"],
+  Media: ["Décimo", "Undécimo"],
+};
 
 const ComunicadosProfesor = () => {
   const navigate = useNavigate();
@@ -32,6 +42,19 @@ const ComunicadosProfesor = () => {
 
     const cargar = async () => {
       try {
+        // Traer las asignaciones del profesor para poder filtrar por aula
+        const { data: asignaciones } = await supabase
+          .from('Asignación Profesores')
+          .select('"Grado(s)", "Salon(es)"')
+          .eq('codigo', parseInt(session.codigo!));
+
+        const allGrados = new Set<string>();
+        const allSalones = new Set<string>();
+        for (const row of asignaciones || []) {
+          for (const g of (row["Grado(s)"] as string[] | null) || []) allGrados.add(g);
+          for (const s of (row["Salon(es)"] as string[] | null) || []) allSalones.add(s);
+        }
+
         const { data, error } = await supabase
           .from('Comunicados')
           .select('*')
@@ -44,11 +67,21 @@ const ComunicadosProfesor = () => {
               return c.id_destinatarios.includes(String(session.codigo));
             }
             if (c.codigo_estudiantil && c.codigo_estudiantil !== session.codigo) return false;
+            // Si la fila tiene filtros de aula/nivel, el profesor solo la ve si
+            // tiene alguna asignación que cubra esa aula/nivel
+            if (c.grado || c.salon || c.nivel) {
+              if (c.grado && !allGrados.has(c.grado)) return false;
+              if (c.salon && !allSalones.has(c.salon)) return false;
+              if (c.nivel) {
+                const gradosDelNivel = NIVELES_GRADOS[c.nivel] || [];
+                if (!gradosDelNivel.some(g => allGrados.has(g))) return false;
+              }
+            }
             return true;
           });
           setComunicados(filtrados);
           const maxId = filtrados.length > 0 ? Math.max(...filtrados.map((c: Comunicado) => c.id)) : 0;
-          if (maxId > 0) markLastSeen('comunicados', session.id!, maxId);
+          if (maxId > 0) markLastSeen('comunicados', session.codigo!, maxId);
         }
       } catch (err) {
         console.error('Error:', err);
