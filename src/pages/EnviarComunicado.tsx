@@ -51,6 +51,7 @@ interface ComunicadoEnviado {
   mensaje: string;
   archivo_url: string | null;
   fecha: string;
+  codigo_remitente: string | null;
 }
 
 const getCleanFilename = (url: string) =>
@@ -280,11 +281,15 @@ const EnviarComunicado = () => {
 
   const fetchHistorial = async () => {
     setLoadingHistorial(true);
-    const { data } = await supabase
+    // Rector ve TODOS los comunicados (igual que admin); los demás roles solo los suyos.
+    let query = supabase
       .from("Comunicados")
       .select("*")
-      .eq("codigo_remitente", codigoRemitente)
       .order("fecha", { ascending: false });
+    if (cargo !== "Rector") {
+      query = query.eq("codigo_remitente", codigoRemitente);
+    }
+    const { data } = await query;
     setHistorial((data as ComunicadoEnviado[]) || []);
     setLoadingHistorial(false);
   };
@@ -1189,13 +1194,15 @@ const EnviarComunicado = () => {
                           <Clock className="w-3 h-3" />
                           {formatFecha(c.fecha)}
                         </div>
-                        <button
-                          onClick={(e) => { e.stopPropagation(); setDeleteId(c.id); }}
-                          className="text-muted-foreground hover:text-destructive transition-colors"
-                          title="Eliminar"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                        {String(c.codigo_remitente ?? "") === String(codigoRemitente) && (
+                          <button
+                            onClick={(e) => { e.stopPropagation(); setDeleteId(c.id); }}
+                            className="text-muted-foreground hover:text-destructive transition-colors"
+                            title="Eliminar"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        )}
                       </div>
                       <p className="text-sm">
                         <span className="font-medium text-foreground">Para:</span>{" "}
