@@ -127,7 +127,7 @@ const ListaComunicados = ({ comunicados, loading, showDocumentLink = false }: Li
       </div>
 
       {filtrados.map((c) => (
-        <div key={c.id} className="bg-primary/5 border border-primary/20 rounded-lg p-4 space-y-2 cursor-pointer hover:bg-primary/10 transition-colors" onClick={() => setSelectedItem(c)}>
+        <div key={c.id} className="bg-primary/10 border border-primary/30 rounded-lg p-4 space-y-2 cursor-pointer hover:bg-primary/15 transition-colors" onClick={() => setSelectedItem(c)}>
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
             <Clock className="w-3 h-3" />
             {formatFecha(c.fecha)}
@@ -143,7 +143,7 @@ const ListaComunicados = ({ comunicados, loading, showDocumentLink = false }: Li
             </p>
           )}
           {c.mensaje && (
-            <p className="text-sm whitespace-pre-wrap bg-card border border-border/60 p-3 rounded-md leading-relaxed">
+            <p className="text-sm whitespace-pre-wrap bg-stone-50 border border-stone-200 p-3 rounded-md leading-relaxed">
               {c.mensaje}
             </p>
           )}
@@ -171,7 +171,7 @@ const ListaComunicados = ({ comunicados, loading, showDocumentLink = false }: Li
                 </div>
               </DialogHeader>
               {selectedItem.mensaje && (
-                <p className="text-sm whitespace-pre-wrap bg-card border border-border/60 p-4 rounded-md leading-relaxed">
+                <p className="text-sm whitespace-pre-wrap bg-stone-50 border border-stone-200 p-4 rounded-md leading-relaxed">
                   {selectedItem.mensaje}
                 </p>
               )}

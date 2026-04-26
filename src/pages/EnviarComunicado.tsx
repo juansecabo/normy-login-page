@@ -1183,7 +1183,7 @@ const EnviarComunicado = () => {
                     const term = normalize(busqueda);
                     return normalize(c.destinatarios).includes(term) || normalize(c.mensaje).includes(term);
                   }).map((c) => (
-                    <div key={c.id} className="bg-primary/5 border border-primary/20 rounded-lg p-4 space-y-2 cursor-pointer hover:bg-primary/10 transition-colors" onClick={() => setSelectedHistorial(c)}>
+                    <div key={c.id} className="bg-primary/10 border border-primary/30 rounded-lg p-4 space-y-2 cursor-pointer hover:bg-primary/15 transition-colors" onClick={() => setSelectedHistorial(c)}>
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2 text-xs text-muted-foreground">
                           <Clock className="w-3 h-3" />
@@ -1202,7 +1202,7 @@ const EnviarComunicado = () => {
                         {c.destinatarios}
                       </p>
                       {c.mensaje && (
-                        <p className="text-sm whitespace-pre-wrap bg-card border border-border/60 p-3 rounded-md leading-relaxed">
+                        <p className="text-sm whitespace-pre-wrap bg-stone-50 border border-stone-200 p-3 rounded-md leading-relaxed">
                           {c.mensaje}
                         </p>
                       )}
@@ -1251,7 +1251,7 @@ const EnviarComunicado = () => {
                 <p>
                   <span className="font-medium text-foreground">Mensaje:</span>
                 </p>
-                <p className="whitespace-pre-wrap bg-card border border-border/60 p-3 rounded-md leading-relaxed">
+                <p className="whitespace-pre-wrap bg-stone-50 border border-stone-200 p-3 rounded-md leading-relaxed">
                   {mensaje}
                 </p>
                 {archivosSeleccionados.length > 0 && (
@@ -1288,7 +1288,7 @@ const EnviarComunicado = () => {
                   <span className="font-medium text-foreground">Ejemplo (primer estudiante):</span>
                 </p>
                 {filasParsed.length > 0 && plantillaMasivo && (
-                  <p className="whitespace-pre-wrap bg-card border border-border/60 p-3 rounded-md leading-relaxed">
+                  <p className="whitespace-pre-wrap bg-stone-50 border border-stone-200 p-3 rounded-md leading-relaxed">
                     {resolverPlantilla(plantillaMasivo, filasParsed[0])}
                   </p>
                 )}
