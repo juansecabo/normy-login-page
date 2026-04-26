@@ -599,7 +599,7 @@ const EnviarDocumento = () => {
                         </a>
                       )}
                       {c.mensaje && (
-                        <p className="text-sm whitespace-pre-wrap bg-muted p-3 rounded-md max-h-32 overflow-y-auto">
+                        <p className="text-sm whitespace-pre-wrap bg-secondary/40 border border-border/60 p-3 rounded-md leading-relaxed">
                           {c.mensaje}
                         </p>
                       )}
@@ -638,7 +638,7 @@ const EnviarDocumento = () => {
                     <p>
                       <span className="font-medium text-foreground">Mensaje:</span>
                     </p>
-                    <p className="whitespace-pre-wrap bg-muted p-3 rounded-md max-h-48 overflow-y-auto">
+                    <p className="whitespace-pre-wrap bg-secondary/40 border border-border/60 p-3 rounded-md leading-relaxed">
                       {mensaje}
                     </p>
                   </>

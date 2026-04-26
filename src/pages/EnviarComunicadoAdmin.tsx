@@ -1190,7 +1190,7 @@ const EnviarComunicadoAdmin = () => {
                         {c.destinatarios}
                       </p>
                       {c.mensaje && (
-                        <p className="text-sm whitespace-pre-wrap bg-muted p-3 rounded-md max-h-32 overflow-y-auto">
+                        <p className="text-sm whitespace-pre-wrap bg-secondary/40 border border-border/60 p-3 rounded-md leading-relaxed">
                           {c.mensaje}
                         </p>
                       )}
@@ -1239,7 +1239,7 @@ const EnviarComunicadoAdmin = () => {
                 <p>
                   <span className="font-medium text-foreground">Mensaje:</span>
                 </p>
-                <p className="whitespace-pre-wrap bg-muted p-3 rounded-md max-h-48 overflow-y-auto">
+                <p className="whitespace-pre-wrap bg-secondary/40 border border-border/60 p-3 rounded-md leading-relaxed">
                   {mensaje}
                 </p>
                 {archivosSeleccionados.length > 0 && (
@@ -1276,7 +1276,7 @@ const EnviarComunicadoAdmin = () => {
                   <span className="font-medium text-foreground">Ejemplo (primer estudiante):</span>
                 </p>
                 {filasParsed.length > 0 && plantillaMasivo && (
-                  <p className="whitespace-pre-wrap bg-muted p-3 rounded-md max-h-48 overflow-y-auto">
+                  <p className="whitespace-pre-wrap bg-secondary/40 border border-border/60 p-3 rounded-md leading-relaxed">
                     {resolverPlantilla(plantillaMasivo, filasParsed[0])}
                   </p>
                 )}
