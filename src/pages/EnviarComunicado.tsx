@@ -1204,6 +1204,12 @@ const EnviarComunicado = () => {
                           </button>
                         )}
                       </div>
+                      {c.remitente && (
+                        <p className="text-sm">
+                          <span className="font-medium text-foreground">De:</span>{" "}
+                          {c.remitente}
+                        </p>
+                      )}
                       <p className="text-sm">
                         <span className="font-medium text-foreground">Para:</span>{" "}
                         {c.destinatarios}
