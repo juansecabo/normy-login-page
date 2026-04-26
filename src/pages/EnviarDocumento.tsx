@@ -569,7 +569,7 @@ const EnviarDocumento = () => {
                     const term = normalize(busqueda);
                     return normalize(c.destinatarios).includes(term) || normalize(c.mensaje).includes(term);
                   }).map((c) => (
-                    <div key={c.id} className="bg-primary/10 border border-primary/30 rounded-lg p-4 space-y-2 cursor-pointer hover:bg-primary/15 transition-colors" onClick={() => setSelectedHistorial(c)}>
+                    <div key={c.id} className="bg-primary/10 border-2 border-primary/40 rounded-lg p-4 space-y-2 cursor-pointer hover:bg-primary/15 hover:border-primary/60 transition-colors" onClick={() => setSelectedHistorial(c)}>
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2 text-xs text-muted-foreground">
                           <Clock className="w-3 h-3" />
