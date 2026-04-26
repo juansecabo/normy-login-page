@@ -142,7 +142,7 @@ const ListaComunicados = ({ comunicados, loading, showDocumentLink = false }: Li
             </p>
           )}
           {c.mensaje && (
-            <p className="text-sm whitespace-pre-wrap bg-muted p-3 rounded-md max-h-32 overflow-y-auto">
+            <p className="text-sm whitespace-pre-wrap bg-secondary/40 border border-border/60 p-3 rounded-md leading-relaxed">
               {c.mensaje}
             </p>
           )}
@@ -170,7 +170,7 @@ const ListaComunicados = ({ comunicados, loading, showDocumentLink = false }: Li
                 </div>
               </DialogHeader>
               {selectedItem.mensaje && (
-                <p className="text-sm whitespace-pre-wrap bg-muted p-4 rounded-md">
+                <p className="text-sm whitespace-pre-wrap bg-secondary/40 border border-border/60 p-4 rounded-md leading-relaxed">
                   {selectedItem.mensaje}
                 </p>
               )}
