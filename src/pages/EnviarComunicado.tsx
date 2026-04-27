@@ -1182,34 +1182,27 @@ const EnviarComunicado = () => {
                       className="pl-9"
                     />
                   </div>
-                  {(() => {
-                    const totalHist = historial.length;
-                    const numeroByIdHist = new Map<number, number>();
-                    historial.forEach((c, i) => numeroByIdHist.set(c.id, totalHist - i));
-                    return historial.filter((c) => {
-                      if (!busqueda.trim()) return true;
-                      const normalize = (s: string) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
-                      const term = normalize(busqueda);
-                      return normalize(c.destinatarios).includes(term) || normalize(c.mensaje).includes(term);
-                    }).map((c) => (
+                  {historial.filter((c) => {
+                    if (!busqueda.trim()) return true;
+                    const normalize = (s: string) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+                    const term = normalize(busqueda);
+                    return normalize(c.destinatarios).includes(term) || normalize(c.mensaje).includes(term);
+                  }).map((c) => (
                     <div key={c.id} className="bg-primary/10 border-2 border-primary/40 rounded-lg p-4 space-y-2 cursor-pointer hover:bg-primary/15 hover:border-primary/60 transition-colors" onClick={() => setSelectedHistorial(c)}>
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2 text-xs text-muted-foreground">
                           <Clock className="w-3 h-3" />
                           {formatFecha(c.fecha)}
                         </div>
-                        <div className="flex items-center gap-3">
-                          <span className="text-xs font-semibold text-primary">#{numeroByIdHist.get(c.id)}</span>
-                          {String(c.codigo_remitente ?? "") === String(codigoRemitente) && (
-                            <button
-                              onClick={(e) => { e.stopPropagation(); setDeleteId(c.id); }}
-                              className="text-muted-foreground hover:text-destructive transition-colors"
-                              title="Eliminar"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          )}
-                        </div>
+                        {String(c.codigo_remitente ?? "") === String(codigoRemitente) && (
+                          <button
+                            onClick={(e) => { e.stopPropagation(); setDeleteId(c.id); }}
+                            className="text-muted-foreground hover:text-destructive transition-colors"
+                            title="Eliminar"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        )}
                       </div>
                       {c.remitente && (
                         <p className="text-sm">
@@ -1243,8 +1236,7 @@ const EnviarComunicado = () => {
                         </div>
                       ))}
                     </div>
-                  ));
-                  })()}
+                  ))}
                 </div>
               )}
             </TabsContent>
