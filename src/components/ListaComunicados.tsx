@@ -114,6 +114,12 @@ const ListaComunicados = ({ comunicados, loading, showDocumentLink = false }: Li
     return normalize(c.remitente || '').includes(term) || normalize(c.mensaje || '').includes(term);
   });
 
+  // Numerar cada comunicado del usuario (oldest = #1, newest = N) basado en
+  // la lista completa, no en la filtrada — así el número es estable.
+  const total = comunicados.length;
+  const numeroById = new Map<number, number>();
+  comunicados.forEach((c, i) => numeroById.set(c.id, total - i));
+
   return (
     <div className="space-y-4">
       <div className="relative">
@@ -128,9 +134,12 @@ const ListaComunicados = ({ comunicados, loading, showDocumentLink = false }: Li
 
       {filtrados.map((c) => (
         <div key={c.id} className="bg-primary/10 border-2 border-primary/40 rounded-lg p-4 space-y-2 cursor-pointer hover:bg-primary/15 hover:border-primary/60 transition-colors" onClick={() => setSelectedItem(c)}>
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <Clock className="w-3 h-3" />
-            {formatFecha(c.fecha)}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <Clock className="w-3 h-3" />
+              {formatFecha(c.fecha)}
+            </div>
+            <span className="text-xs font-semibold text-primary">#{numeroById.get(c.id)}</span>
           </div>
           <p className="text-sm">
             <span className="font-medium text-foreground">De:</span>{" "}
